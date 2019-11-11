@@ -24,7 +24,7 @@ def parse_arguments():
     parser.add_argument(
         "filename",
         type=str,
-        help="Filename with strings to be processed (one per line)."
+        help="Filename with strings to be processed (one per line).",
     )
     args = parser.parse_args()
 

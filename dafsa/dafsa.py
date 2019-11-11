@@ -222,27 +222,38 @@ class DAFSA:
 
         # Add basic statistics
         # TODO: add number of sequences
-        buf = ["DAFSA with %i nodes and %i edges (%i seqs)" % (
-            self.num_nodes(), self.num_edges(),
-            0
-        )]
+        buf = [
+            "DAFSA with %i nodes and %i edges (%i seqs)"
+            % (self.num_nodes(), self.num_edges(), 0)
+        ]
 
         # Add information on root node
         # TODO: move root to general nodes?
         buf += [
-            "+-- ROOT %s %s" %
-            ([self.root.node_id],
-            [(label, str(n.node_id)) for label, n in self.root.edges.items()],)
+            "+-- ROOT %s %s"
+            % (
+                [self.root.node_id],
+                [
+                    (label, str(n.node_id))
+                    for label, n in self.root.edges.items()
+                ],
+            )
         ]
 
         # Add information on nodes
         # TODO: better sorting
         for node in sorted(self.nodes):
             buf += [
-            "    +-- %s %s %s" %
-            (node, [self.root.node_id],
-            [(label, str(n.node_id)) for label, n in self.root.edges.items()],)
-        ]
+                "    +-- %s %s %s"
+                % (
+                    node,
+                    [self.root.node_id],
+                    [
+                        (label, str(n.node_id))
+                        for label, n in self.root.edges.items()
+                    ],
+                )
+            ]
 
         # build a single string and returns
         return "\n".join(buf)
