@@ -73,6 +73,16 @@ class DAFSANode:
 
         return self.__str__() == other.__str__()
 
+    def __gt__(self, other):
+        """
+        Compares two nodes for sorting purposes.
+
+        Internally, the method reuses the `.__str__()` method, so that
+        the logic for comparison is implemented in a single place.
+        """
+
+        return self.__str__() > other.__str__()
+
     def __hash__(self):
         """
         Returns a hash for the node, based on its string representation.
@@ -103,6 +113,8 @@ class DAFSA:
         # stored in `self.nodes` after minimization
         self._unchecked_nodes = []
 
+    # TODO: store number of sequences added somewhere
+    # TODO: take set of sequences
     def insert(self, sequences):
         """
         Insert a list of sequences to the structure and finalizes it.
@@ -202,3 +214,35 @@ class DAFSA:
         """
 
         return sum([len(node.edges) for node in self.nodes])
+
+    def __str__(self):
+        """
+        Returns a readable, multiline textual representation.
+        """
+
+        # Add basic statistics
+        # TODO: add number of sequences
+        buf = ["DAFSA with %i nodes and %i edges (%i seqs)" % (
+            self.num_nodes(), self.num_edges(),
+            0
+        )]
+
+        # Add information on root node
+        # TODO: move root to general nodes?
+        buf += [
+            "+-- ROOT %s %s" %
+            ([self.root.node_id],
+            [(label, str(n.node_id)) for label, n in self.root.edges.items()],)
+        ]
+
+        # Add information on nodes
+        # TODO: better sorting
+        for node in sorted(self.nodes):
+            buf += [
+            "    +-- %s %s %s" %
+            (node, [self.root.node_id],
+            [(label, str(n.node_id)) for label, n in self.root.edges.items()],)
+        ]
+
+        # build a single string and returns
+        return "\n".join(buf)

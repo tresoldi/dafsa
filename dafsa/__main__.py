@@ -22,7 +22,9 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-t", "--test", type=str, help="Temporary argument for development."
+        "filename",
+        type=str,
+        help="Filename with strings to be processed (one per line)."
     )
     args = parser.parse_args()
 
@@ -37,47 +39,19 @@ def main():
     # parse command line arguments
     args = parse_arguments()
 
-    # Temporary results
-    print(args)
-    print("== ok ==")
+    # load data
+    with open(args.filename) as handler:
+        seqs = [line.strip() for line in handler]
 
-    words = [
-        "defy",
-        "try",
-        "defying",
-        "deny",
-        "denying",
-        "tried",
-        "defies",
-        "tries",
-        "defied",
-        "dafsa",
-        "trying",
-    ]
-
+    # build object
     dafsa = DAFSA()
-    dafsa.insert(words)
+    dafsa.insert(seqs)
 
-    print(
-        "Read %d words into %d nodes and %d edges"
-        % (len(words), dafsa.num_nodes(), dafsa.num_edges())
-    )
+    print(str(dafsa))
 
-    print(
-        "r",
-        [dafsa.root.node_id],
-        [(label, str(n.node_id)) for label, n in dafsa.root.edges.items()],
-    )
-    for node in dafsa.nodes:
-        print(
-            node,
-            [node.node_id, node.final],
-            [(label, str(n.node_id)) for label, n in node.edges.items()],
-        )
-
-    print("deny", dafsa.lookup("deny"))
-    print("dafsa", dafsa.lookup("dafsa"))
-    print("dawg", dafsa.lookup("dawg"))
+    print()
+    for needle in ["deny", "dafsa", "dawg"]:
+        print("`%s` in dafsa:" % needle, dafsa.lookup(needle))
 
 
 if __name__ == "__main__":
