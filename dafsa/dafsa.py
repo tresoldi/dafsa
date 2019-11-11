@@ -111,7 +111,7 @@ class DAFSA:
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
         seq_list = [""] + sorted(sequences)
-        for previous_seq, seq in pairwise(seq_list):
+        for previous_seq, seq in utils.pairwise(seq_list):
             self._insert_single_seq(seq, previous_seq)
 
         # Minimize the entire graph, no restrictions, so that we clean
@@ -124,7 +124,7 @@ class DAFSA:
         # removing redundant nodes, proceeding from the last one down to
         # the the common prefix size. The list will be truncated at that
         # point.
-        prefix_len = common_prefix_length(seq, previous_seq)
+        prefix_len = utils.common_prefix_length(seq, previous_seq)
         self._minimize(prefix_len)
 
         # add the suffix, starting from the correct node mid-way through the
