@@ -12,7 +12,8 @@ import argparse
 import configparser
 
 # Import our library
-import dafsa
+from dafsa import DAFSA
+
 
 def parse_arguments():
     """
@@ -21,13 +22,12 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-t",
-        "--test",
-        type=str,
-        help="Temporary argument for development.")
+        "-t", "--test", type=str, help="Temporary argument for development."
+    )
     args = parser.parse_args()
 
     return args
+
 
 def main():
     """
@@ -40,6 +40,45 @@ def main():
     # Temporary results
     print(args)
     print("== ok ==")
+
+    words = [
+        "defy",
+        "try",
+        "defying",
+        "deny",
+        "denying",
+        "tried",
+        "defies",
+        "tries",
+        "defied",
+        "dafsa",
+        "trying",
+    ]
+
+    dafsa = DAFSA()
+    dafsa.insert(words)
+
+    print(
+        "Read %d words into %d nodes and %d edges"
+        % (len(words), dafsa.num_nodes(), dafsa.num_edges())
+    )
+
+    print(
+        "r",
+        [dafsa.root.node_id],
+        [(label, str(n.node_id)) for label, n in dafsa.root.edges.items()],
+    )
+    for node in dafsa.nodes:
+        print(
+            node,
+            [node.node_id, node.final],
+            [(label, str(n.node_id)) for label, n in node.edges.items()],
+        )
+
+    print("deny", dafsa.lookup("deny"))
+    print("dafsa", dafsa.lookup("dafsa"))
+    print("dawg", dafsa.lookup("dawg"))
+
 
 if __name__ == "__main__":
     main()

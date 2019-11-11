@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # encoding: utf-8
 
 # Originally based on public domain code by Steve Hanov, published at
@@ -16,32 +15,8 @@ that the list of strings can be sorted before computation.
 # Import Python libraries
 import itertools
 
-# Define some auxiliary functions
-def common_prefix_length(seq_a, seq_b):
-    """
-    Returns the length of the common prefix between two sequences.
-    """
-
-    common_prefix_len = 0
-    for i in range(min(len(seq_a), len(seq_b))):
-        if seq_a[i] != seq_b[i]:
-            break
-        common_prefix_len += 1
-
-    return common_prefix_len
-
-
-def pairwise(iterable):
-    """
-    Iterates pairwise over an iterable.
-
-    s -> (s0,s1), (s1,s2), (s2, s3), ...
-    """
-
-    elem_a, elem_b = itertools.tee(iterable)
-    next(elem_b, None)
-
-    return zip(elem_a, elem_b)
+# Import other modules
+from . import utils
 
 # Define classes for DAFSA nodes and graphs
 class DAFSANode:
@@ -55,6 +30,7 @@ class DAFSANode:
     to identical states. The `__hash__()` and `__eq__()` methods allow it
     to be used as a key in a dictionary.
     """
+
     # pylint: disable=too-few-public-methods
 
     def __init__(self, node_id):
@@ -103,6 +79,7 @@ class DAFSANode:
         """
 
         return self.__str__().__hash__()
+
 
 class DAFSA:
     """
@@ -225,47 +202,3 @@ class DAFSA:
         """
 
         return sum([len(node.edges) for node in self.nodes])
-
-
-def main():
-    words = [
-        "defy",
-        "try",
-        "defying",
-        "deny",
-        "denying",
-        "tried",
-        "defies",
-        "tries",
-        "defied",
-        "dafsa",
-        "trying",
-    ]
-
-    dafsa = DAFSA()
-    dafsa.insert(words)
-
-    print(
-        "Read %d words into %d nodes and %d edges"
-        % (len(words), dafsa.num_nodes(), dafsa.num_edges())
-    )
-
-    print(
-        "r",
-        [dafsa.root.node_id],
-        [(label, str(n.node_id)) for label, n in dafsa.root.edges.items()],
-    )
-    for node in dafsa.nodes:
-        print(
-            node,
-            [node.node_id, node.final],
-            [(label, str(n.node_id)) for label, n in node.edges.items()],
-        )
-
-    print("deny", dafsa.lookup("deny"))
-    print("dafsa", dafsa.lookup("dafsa"))
-    print("dawg", dafsa.lookup("dawg"))
-
-
-if __name__ == "__main__":
-    main()

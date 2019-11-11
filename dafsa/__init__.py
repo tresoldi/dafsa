@@ -8,5 +8,4 @@ __email__ = "tresoldi@shh.mpg.de"
 import random
 
 # Build the namespace
-#from ngesh.random_tree import gen_tree, add_characters
-#from ngesh.output import tree2nexus, tree2wordlist
+from dafsa.dafsa import DAFSA
