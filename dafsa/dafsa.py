@@ -12,6 +12,8 @@ that the list of strings can be sorted before computation.
 
 # TODO: Add support for tokens/ngrams, instead of only using characters
 # TODO: rename the num_ methods to count_ ?
+# TODO: comment all arguements, at least in this module
+# TODO: check why root is not always sorted
 
 # Import Python libraries
 import itertools
@@ -121,8 +123,7 @@ class DAFSA:
         # edges.
         self._num_sequences = None
 
-    # TODO: store number of sequences added somewhere
-    # TODO: take set of sequences
+    # TODO: allow to override minimization?
     def insert(self, sequences):
         """
         Insert a list of sequences to the structure and finalizes it.
@@ -176,22 +177,35 @@ class DAFSA:
         # minimize the graph from the last unchecked item to `index`;
         # final minimization, the default, traverses the entire data
         # structure.
-        # NOTE: the loop could be removed, but it leaves the code in
-        #       place for future and already planned improvements, while
-        #       also making it easier to follow.
-        for _ in range(len(self._unchecked_nodes) - index):
-            # Remove the last item from unchecked nodes and extract
-            # information on parent, attribute, and child for checking
-            # if we can minimize the graph.
-            parent, token, child = self._unchecked_nodes.pop()
 
-            # If the child is already among the minimized nodes, replace it
-            # with one previously encountered; otherwise, add the state
-            # to the minimized nodes.
-            if child in self.nodes:
-                parent.edges[token] = self.nodes[child]
-            else:
-                self.nodes[child] = child
+        # Please note that this loop could be removed, but it would
+        # unnecessarily complicate a logic which is already not immediately
+        # intuite (even if less idiomatic). Also note that, to guarantee
+        # that the graph is minimized as much as possible with a single
+        # call to this method, we restart the loop each time an item is
+        # changed, only leaving when it is untouched.
+        while True:
+            # Sentinel to whether the graph was changed
+            graph_changed = False
+
+            for _ in range(len(self._unchecked_nodes) - index):
+                # Remove the last item from unchecked nodes and extract
+                # information on parent, attribute, and child for checking
+                # if we can minimize the graph.
+                parent, token, child = self._unchecked_nodes.pop()
+
+                # If the child is already among the minimized nodes, replace it
+                # with one previously encountered, also setting the sentinel;
+                # otherwise, add the state to the list of minimized nodes.
+                if child in self.nodes:
+                    parent.edges[token] = self.nodes[child]
+                    graph_changed = True
+                else:
+                    self.nodes[child] = child
+
+            # Only leave the loop if the graph was untouched
+            if not graph_changed:
+                break
 
     def lookup(self, seq):
         """
