@@ -11,6 +11,7 @@ that the list of strings can be sorted before computation.
 """
 
 # TODO: Add support for tokens/ngrams, instead of only using characters
+# TODO: rename the num_ methods to count_ ?
 
 # Import Python libraries
 import itertools
@@ -113,6 +114,13 @@ class DAFSA:
         # stored in `self.nodes` after minimization
         self._unchecked_nodes = []
 
+        # Variable holding the number of sequences stores; it is initialized
+        # to `None`, so we can differentiate from empty sets. Note that it
+        # set as an internal variable, to be accessed with the
+        # `.num_sequences()` method in analogy to the number of nodes and
+        # edges.
+        self._num_sequences = None
+
     # TODO: store number of sequences added somewhere
     # TODO: take set of sequences
     def insert(self, sequences):
@@ -120,10 +128,13 @@ class DAFSA:
         Insert a list of sequences to the structure and finalizes it.
         """
 
+        # Take a sorted set of the sequences and store its number
+        sequences = sorted(set(sequences))
+        self._num_sequences = len(sequences)
+
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
-        seq_list = [""] + sorted(sequences)
-        for previous_seq, seq in utils.pairwise(seq_list):
+        for previous_seq, seq in utils.pairwise([""] +sequences):
             self._insert_single_seq(seq, previous_seq)
 
         # Minimize the entire graph, no restrictions, so that we clean
@@ -215,6 +226,13 @@ class DAFSA:
 
         return sum([len(node.edges) for node in self.nodes])
 
+    def num_sequences(self):
+        """
+        Returns the number of sequences the structure.
+        """
+
+        return self._num_sequences
+
     def __str__(self):
         """
         Returns a readable, multiline textual representation.
@@ -223,8 +241,8 @@ class DAFSA:
         # Add basic statistics
         # TODO: add number of sequences
         buf = [
-            "DAFSA with %i nodes and %i edges (%i seqs)"
-            % (self.num_nodes(), self.num_edges(), 0)
+            "DAFSA with %i nodes and %i edges (%i sequences)"
+            % (self.num_nodes(), self.num_edges(), self.num_sequences())
         ]
 
         # Add information on root node
