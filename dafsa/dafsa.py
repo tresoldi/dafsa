@@ -13,7 +13,8 @@ that the list of strings can be sorted before computation.
 # TODO: Add support for tokens/ngrams, instead of only using characters
 # TODO: rename the num_ methods to count_ ?
 # TODO: comment all arguements, at least in this module
-# TODO: check why root is not always sorted
+# TODO: check why root is not always sorted - or is sorted and we
+#       just need to generate the label for it as well?
 
 # Import Python libraries
 import itertools
