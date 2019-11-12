@@ -9,7 +9,7 @@ DAFSA is a library for computing [Deterministic Acyclic Finite State Automata](h
 
 ![Trie vs. DAFSA](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/trie-vs-dafsa.png)
 
-The primary difference between DAFSA and tries is that suffix and infix redundancy is eliminated, as in the example of Figure 1 (from the linked Wikipedia article) storing the set of strings `"tap"`, `"taps"`, and `"tops"`. Even though DAFSAs cannot be used to store precise frequency information, given that terminal nodes can be reached by multiple paths, they allow to estimate the sampling frequency; being acyclic, they can also reject any sequence not included in the training. Fuzzy extensions will allow to estimate the sampling probability of unobserved sequences.
+The primary difference between DAFSA and tries is that suffix and infix redundancy is eliminated, as in the example of Figure 1 (from the linked Wikipedia article) storing the set of strings `"tap"`, `"taps"`, `"top"`, and `"tops"`. Even though DAFSAs cannot be used to store precise frequency information, given that terminal nodes can be reached by multiple paths, they allow to estimate the sampling frequency; being acyclic, they can also reject any sequence not included in the training. Fuzzy extensions will allow to estimate the sampling probability of unobserved sequences.
 
 ## Changelog
 
