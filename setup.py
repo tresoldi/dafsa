@@ -24,7 +24,7 @@ setup(
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries",
     ],
-    packages=["dafsa"],
+    packages=["dafsa", "resources"],
     keywords=[
         "dafsa",
         "dawg",
@@ -37,4 +37,5 @@ setup(
     entry_points={"console_scripts": ["dafsa=dafsa.__main__:main"]},
     test_suite="tests",
     tests_require=[],
+    zip_safe=False,
 )

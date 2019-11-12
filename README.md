@@ -20,6 +20,7 @@ Version 0.2:
   - Refined minimization method, which repeated until completion or can be
     skipped
   - Added some examples in the resources, also used for test data
+  - Added code for Daciuk's packages as an extra directory
 
 Version 0.1:
 

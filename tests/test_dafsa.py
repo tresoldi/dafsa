@@ -16,25 +16,32 @@ import dafsa
 
 
 class TestDAFSA(unittest.TestCase):
-
-    # First test with hardcoded list of words
+    # TODO: write assertions
     def test_hardcoded(self):
-        seqs = [
-            "defied",
-            "defies",
-            "defy",
-            "defying",
-            "deny",
-            "denying",
-            "tried",
-            "tries",
-            "try",
-            "trying",
-        ]
+        """
+        Performs a test from a hardcoded list of strings.
+        """
+
+        seqs = ["tap","taps","top","tops"]
 
         # build object
         dafsa_obj = dafsa.DAFSA()
         dafsa_obj.insert(seqs)
+
+
+    def test_full_test(self):
+        """
+        Perform a full test by loading strings from a file.
+        """
+
+        # Load strings from file
+        filename = dafsa.RESOURCE_DIR / "ciura.txt"
+        with open(filename.as_posix()) as handler:
+            strings = [line.strip() for line in handler]
+
+        # build object
+        dafsa_obj = dafsa.DAFSA()
+        dafsa_obj.insert(strings)
 
         # don't print
         text = str(dafsa_obj)
