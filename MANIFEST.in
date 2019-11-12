@@ -1,0 +1,4 @@
+include README.md
+include AUTHORS.md
+include LICENSE
+include resources/*
