@@ -250,7 +250,7 @@ class DAFSA:
                     [self.root.node_id],
                     [
                         (label, str(n.node_id))
-                        for label, n in self.root.edges.items()
+                        for label, n in node.edges.items()
                     ],
                 )
             ]
