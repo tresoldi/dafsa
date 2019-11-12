@@ -247,7 +247,7 @@ class DAFSA:
                 "    +-- %s %s %s"
                 % (
                     node,
-                    [self.root.node_id],
+                    [node.node_id],
                     [
                         (label, str(n.node_id))
                         for label, n in node.edges.items()

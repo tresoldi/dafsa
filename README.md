@@ -1,4 +1,4 @@
-# dafsa
+# DAFSA
 
 
 [![Build Status](https://travis-ci.org/tresoldi/dafsa.svg?branch=master)](https://travis-ci.org/tresoldi/dafsa)
@@ -12,6 +12,14 @@ DAFSA is a library for computing [Deterministic Acyclic Finite State Automata](h
 The primary difference between DAFSA and tries is that suffix and infix redundancy is eliminated, as in the example of Figure 1 (from the linked Wikipedia article) storing the set of strings `"tap"`, `"taps"`, `"top"`, and `"tops"`. Even though DAFSAs cannot be used to store precise frequency information, given that terminal nodes can be reached by multiple paths, they allow to estimate the sampling frequency; being acyclic, they can also reject any sequence not included in the training. Fuzzy extensions will allow to estimate the sampling probability of unobserved sequences.
 
 ## Changelog
+
+Version 0.2:
+  - Added support for weighted edges
+  - Added Graphviz export and generation
+  - Added support for non-character tokens
+  - Refined minimization method, which repeated until completion or can be
+    skipped
+  - Added some examples in the resources, also used for test data
 
 Version 0.1:
 
@@ -91,15 +99,14 @@ Other alternatives are the `adfa` and `minim` packages, writting in C/C++, writt
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata.
-Version 0.1. Jena. Available at: https://github.com/tresoldi/dafsa
+> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2. Jena. Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
 
 ```
 @misc{Tresoldi2019dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.1},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
   year = {2019},
@@ -118,7 +125,7 @@ Daciuk, Jan; Mihov, Stoyan; Watson, Bruce and Watson, Richard. 2000. "Incrementa
 
 Havon, Steve. 2011. "Compressing dictionaries with a DAWG". *Steve Hanov's Blog*. [url](http://stevehanov.ca/blog/?id=115)
 
-Kowaltowski, T.; CL Lucchesi. 1993. "Applications of finite automata representing large vocabularies". *Software-Practice and Experience*. 1993: 15–30. [CiteSeerX 10.1.1.56.5272](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.56.5272).
+Lucchesi, Cláudio L. and Kowaltowski, Tomasz. "Applications of finite automata representing large vocabularies". *Software-Practice and Experience*. 1993: 15–30. [CiteSeerX 10.1.1.56.5272](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.56.5272).
 
 ## Author
 
