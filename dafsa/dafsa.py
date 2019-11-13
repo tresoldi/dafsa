@@ -267,7 +267,7 @@ class DAFSA:
             % (
                 [self.root.node_id],
                 [
-                    (label, str(n.node_id))
+                    (label, n.node_id)
                     for label, n in self.root.edges.items()
                 ],
             )
@@ -282,7 +282,7 @@ class DAFSA:
                     node,
                     [node.node_id],
                     [
-                        (label, str(n.node_id))
+                        (label, n.node_id)
                         for label, n in node.edges.items()
                     ],
                 )
@@ -290,3 +290,29 @@ class DAFSA:
 
         # build a single string and returns
         return "\n".join(buf)
+
+    # TODO: add terminals
+    def to_dot(self):
+        dot_edges = []
+
+        # add root edges
+        for attr, node in self.root.edges.items():
+            buf = '"root" -> "%i" [label="%s"] ;' % (node.node_id, attr)
+            dot_edges.append(buf)
+
+        # add other edges
+        for left in self.nodes:
+            for attr, right in left.edges.items():
+                buf = '"%i" -> "%i" [label="%s"] ;' % (left.node_id,
+                right.node_id, attr)
+                dot_edges.append(buf)
+
+        # build dot
+        source = """
+digraph G {
+graph [layout="dot",rankdir="LR"];
+%s
+}
+""" % "\n".join(dot_edges)
+
+        return source

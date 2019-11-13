@@ -53,6 +53,8 @@ def main():
     for needle in ["deny", "dafsa", "dawg"]:
         print("`%s` in dafsa:" % needle, dafsa.lookup(needle))
 
+    with open("temp.dot", "w") as handler:
+        handler.write(dafsa.to_dot())
 
 if __name__ == "__main__":
     main()
