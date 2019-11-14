@@ -307,14 +307,21 @@ class DAFSA:
 
     # TODO: add terminals
     def to_dot(self):
-        dot_edges = []
 
         # add root edges
 #        for attr, node in self.root.edges.items():
 #            buf = '"root" -> "%i" [label="%s"] ;' % (node.node_id, attr)
 #            dot_edges.append(buf)
 
+        # collect all nodes
+        dot_nodes = []
+        for node in self.nodes:
+            buf = '"%i" [label="%i-%s"] ;' % (node.node_id, node.node_id,
+            ["n", "F"][node.final])
+            dot_nodes.append(buf)
+
         # add other edges
+        dot_edges = []
         for left in self.nodes:
             for attr, right in left.edges.items():
                 buf = '"%i" -> "%i" [label="%s"] ;' % (left.node_id,
@@ -326,7 +333,8 @@ class DAFSA:
 digraph G {
 graph [layout="dot",rankdir="LR"];
 %s
+%s
 }
-""" % "\n".join(dot_edges)
+""" % ("\n".join(dot_nodes), "\n".join(dot_edges))
 
         return source
