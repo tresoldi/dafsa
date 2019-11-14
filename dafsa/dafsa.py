@@ -111,7 +111,7 @@ class DAFSA:
         # Includes by default a root node
         self.root = DAFSANode(next(self._iditer))
         self.root.root = True
-        self.nodes = {self.root:self.root}
+        self.nodes = {0:self.root}
 
         # Internal list of nodes that still hasn't been checked for
         # duplicates; note that the data structure, a list of
@@ -158,11 +158,13 @@ class DAFSA:
         # graph, provided there are unchecked nodes (otherwise, just
         # start at the root)
         # TODO: fix this horrible way to get the root
-        root_node = [node for node in self.nodes if node.root][0]
+#        root_node = [node for node in self.nodes if node.root][0]
         if prefix_len == 0:
-            node = root_node
+#            node = root_node
+            node = self.nodes[0]
         elif not self._unchecked_nodes:
-            node = root_node
+#            node = root_node
+            node = self.nodes[0]
         else:
             node = self._unchecked_nodes[-1][2]
 
@@ -207,11 +209,15 @@ class DAFSA:
                 # If the child is already among the minimized nodes, replace it
                 # with one previously encountered, also setting the sentinel;
                 # otherwise, add the state to the list of minimized nodes.
-                if child in self.nodes:
-                    parent.edges[token] = self.nodes[child]
+                child_idx = [node_idx for node_idx, node in self.nodes.items()
+                if node == child]
+
+                if child_idx:
+                #if child in self.nodes.values():
+                    parent.edges[token] = self.nodes[child_idx[0]]
                     graph_changed = True
                 else:
-                    self.nodes[child] = child
+                    self.nodes[child.node_id] = child
 
             # Only leave the loop if the graph was untouched
             if not graph_changed:
@@ -227,7 +233,8 @@ class DAFSA:
 
         # Start at the root
         # TODO: fix horrible way
-        node = [node for node in self.nodes if node.root][0]
+#        node = [node for node in self.nodes if node.root][0]
+        node = self.nodes[0]
 
         # If we can follow a path, it is valid, otherwise return false
         for token in seq:
@@ -249,7 +256,7 @@ class DAFSA:
         Returns the number of minimized edges in the structure.
         """
 
-        return sum([len(node.edges) for node in self.nodes])
+        return sum([len(node.edges) for node in self.nodes.values()])
 
     def num_sequences(self):
         """
@@ -286,7 +293,7 @@ class DAFSA:
 
         # Add information on nodes
         # TODO: better sorting
-        for node in sorted(self.nodes):
+        for node in self.nodes.values():
             buf += [
                 "    +-- %s %s %s"
                 % (
@@ -315,14 +322,14 @@ class DAFSA:
 
         # collect all nodes
         dot_nodes = []
-        for node in self.nodes:
+        for node in self.nodes.values():
             buf = '"%i" [label="%i-%s"] ;' % (node.node_id, node.node_id,
             ["n", "F"][node.final])
             dot_nodes.append(buf)
 
         # add other edges
         dot_edges = []
-        for left in self.nodes:
+        for left in self.nodes.values():
             for attr, right in left.edges.items():
                 buf = '"%i" -> "%i" [label="%s"] ;' % (left.node_id,
                 right.node_id, attr)
