@@ -13,8 +13,6 @@ that the list of strings can be sorted before computation.
 # TODO: Add support for tokens/ngrams, instead of only using characters
 # TODO: rename the num_ methods to count_ ?
 # TODO: comment all arguements, at least in this module
-# TODO: check why root is not always sorted - or is sorted and we
-#       just need to generate the label for it as well?
 
 # Import Python libraries
 import itertools
@@ -67,6 +65,7 @@ class DAFSANode:
 
         return ret
 
+    # TODO: write note about comparison etc.
     def __eq__(self, other):
         """
         Checks whether two nodes are equivalent.
@@ -161,7 +160,7 @@ class DAFSA:
         elif not self._unchecked_nodes:
             node = self.nodes[0]
         else:
-            node = self._unchecked_nodes[-1][2]
+            node = self._unchecked_nodes[-1]["child"]
 
         # For everything after the common prefix, create as many necessary
         # new nodes and add them.
@@ -171,7 +170,9 @@ class DAFSA:
             # future) and proceed until the end of the sequence
             child = DAFSANode(next(self._iditer))
             node.edges[token] = child
-            self._unchecked_nodes.append([node, token, child])
+            self._unchecked_nodes.append(
+                {"parent": node, "token": token, "child": child}
+            )
             node = child
 
         # This last node from the above loop is a terminal one
@@ -197,11 +198,18 @@ class DAFSA:
                 # Remove the last item from unchecked nodes and extract
                 # information on parent, attribute, and child for checking
                 # if we can minimize the graph.
-                parent, token, child = self._unchecked_nodes.pop()
+                unchecked_node = self._unchecked_nodes.pop()
+                parent = unchecked_node["parent"]
+                token = unchecked_node["token"]
+                child = unchecked_node["child"]
 
                 # If the child is already among the minimized nodes, replace it
                 # with one previously encountered, also setting the sentinel;
                 # otherwise, add the state to the list of minimized nodes.
+                # The logic is to iterate over all self.nodes items,
+                # compare each `node` with the `child` (using the internal
+                # `.__eq__()` method), and carry the key/index in case
+                # it is found
                 child_idx = [
                     node_idx
                     for node_idx, node in self.nodes.items()
@@ -209,7 +217,7 @@ class DAFSA:
                 ]
 
                 if child_idx:
-                    # if child in self.nodes.values():
+                    # Use the first node that matches
                     parent.edges[token] = self.nodes[child_idx[0]]
                     graph_changed = True
                 else:
