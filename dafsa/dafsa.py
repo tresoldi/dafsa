@@ -20,6 +20,17 @@ import itertools
 # Import other modules
 from . import utils
 
+# TODO: put after node, later
+class DAFSAEdge:
+    """
+    Edges have a node they point to and a count.
+    """
+
+    def __init__(self, node, count=1):
+        self.node = node
+        self.count = count
+
+
 # Define classes for DAFSA nodes and graphs
 class DAFSANode:
     """
@@ -50,9 +61,32 @@ class DAFSANode:
         more expansive computationally, the function is guaranteed to be
         idempotent.
         """
-
         arr = [
-            "|".join([label, str(self.edges[label].node_id)])
+            "|".join([label, str(self.edges[label].node.node_id)])
+            for label in sorted(self.edges)
+        ]
+
+        ret = ";".join(arr)
+
+        # TODO: should probably remove this?
+        if self.final:
+            ret = "F(%s)" % ret
+        else:
+            ret = "n(%s)" % ret
+
+        return ret
+
+    # TODO: using edge count, which cannot be part of the comparison
+    # TODO: have a .to_dot()
+    def to_string(self):
+        arr = [
+            "|".join(
+                [
+                    label,
+                    str(self.edges[label].node.node_id),
+                    str(self.edges[label].count),
+                ]
+            )
             for label in sorted(self.edges)
         ]
 
@@ -86,6 +120,7 @@ class DAFSANode:
 
         return self.__str__() > other.__str__()
 
+    # TODO: is this needed?
     def __hash__(self):
         """
         Returns a hash for the node, based on its string representation.
@@ -169,7 +204,7 @@ class DAFSA:
             # list of unchecked nodes (there might be duplicates in the
             # future) and proceed until the end of the sequence
             child = DAFSANode(next(self._iditer))
-            node.edges[token] = child
+            node.edges[token] = DAFSAEdge(child)
             self._unchecked_nodes.append(
                 {"parent": node, "token": token, "child": child}
             )
@@ -218,7 +253,8 @@ class DAFSA:
 
                 if child_idx:
                     # Use the first node that matches
-                    parent.edges[token] = self.nodes[child_idx[0]]
+                    parent.edges[token].node = self.nodes[child_idx[0]]
+                    parent.edges[token].count += 1
                     graph_changed = True
                 else:
                     self.nodes[child.node_id] = child
@@ -242,7 +278,7 @@ class DAFSA:
         for token in seq:
             if token not in node.edges:
                 return False
-            node = node.edges[token]
+            node = node.edges[token].node
 
         return node
 
@@ -285,9 +321,12 @@ class DAFSA:
             buf += [
                 "    +-- %s %s %s"
                 % (
-                    node,
+                    node.to_string(),
                     [node.node_id],
-                    [(label, n.node_id) for label, n in node.edges.items()],
+                    [
+                        (label, v.node.node_id)
+                        for label, v in node.edges.items()
+                    ],
                 )
             ]
 
@@ -307,13 +346,15 @@ class DAFSA:
             dot_nodes.append(buf)
 
         # add other edges
+        SCALE = 2
         dot_edges = []
         for left in self.nodes.values():
             for attr, right in left.edges.items():
-                buf = '"%i" -> "%i" [label="%s"] ;' % (
+                buf = '"%i" -> "%i" [label="%s",penwidth=%i] ;' % (
                     left.node_id,
-                    right.node_id,
+                    right.node.node_id,
                     attr,
+                    right.count * SCALE,
                 )
                 dot_edges.append(buf)
 
