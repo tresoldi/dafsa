@@ -40,7 +40,6 @@ class DAFSANode:
     def __init__(self, node_id):
         self.node_id = node_id
         self.final = False
-        self.root = False
         self.edges = {}
 
     def __str__(self):
@@ -109,9 +108,7 @@ class DAFSA:
         # List of nodes in the graph (during minimization, it is the list
         # of unique nodes that have been checked for duplicates).
         # Includes by default a root node
-        self.root = DAFSANode(next(self._iditer))
-        self.root.root = True
-        self.nodes = {0:self.root}
+        self.nodes = {0: DAFSANode(next(self._iditer))}
 
         # Internal list of nodes that still hasn't been checked for
         # duplicates; note that the data structure, a list of
@@ -138,7 +135,7 @@ class DAFSA:
 
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
-        for previous_seq, seq in utils.pairwise([""] +sequences):
+        for previous_seq, seq in utils.pairwise([""] + sequences):
             self._insert_single_seq(seq, previous_seq)
 
         # Minimize the entire graph, no restrictions, so that we clean
@@ -154,16 +151,14 @@ class DAFSA:
         prefix_len = utils.common_prefix_length(seq, previous_seq)
         self._minimize(prefix_len)
 
-        # add the suffix, starting from the correct node mid-way through the
+        # Add the suffix, starting from the correct node mid-way through the
         # graph, provided there are unchecked nodes (otherwise, just
-        # start at the root)
-        # TODO: fix this horrible way to get the root
-#        root_node = [node for node in self.nodes if node.root][0]
+        # start at the root). If there is no shared prefix, the node is
+        # obviously the root (the only thing the two sequences share is
+        # the start symbol)
         if prefix_len == 0:
-#            node = root_node
             node = self.nodes[0]
         elif not self._unchecked_nodes:
-#            node = root_node
             node = self.nodes[0]
         else:
             node = self._unchecked_nodes[-1][2]
@@ -182,10 +177,8 @@ class DAFSA:
         # This last node from the above loop is a terminal one
         node.final = True
 
-        print(seq, len(self.nodes), len(self._unchecked_nodes), self.nodes)
-
     def _minimize(self, index=0):
-        #print(self.root in self.nodes, self.root, self.nodes)
+        # print(self.root in self.nodes, self.root, self.nodes)
         # minimize the graph from the last unchecked item to `index`;
         # final minimization, the default, traverses the entire data
         # structure.
@@ -209,11 +202,14 @@ class DAFSA:
                 # If the child is already among the minimized nodes, replace it
                 # with one previously encountered, also setting the sentinel;
                 # otherwise, add the state to the list of minimized nodes.
-                child_idx = [node_idx for node_idx, node in self.nodes.items()
-                if node == child]
+                child_idx = [
+                    node_idx
+                    for node_idx, node in self.nodes.items()
+                    if node == child
+                ]
 
                 if child_idx:
-                #if child in self.nodes.values():
+                    # if child in self.nodes.values():
                     parent.edges[token] = self.nodes[child_idx[0]]
                     graph_changed = True
                 else:
@@ -232,8 +228,6 @@ class DAFSA:
         """
 
         # Start at the root
-        # TODO: fix horrible way
-#        node = [node for node in self.nodes if node.root][0]
         node = self.nodes[0]
 
         # If we can follow a path, it is valid, otherwise return false
@@ -277,20 +271,6 @@ class DAFSA:
             % (self.num_nodes(), self.num_edges(), self.num_sequences())
         ]
 
-        # Add information on root node
-        # TODO: move root to general nodes?
-#        my_root = self.nodes[self.root]
-#        buf += [
-#            "+-- ROOT %s %s"
-#            % (
-#                [my_root.node_id],
-##                [
-#                    (label, n.node_id)
-#                    for label, n in my_#root.edges.items()
-#                ],
-#            )
-#        ]
-
         # Add information on nodes
         # TODO: better sorting
         for node in self.nodes.values():
@@ -299,40 +279,34 @@ class DAFSA:
                 % (
                     node,
                     [node.node_id],
-                    [
-                        (label, n.node_id)
-                        for label, n in node.edges.items()
-                    ],
+                    [(label, n.node_id) for label, n in node.edges.items()],
                 )
             ]
-
-        import pprint
-        pprint.pprint(self.nodes)
 
         # build a single string and returns
         return "\n".join(buf)
 
-    # TODO: add terminals
     def to_dot(self):
-
-        # add root edges
-#        for attr, node in self.root.edges.items():
-#            buf = '"root" -> "%i" [label="%s"] ;' % (node.node_id, attr)
-#            dot_edges.append(buf)
 
         # collect all nodes
         dot_nodes = []
         for node in self.nodes.values():
-            buf = '"%i" [label="%i-%s"] ;' % (node.node_id, node.node_id,
-            ["n", "F"][node.final])
+            buf = '"%i" [label="%i-%s"] ;' % (
+                node.node_id,
+                node.node_id,
+                ["n", "F"][node.final],
+            )
             dot_nodes.append(buf)
 
         # add other edges
         dot_edges = []
         for left in self.nodes.values():
             for attr, right in left.edges.items():
-                buf = '"%i" -> "%i" [label="%s"] ;' % (left.node_id,
-                right.node_id, attr)
+                buf = '"%i" -> "%i" [label="%s"] ;' % (
+                    left.node_id,
+                    right.node_id,
+                    attr,
+                )
                 dot_edges.append(buf)
 
         # build dot
@@ -342,6 +316,9 @@ graph [layout="dot",rankdir="LR"];
 %s
 %s
 }
-""" % ("\n".join(dot_nodes), "\n".join(dot_edges))
+""" % (
+            "\n".join(dot_nodes),
+            "\n".join(dot_edges),
+        )
 
         return source
