@@ -41,17 +41,28 @@ DAFSA with 7 nodes and 8 edges (5 sequences)
   +-- #6: n(#3:<p>/4) [('p', 3)]
 ```
 
-Note how the resulting graph includes the 4 training sequences, with one starting node (#0) that advances with either a `t` (observed four times) or a `d` symbol (observed a single time), a subsequent node to `t` that only advances with `a` and `o` symbols (#1), and so on.
+Note how the resulting graph includes the 5 training sequences, with one starting node (#0) that advances with either a `t` (observed four times) or a `d` symbol (observed a single time), a subsequent node to `t` that only advances with `a` and `o` symbols (#1), and so on.
 
 The visualization is much clearer with a graphical representation:
 
-```
+```python
 >>> d.graphviz_output("example.png")
 ```
 
 ![First example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/example.png)
 
-**Example for checking**
+**A DAFSA object allows to check for the presence or absence of a sequence in its structure, returning a terminal node if a path can be found:**
+
+```python
+>>> d.lookup("tap")
+F(#4:<s>/3)
+>>> d.lookup("tops")
+F()
+>>> d.lookup("tapap") is None
+True
+>>> d.lookup("ta") is None
+True
+```
 
 A command-line tool for reading files with lists of strings, with one string per line, is also available:
 
@@ -71,16 +82,14 @@ Which will produce the following graph:
 
 ![DNA example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/dna.png)
 
-
 ## Changelog
 
 Version 0.2:
-  - Added support for weighted edges
-  - Added Graphviz export and generation
-  - Refined minimization method, which repeated until completion or can be
-    skipped
-  - Added some examples in the resources, also used for test data
-  - **Added code for Daciuk's packages as an extra directory**
+  - Added support for weighted edges and nodes
+  - Added DOT export and Graphviz generation
+  - Refined minimization method, which can be skipped if desired (resulting
+    in a standard trie)
+  - Added examples in the resources, also used for test data
 
 Version 0.1:
 
@@ -88,15 +97,28 @@ Version 0.1:
 
 ## Roadmap
 
-    - Added support for non-character tokens
-    - Add support for tokens/ngrams, instead of only using characters
-    - return `networkx` graph
-    - allow to join attributes in single paths; allow to RE export
-    - Work on various options for nicer graphviz output (colors, widths, etc.)
-    - Decided how (and if) properly implement `.__gt__()` for nodes
-    - Allow to replace final nodes with edges to end node
-    - colors and not weight to graphviz output (optional)
+Version 0.3:
 
+  - Add support for non-character tokens, allowing to use any Python
+    iterable as long as its elements are hasheable
+  - Start integration with `networkx`, including:
+    - Exporting DAFSA in standard network formats
+    - Computation of shortest or *k*-shortest paths, along with
+      cumulative edge and/or node weights
+  - Preliminary generation of minimal regular expressions matching the
+    contents of a DAFSA
+  - Allow to join attributes in single sub-paths
+  - Allow to replace final nodes with edges to ``end-of-sequence``
+    nodes (possibly as a default)
+
+Version 0.4:
+  - Work on options for nicer graphviz output (colors, widths, etc.)
+  - Decide how (and if) to properly implement a `.__gt__()` method for
+    the nodes, both before and after the final minimization
+
+Before 1.0:
+  - Add code for Daciuk's packages in an extra directory, along with
+    notes on license
 
 ## Alternatives
 
