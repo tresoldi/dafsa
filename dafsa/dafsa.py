@@ -21,6 +21,7 @@ from . import utils
 
 # TODO: check and guarantee that Edge receives a node, and not a node_id
 
+
 class DAFSANode:
     """
     Class representing a node in the DAFSA.
@@ -154,7 +155,7 @@ class DAFSAEdge(dict):
     Class representing an edge in the DAFSA.
     """
 
-    def __init__(self, node, weight=1):
+    def __init__(self, node, weight=0):
         """
         Initializes a DAFSA edge.
 
@@ -185,7 +186,7 @@ class DAFSA:
     Class representing a DAFSA graph.
     """
 
-    def __init__(self, sequences=None, minimize=True):
+    def __init__(self, sequences=None, minimize=True, weight=True):
         """
         Initializes a DAFSA object.
 
@@ -197,6 +198,9 @@ class DAFSA:
         minimize : bool
             Whether to run the minimization or not in case `sequences` are
             provided. Defaults to `True`.
+        weight : bool
+            Whether to collect edge weights after minimization. Defaults
+            to `True`.
         """
 
         # Initializes an internal counter iterator, which is used to
@@ -223,9 +227,9 @@ class DAFSA:
 
         # Insert the sequences, if provided
         if sequences:
-            self.insert(sequences, minimize)
+            self.insert(sequences, minimize, weight)
 
-    def insert(self, sequences, minimize=True):
+    def insert(self, sequences, minimize=True, weight=True):
         """
         Insert a list of sequences to the structure and finalizes it.
 
@@ -238,6 +242,9 @@ class DAFSA:
         minimize : bool
             Whether to run the minimization or not. No minimization will
             return a full trie. Defaults to True.
+        weight : bool
+            Whether to collect edge weights after minimization. Defaults
+            to `True`.
         """
 
         # Take a sorted set of the sequences and store its number
@@ -253,6 +260,14 @@ class DAFSA:
         # `self._unchecked_nodes`.
         # See comments on the `minimize` flag in the `._minimize()` method.
         self._minimize(0, minimize)
+
+        # Collect (or update) edge weights if requested. While this means
+        # a second pass at all the sequences, it is better to do it in
+        # separate step/method: it doesn't affect the computation speed
+        # significantly, makes the logic easier to follow, and allows
+        # to decide whether to collect the weights or not.
+        if weight:
+            self._collect_weights(sequences)
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
         """
@@ -347,7 +362,6 @@ class DAFSA:
                 if child_idx:
                     # Use the first node that matches
                     parent.edges[token].node = self.nodes[child_idx[0]]
-                    parent.edges[token].weight += 1
                     graph_changed = True
                 else:
                     self.nodes[child.node_id] = child
@@ -355,6 +369,24 @@ class DAFSA:
             # Only leave the loop if the graph was untouched
             if not graph_changed:
                 break
+
+    def _collect_weights(self, sequences):
+        """
+        Updates or collects weights for the sequences.
+
+        This method requires the minimized graph to be already in place.
+        As commented in `.insert()`, while it means a second pass at all
+        sequences, it is better to have it as a separate method.
+        """
+
+        for seq in sequences:
+            # Start at the root
+            node = self.nodes[0]
+
+            # Follow the path, updating along the way
+            for token in seq:
+                node.edges[token].weight += 1
+                node = node.edges[token].node
 
     def lookup(self, seq):
         """
@@ -450,7 +482,7 @@ class DAFSA:
 
         # Get parameters for tweaking the graph
         label_nodes = kwargs.get("label_nodes", False)
-        weight_scale = kwargs.get("weight_scale", 2.0)
+        weight_scale = kwargs.get("weight_scale", 1.5)
 
         # collect all nodes
         dot_nodes = []
