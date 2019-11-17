@@ -307,9 +307,11 @@ class DAFSA:
                 {"parent": node, "token": token, "child": child}
             )
             node = child
+            print("===", [seq, token])
 
         # This last node from the above loop is a terminal one
         node.final = True
+        print()
 
     def _minimize(self, index, minimize):
         """
@@ -362,8 +364,14 @@ class DAFSA:
                 ]
 
                 if child_idx:
-                    # Use the first node that matches
+                    # Use the first node that matches, and make sure to
+                    # carry the information about final state of the
+                    # child, if that is the case
+                    if parent.edges[token].node.final:
+                        self.nodes[child_idx[0]].final = True
                     parent.edges[token].node = self.nodes[child_idx[0]]
+
+                    # Mark the graph as changed, so we restart the loop
                     graph_changed = True
                 else:
                     self.nodes[child.node_id] = child
