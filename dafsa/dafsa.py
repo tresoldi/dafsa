@@ -53,6 +53,7 @@ class DAFSANode:
         self.node_id = node_id
         self.edges = {}
         self.final = False
+        self.weight = 0
 
     def __str__(self):
         """
@@ -78,6 +79,7 @@ class DAFSANode:
 
         return buf
 
+    # TODO: include self.weight
     def __repr__(self):
         """
         Return an unambigous textual representation of the node.
@@ -382,11 +384,13 @@ class DAFSA:
         for seq in sequences:
             # Start at the root
             node = self.nodes[0]
+            node.weight += 1
 
             # Follow the path, updating along the way
             for token in seq:
                 node.edges[token].weight += 1
                 node = node.edges[token].node
+                node.weight += 1
 
     def lookup(self, seq):
         """
@@ -484,6 +488,9 @@ class DAFSA:
         label_nodes = kwargs.get("label_nodes", False)
         weight_scale = kwargs.get("weight_scale", 1.5)
 
+        # collect the maximum node weight for later computing the size
+        max_weight = max([node.weight for node in self.nodes.values()])
+
         # collect all nodes
         dot_nodes = []
         for node in self.nodes.values():
@@ -504,14 +511,16 @@ class DAFSA:
             else:
                 node_attr.append('shape="circle"')
 
+            # Set node size
+            node_attr.append(
+                "width=%.2f" % ((1.0 * (node.weight / max_weight)) ** 0.5)
+            )
+
             # All nodes as filled
             node_attr.append('style="filled"')
 
             # Build the node attributes string
-            if node_attr:
-                node_attr_str = "[%s]" % ",".join(node_attr)
-            else:
-                node_attr_str = ""
+            node_attr_str = "[%s]" % ",".join(node_attr)
 
             buf = '"%i" %s ;' % (node.node_id, node_attr_str)
             dot_nodes.append(buf)
@@ -564,9 +573,14 @@ class DAFSA:
         # Get the filetype from the extension and call graphviz
         suffix = pathlib.PurePosixPath(output_file).suffix
         subprocess.run(
-            ["dot", "-T%s" % suffix[1:],
-            "-Gdpi=%i" % dpi,
-            "-o", output_file, handler.name]
+            [
+                "dot",
+                "-T%s" % suffix[1:],
+                "-Gdpi=%i" % dpi,
+                "-o",
+                output_file,
+                handler.name,
+            ]
         )
 
         # Close the temporary file
