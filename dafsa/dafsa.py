@@ -11,6 +11,7 @@ that the list of strings can be sorted before computation.
 """
 
 # TODO: better comments and Parameters to .to_dot
+# TODO: generate .png by calling graphviz as in alteruphono
 
 # Import Python libraries
 import itertools
@@ -418,19 +419,43 @@ class DAFSA:
         # build a single string and returns
         return "\n".join(buf)
 
-    def to_dot(self, weight_scale=2.0):
+    def to_dot(self, **kwargs):
         """
         Returns a representation in the DOT (Graphviz) language.
         """
 
+        # Get parameters for tweaking the graph
+        label_nodes = kwargs.get("label_nodes", False)
+        weight_scale = kwargs.get("weight_scale", 2.0)
+
         # collect all nodes
         dot_nodes = []
         for node in self.nodes.values():
-            buf = '"%i" [label="%i-%s"] ;' % (
-                node.node_id,
-                node.node_id,
-                ["n", "F"][node.final],
-            )
+            # List for collecting node attributes
+            node_attr = []
+
+            # Decide on node label
+            if label_nodes:
+                node_attr.append('label="%i"' % node.node_id)
+            else:
+                node_attr.append('label=""')
+
+            # Decide on node shape based on being final or not
+            if node.final:
+                node_attr.append('shape="doublecircle"')
+            else:
+                node_attr.append('shape="circle"')
+
+            # All nodes as filled
+            node_attr.append('style="filled"')
+
+            # Build the node attributes string
+            if node_attr:
+                node_attr_str = "[%s]" % ",".join(node_attr)
+            else:
+                node_attr_str = ""
+
+            buf = '"%i" %s ;' % (node.node_id, node_attr_str)
             dot_nodes.append(buf)
 
         # add other edges

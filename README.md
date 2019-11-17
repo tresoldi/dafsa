@@ -97,7 +97,7 @@ Other alternatives are the `adfa` and `minim` packages, writting in C/C++, writt
   - Add support for tokens/ngrams, instead of only using characters
   - return `networkx` graph
   - allow to join attributes in single paths; allow to RE export
-
+  - Work on various options for nicer graphviz output (colors, widths, etc.)
 
 ## How to cite
 
