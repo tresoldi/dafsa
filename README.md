@@ -51,39 +51,25 @@ The visualization is much clearer with a graphical representation:
 
 ![First example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/example.png)
 
+**Example for checking**
+
 A command-line tool for reading files with lists of strings, with one string per line, is also available:
 
 ```
-$ cat lexicon
-defy
-tried
-defies
-tries
-defied
-trying
-denying
-try
-deny
-defying
+$ cat resources/dna.txt
+CGCGAAA
+CGCGATA
+CGGAAA
+CGGATA
+GGATA
+AATA
 
-$ dafsa lexicon
-DAFSA with 11 nodes and 13 edges (10 seqs)
-+-- F() [0] []
-+-- F(i|9) [0] [('i', '9')]
-+-- n(d|6;s|6) [0] [('s', '6'), ('d', '6')]
-+-- n(e|2) [0] [('e', '2')]
-+-- n(e|5) [0] [('e', '5')]
-+-- n(f|3;n|12) [0] [('f', '3'), ('n', '12')]
-+-- n(g|6) [0] [('g', '6')]
-+-- n(i|4;y|8) [0] [('i', '4'), ('y', '8')]
-+-- n(n|10) [0] [('n', '10')]
-+-- n(r|3) [0] [('r', '3')]
-+-- n(y|8) [0] [('y', '8')]
-
-`deny` in dafsa: F(i|9)
-`dafsa` in dafsa: False
-`dawg` in dafsa: False
+$ dafsa resources/dna.txt -t png -o dna.png
 ```
+
+Which will produce the following graph:
+
+![DNA example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/dna.png)
 
 
 ## Changelog
