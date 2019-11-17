@@ -14,6 +14,8 @@ import configparser
 # Import our library
 from dafsa import DAFSA
 
+# TODO: option for minimization from command line
+
 
 def parse_arguments():
     """
@@ -22,7 +24,21 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "filename",
+        "-t",
+        "--type",
+        type=str,
+        choices=["stdout", "txt", "dot", "png"],
+        default="stdout",
+        help="Type of output (default: 'stdout')",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Full path to the output file (if any).",
+    )
+    parser.add_argument(
+        "source",
         type=str,
         help="Filename with strings to be processed (one per line).",
     )
@@ -40,21 +56,25 @@ def main():
     args = parse_arguments()
 
     # load data
-    with open(args.filename) as handler:
+    with open(args.source) as handler:
         seqs = [line.strip() for line in handler]
 
     # build object
-    dafsa = DAFSA()
-    dafsa.insert(seqs)
+    dafsa = DAFSA(seqs)
 
-    print(str(dafsa))
+    # Generate output
+    if args.type == "stdout":
+        print(str(dafsa))
+    elif args.type == "txt":
+        with open(args.output, "w") as handler:
+            handler.write(str(dafsa))
+            handler.write("\n")
+    elif args.type == "dot":
+        with open(args.output, "w") as handler:
+            handler.write(dafsa.to_dot())
+    elif args.type in ["png"]:
+        dafsa.graphviz_output(args.output)
 
-    print()
-    for needle in ["den", "deny", "dafsa", "dawg"]:
-        print("`%s` in dafsa:" % needle, dafsa.lookup(needle))
-
-    with open("temp.dot", "w") as handler:
-        handler.write(dafsa.to_dot())
 
 if __name__ == "__main__":
     main()

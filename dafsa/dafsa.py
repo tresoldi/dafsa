@@ -12,9 +12,13 @@ that the list of strings can be sorted before computation.
 
 # TODO: better comments and Parameters to .to_dot
 # TODO: generate .png by calling graphviz as in alteruphono
+# TODO: allow to insert sequences from initialization
 
 # Import Python libraries
 import itertools
+import pathlib
+import subprocess
+import tempfile
 
 # Import other modules
 from . import utils
@@ -178,7 +182,20 @@ class DAFSA:
     Class representing a DAFSA graph.
     """
 
-    def __init__(self):
+    def __init__(self, sequences=None, minimize=True):
+        """
+        Initializes a DAFSA object.
+
+        Parameters
+        ----------
+        sequences : list
+            List of sequences to be added to the DAFSA from initialization.
+            Defaults to `None`.
+        minimize : bool
+            Whether to run the minimization or not in case `sequences` are
+            provided. Defaults to `True`.
+        """
+
         # Initializes an internal counter iterator, which is used to
         # provide unique IDs to nodes
         self._iditer = itertools.count()
@@ -200,6 +217,10 @@ class DAFSA:
         # `.num_sequences()` method in analogy to the number of nodes and
         # edges.
         self._num_sequences = None
+
+        # Insert the sequences, if provided
+        if sequences:
+            self.insert(sequences, minimize)
 
     def insert(self, sequences, minimize=True):
         """
@@ -479,3 +500,33 @@ class DAFSA:
         source = source.replace("$dot_edges$", "\n".join(dot_edges))
 
         return source
+
+    def graphviz_output(self, output_file):
+        """
+        Generates a visualization by calling the local `graphviz`.
+
+        The filetype will be decided from the extension of the `filename`.
+
+        Parameters
+        ----------
+        output_file : str
+            The path to the output file.
+        """
+
+        # Obtain the source and make it writable
+        dot_source = self.to_dot()
+        dot_source = dot_source.encode("utf-8")
+
+        # Write to a named temporary file so we can call `graphviz`
+        handler = tempfile.NamedTemporaryFile()
+        handler.write(dot_source)
+        handler.flush()
+
+        # Get the filetype from the extension and call graphviz
+        suffix = pathlib.PurePosixPath(output_file).suffix
+        subprocess.run(
+            ["dot", "-T%s" % suffix[1:], "-o", output_file, handler.name]
+        )
+
+        # Close the temporary file
+        handler.close()
