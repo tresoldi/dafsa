@@ -50,7 +50,7 @@ def main():
     print(str(dafsa))
 
     print()
-    for needle in ["deny", "dafsa", "dawg"]:
+    for needle in ["den", "deny", "dafsa", "dawg"]:
         print("`%s` in dafsa:" % needle, dafsa.lookup(needle))
 
     with open("temp.dot", "w") as handler:

@@ -344,11 +344,16 @@ class DAFSA:
         # Start at the root
         node = self.nodes[0]
 
-        # If we can follow a path, it is valid, otherwise return false
+        # If we can follow a path, it is valid, otherwise return None
         for token in seq:
             if token not in node.edges:
                 return None
             node = node.edges[token].node
+
+        # Check if the last node is indeed a final one (so we don't
+        # match prefixes alone)
+        if not node.final:
+            return None
 
         return node
 
