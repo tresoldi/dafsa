@@ -307,11 +307,9 @@ class DAFSA:
                 {"parent": node, "token": token, "child": child}
             )
             node = child
-            print("===", [seq, token])
 
         # This last node from the above loop is a terminal one
         node.final = True
-        print()
 
     def _minimize(self, index, minimize):
         """
