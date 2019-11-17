@@ -15,10 +15,11 @@ import unittest
 import dafsa
 import dafsa.utils
 
+
 class TestNode(unittest.TestCase):
     def test_node(self):
         """
-        Test node initialization.
+        Test nodes.
         """
 
         # Missing ID
@@ -42,8 +43,8 @@ class TestNode(unittest.TestCase):
 
         assert repr(node_a) == "0()"
         assert repr(node_b) == "F()"
-        assert repr(node_c) == 'n(#1:<x>/2)'
-        assert repr(node_d) == 'n(#1:<x>/1)'
+        assert repr(node_c) == "n(#1:<x>/2)"
+        assert repr(node_d) == "n(#1:<x>/1)"
 
         # __eq__ assertions
         assert node_a == node_b
@@ -59,18 +60,43 @@ class TestNode(unittest.TestCase):
         assert hash(node_c) == hash(node_d)
         assert hash(node_a) != hash(node_c)
 
+
+class TestEdge(unittest.TestCase):
+    def test_edge(self):
+        """
+        Test edges.
+        """
+
+        # Missing node
+        with self.assertRaises(TypeError):
+            edge_a = dafsa.dafsa.DAFSAEdge()
+
+        # Create nodes for testing
+        node_a = dafsa.dafsa.DAFSANode(15)
+        node_a.final = True
+        node_b = dafsa.dafsa.DAFSANode(16)
+
+        # Create edges
+        edge_a = dafsa.dafsa.DAFSAEdge(node_a)
+        edge_b = dafsa.dafsa.DAFSAEdge(node_a, 2)
+        edge_c = dafsa.dafsa.DAFSAEdge(node_b)
+
+        # __str__ assertions
+        assert str(edge_a) == "{node_id: 15, weight: 1}"
+        assert str(edge_b) == "{node_id: 15, weight: 2}"
+        assert str(edge_c) == "{node_id: 16, weight: 1}"
+
+
 class TestDAFSA(unittest.TestCase):
-    # TODO: write assertions
     def test_hardcoded(self):
         """
         Performs a test from a hardcoded list of strings.
         """
 
-        seqs = ["tap","taps","top","tops"]
+        seqs = ["tap", "taps", "top", "tops"]
 
         # build object
         dafsa_obj = dafsa.DAFSA(seqs)
-
 
     def test_full_test(self):
         """
@@ -89,6 +115,7 @@ class TestDAFSA(unittest.TestCase):
         text = str(dafsa_obj)
 
         # simple checks
+        assert dafsa_obj.lookup("den") is None
         assert dafsa_obj.lookup("deny") is not None
         assert dafsa_obj.lookup("dafsa") is None
         assert dafsa_obj.lookup("dawg") is None

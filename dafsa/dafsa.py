@@ -19,6 +19,7 @@ import tempfile
 # Import other modules
 from . import utils
 
+# TODO: check and guarantee that Edge receives a node, and not a node_id
 
 class DAFSANode:
     """
