@@ -2,6 +2,11 @@
 
 # Import Python libraries
 import itertools
+from pathlib import Path
+
+# Set the resource directory; this is sage as we already added
+# `zip_safe=False` to setup.py
+RESOURCE_DIR = Path(__file__).parent.parent / "resources"
 
 # Define some auxiliary functions
 def common_prefix_length(seq_a, seq_b):
