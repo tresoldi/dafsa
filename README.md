@@ -122,6 +122,8 @@ Before 1.0:
   - Add code from Daciuk's packages in an extra directory, along with
     notes on license
 
+Please note that this library is under development and still needs performance optimizations: common experiments such as building a DAFSA for the contents of `/usr/share/dict/words` will take many minutes in a common machine.
+
 ## Alternatives
 
 The main alternative to this library is the `dawg` one, available at [https://github.com/pytries/DAWG](https://github.com/pytries/DAWG). `dawg` is bundled with the `dwagdic` C++ library, and is intended to production usage of DAFSAs as a space-efficient data structure. It does not support the computation of edge weights, nor it is intended for exporting the internal structure as a graph.
