@@ -29,21 +29,24 @@ The library offers a `DAFSA` object that can be used to compute an automaton, wi
 
 ```python
 >>> import dafsa
->>> d = dafsa.DAFSA(["tap", "taps", "top", "tops"])
+>>> d = dafsa.DAFSA(["tap", "taps", "top", "tops", "dibs"])
 >>> print(d)
-DAFSA with 5 nodes and 5 edges (4 sequences)
-  +-- #0: 0(#1:<t>/1) [('t', 1)]
-  +-- #1: n(#2:<a>/1|#2:<o>/2) [('o', 2), ('a', 2)]
-  +-- #2: n(#3:<p>/1) [('p', 3)]
-  +-- #3: F(#4:<s>/1) [('s', 4)]
+DAFSA with 7 nodes and 8 edges (5 sequences)
+  +-- #0: 0(#1:<d>/1|#5:<t>/4) [('t', 5), ('d', 1)]
+  +-- #1: n(#2:<i>/1) [('i', 2)]
+  +-- #2: n(#3:<b>/1) [('b', 3)]
+  +-- #3: n(#4:<s>/3) [('s', 4)]
   +-- #4: F() []
+  +-- #5: n(#6:<a>/2|#6:<o>/2) [('o', 6), ('a', 6)]
+  +-- #6: n(#3:<p>/4) [('p', 3)]
 ```
 
-Note how the resulting graph includes the 4 training sequences, with one starting node (#0) that only advances with a `t` symbol, a subsequent node that only advances with `a` and `o` symbols (#1), and so on.
+Note how the resulting graph includes the 4 training sequences, with one starting node (#0) that advances with either a `t` (observed four times) or a `d` symbol (observed a single time), a subsequent node to `t` that only advances with `a` and `o` symbols (#1), and so on.
 
 The visualization is much clearer with a graphical representation:
 
 ```
+>>> d.graphviz_output("example.png")
 ```
 
 

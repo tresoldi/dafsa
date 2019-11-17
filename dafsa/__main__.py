@@ -31,6 +31,12 @@ def parse_arguments():
         help="Type of output (default: 'stdout')",
     )
     parser.add_argument(
+        "--dpi",
+        type=int,
+        default=300,
+        help="The resolution output (default: 300)",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=str,
@@ -72,7 +78,7 @@ def main():
         with open(args.output, "w") as handler:
             handler.write(dafsa.to_dot())
     elif args.type in ["png"]:
-        dafsa.graphviz_output(args.output)
+        dafsa.graphviz_output(args.output, args.dpi)
 
 
 if __name__ == "__main__":

@@ -496,8 +496,10 @@ class DAFSA:
             else:
                 node_attr.append('label=""')
 
-            # Decide on node shape based on being final or not
-            if node.final:
+            # Decide on node shape
+            if node.node_id == 0:
+                node_attr.append('shape="doubleoctagon"')
+            elif node.final:
                 node_attr.append('shape="doublecircle"')
             else:
                 node_attr.append('shape="circle"')
@@ -536,7 +538,7 @@ class DAFSA:
 
         return source
 
-    def graphviz_output(self, output_file):
+    def graphviz_output(self, output_file, dpi=300):
         """
         Generates a visualization by calling the local `graphviz`.
 
@@ -546,6 +548,8 @@ class DAFSA:
         ----------
         output_file : str
             The path to the output file.
+        dpi : int
+            The output resolution. Defaults to 300.
         """
 
         # Obtain the source and make it writable
@@ -560,7 +564,9 @@ class DAFSA:
         # Get the filetype from the extension and call graphviz
         suffix = pathlib.PurePosixPath(output_file).suffix
         subprocess.run(
-            ["dot", "-T%s" % suffix[1:], "-o", output_file, handler.name]
+            ["dot", "-T%s" % suffix[1:],
+            "-Gdpi=%i" % dpi,
+            "-o", output_file, handler.name]
         )
 
         # Close the temporary file
