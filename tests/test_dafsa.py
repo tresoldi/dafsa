@@ -15,6 +15,49 @@ import unittest
 import dafsa
 import dafsa.utils
 
+class TestNode(unittest.TestCase):
+    def test_node(self):
+        """
+        Test node initialization.
+        """
+
+        # Missing ID
+        with self.assertRaises(TypeError):
+            node = dafsa.dafsa.DAFSANode()
+
+        # Create nodes for testing
+        node_a = dafsa.dafsa.DAFSANode(0)
+        node_b = dafsa.dafsa.DAFSANode(1)
+        node_c = dafsa.dafsa.DAFSANode(13)
+        node_d = dafsa.dafsa.DAFSANode(14)
+        node_b.final = True
+        node_c.edges["x"] = dafsa.dafsa.DAFSAEdge(node_b, 2)
+        node_d.edges["x"] = dafsa.dafsa.DAFSAEdge(node_b, 1)
+
+        # __str__ and __repr__ assertions
+        assert str(node_a) == ""
+        assert str(node_b) == ""
+        assert str(node_c) == "x|1"
+        assert str(node_d) == "x|1"
+
+        assert repr(node_a) == "0()"
+        assert repr(node_b) == "F()"
+        assert repr(node_c) == 'n(#1:<x>/2)'
+        assert repr(node_d) == 'n(#1:<x>/1)'
+
+        # __eq__ assertions
+        assert node_a == node_b
+        assert node_c == node_d
+        assert node_a != node_c
+
+        # __gt__ assertions
+        assert node_a < node_c
+        assert node_d > node_b
+
+        # __hash__ assertions, follow _str__ for now
+        assert hash(node_a) == hash(node_b)
+        assert hash(node_c) == hash(node_d)
+        assert hash(node_a) != hash(node_c)
 
 class TestDAFSA(unittest.TestCase):
     # TODO: write assertions
