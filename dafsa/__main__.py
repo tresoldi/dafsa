@@ -9,7 +9,6 @@ Module for command-line execution and computation of DAFSAs.
 
 # Import Python standard libraries
 import argparse
-import configparser
 
 # Import our library
 from dafsa import DAFSA

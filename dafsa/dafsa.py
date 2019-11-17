@@ -10,10 +10,6 @@ Note that this is not intended from incremental use due to the assumption
 that the list of strings can be sorted before computation.
 """
 
-# TODO: better comments and Parameters to .to_dot
-# TODO: generate .png by calling graphviz as in alteruphono
-# TODO: allow to insert sequences from initialization
-
 # Import Python libraries
 import itertools
 import pathlib
@@ -98,12 +94,15 @@ class DAFSANode:
             [
                 "|".join(
                     [
-                        label,
-                        str(self.edges[label].node.node_id),
-                        str(self.edges[label].weight),
+                        "#%i:<%s>/%i"
+                        % (
+                            self.edges[label].node.node_id,
+                            label,
+                            self.edges[label].weight,
+                        )
+                        for label in sorted(self.edges)
                     ]
                 )
-                for label in sorted(self.edges)
             ]
         )
 
@@ -133,7 +132,10 @@ class DAFSANode:
         Compares two nodes for sorting purposes.
 
         Internally, the method reuses the `.__str__()` method, so that
-        the logic for comparison is implemented in a single place.
+        the logic for comparison is implemented in a single place. Note that,
+        currently, this only guarantees that the sorting will always
+        return the same sorted items, without an actual basis on "length"
+        or "information amount" (which would need to be decided).
         """
 
         return self.__str__() > other.__str__()

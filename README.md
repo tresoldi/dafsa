@@ -98,6 +98,7 @@ Other alternatives are the `adfa` and `minim` packages, writting in C/C++, writt
   - return `networkx` graph
   - allow to join attributes in single paths; allow to RE export
   - Work on various options for nicer graphviz output (colors, widths, etc.)
+  - Decided how (and if) properly implement `.__gt__()` for nodes
 
 ## How to cite
 
