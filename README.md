@@ -51,7 +51,7 @@ The visualization is much clearer with a graphical representation:
 
 ![First example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/example.png)
 
-**A DAFSA object allows to check for the presence or absence of a sequence in its structure, returning a terminal node if a path can be found:**
+A DAFSA object allows to check for the presence or absence of a sequence in its structure, returning a terminal node if a path can be found:
 
 ```python
 >>> d.lookup("tap")
@@ -112,12 +112,14 @@ Version 0.3:
     nodes (possibly as a default)
 
 Version 0.4:
+  - Profile code and make faster and less resource hungry, using
+    multiple threads wherever possible, memoization, etc.
   - Work on options for nicer graphviz output (colors, widths, etc.)
   - Decide how (and if) to properly implement a `.__gt__()` method for
     the nodes, both before and after the final minimization
 
 Before 1.0:
-  - Add code for Daciuk's packages in an extra directory, along with
+  - Add code from Daciuk's packages in an extra directory, along with
     notes on license
 
 ## Alternatives
