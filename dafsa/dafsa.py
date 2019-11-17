@@ -11,7 +11,6 @@ that the list of strings can be sorted before computation.
 """
 
 # TODO: Add support for tokens/ngrams, instead of only using characters
-# TODO: add wikipedia example
 # TODO: return networkx graph
 # TODO: better comments and Parameters to .to_dot
 # TODO: allow to join attributes in single paths; allow to RE export
@@ -318,7 +317,6 @@ class DAFSA:
             if not graph_changed:
                 break
 
-    # TODO: is this checking for final?
     def lookup(self, seq):
         """
         Checks if a sequence is expressed by the graph.
