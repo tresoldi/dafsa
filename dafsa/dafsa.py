@@ -10,10 +10,7 @@ Note that this is not intended from incremental use due to the assumption
 that the list of strings can be sorted before computation.
 """
 
-# TODO: Add support for tokens/ngrams, instead of only using characters
-# TODO: return networkx graph
 # TODO: better comments and Parameters to .to_dot
-# TODO: allow to join attributes in single paths; allow to RE export
 
 # Import Python libraries
 import itertools
@@ -69,10 +66,12 @@ class DAFSANode:
         the `.__repr__()` method must be used.
         """
 
-        buf = ";".join([
-            "|".join([label, str(self.edges[label].node.node_id)])
-            for label in sorted(self.edges)
-        ])
+        buf = ";".join(
+            [
+                "|".join([label, str(self.edges[label].node.node_id)])
+                for label in sorted(self.edges)
+            ]
+        )
 
         return buf
 
@@ -90,16 +89,18 @@ class DAFSANode:
         the potentially ambiguous `.__str__()` method must be used.
         """
 
-        buf = ";".join([
-            "|".join(
-                [
-                    label,
-                    str(self.edges[label].node.node_id),
-                    str(self.edges[label].weight),
-                ]
-            )
-            for label in sorted(self.edges)
-        ])
+        buf = ";".join(
+            [
+                "|".join(
+                    [
+                        label,
+                        str(self.edges[label].node.node_id),
+                        str(self.edges[label].weight),
+                    ]
+                )
+                for label in sorted(self.edges)
+            ]
+        )
 
         if self.node_id == 0:
             buf = "0(%s)" % buf
@@ -397,10 +398,7 @@ class DAFSA:
                 % (
                     node_id,
                     repr(node),
-                    [
-                        (attr, n.node.node_id)
-                        for attr, n in node.edges.items()
-                    ],
+                    [(attr, n.node.node_id) for attr, n in node.edges.items()],
                 )
             ]
 
