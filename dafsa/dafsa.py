@@ -200,8 +200,7 @@ class DAFSA:
         # edges.
         self._num_sequences = None
 
-    # TODO: allow to override minimization?
-    def insert(self, sequences):
+    def insert(self, sequences, minimize=True):
         """
         Insert a list of sequences to the structure and finalizes it.
 
@@ -211,6 +210,9 @@ class DAFSA:
             List of sequences to be added to the DAFSA. Internally, the list
             will be sorted to simplify the minimization logic. Repeated items
             are inserted as many times as they are found.
+        minimize : bool
+            Whether to run the minimization or not. No minimization will
+            return a full trie. Defaults to True.
         """
 
         # Take a sorted set of the sequences and store its number
@@ -220,13 +222,14 @@ class DAFSA:
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
         for previous_seq, seq in utils.pairwise([""] + sequences):
-            self._insert_single_seq(seq, previous_seq)
+            self._insert_single_seq(seq, previous_seq, minimize)
 
         # Minimize the entire graph, no restrictions, so that we clean
-        # `self._unchecked_nodes`
-        self._minimize()
+        # `self._unchecked_nodes`.
+        # See comments on the `minimize` flag in the `._minimize()` method.
+        self._minimize(0, minimize)
 
-    def _insert_single_seq(self, seq, previous_seq):
+    def _insert_single_seq(self, seq, previous_seq, minimize):
         """
         Internal function for single sequence insertion.
         """
@@ -236,8 +239,9 @@ class DAFSA:
         # removing redundant nodes, proceeding from the last one down to
         # the the common prefix size. The list will be truncated at that
         # point.
+        # See comments on the `minimize` flag in the `._minimize()` method.
         prefix_len = utils.common_prefix_length(seq, previous_seq)
-        self._minimize(prefix_len)
+        self._minimize(prefix_len, minimize)
 
         # Add the suffix, starting from the correct node mid-way through the
         # graph, provided there are unchecked nodes (otherwise, just
@@ -265,13 +269,22 @@ class DAFSA:
         # This last node from the above loop is a terminal one
         node.final = True
 
-    def _minimize(self, index=0):
+    def _minimize(self, index, minimize):
         """
         Internal method for graph minimization.
 
         Minimize the graph from the last unchecked item to `index`;
         final minimization, the default, traverses the entire data
         structure.
+
+        The method allows the minimization to be overridden by setting to
+        `False` the `minimize` flag (returning a trie). Due to the logic in
+        place for the DAFSA minimization, this ends up executed as a
+        non-efficient code, where all comparisons fails, but it is
+        necessary to do it this way to clean the list of unchecked nodes.
+        This is not an implementation problem: this class is not supposed
+        to be used for generating tries (there are more efficient ways of
+        doing that), but it worth having the flag in place for experiments.
         """
 
         # Please note that this loop could be removed, but it would
@@ -299,11 +312,11 @@ class DAFSA:
                 # The logic is to iterate over all self.nodes items,
                 # compare each `node` with the `child` (using the internal
                 # `.__eq__()` method), and carry the key/index in case
-                # it is found
+                # it is found.
                 child_idx = [
                     node_idx
                     for node_idx, node in self.nodes.items()
-                    if node == child
+                    if node == child and minimize
                 ]
 
                 if child_idx:
