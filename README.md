@@ -49,6 +49,7 @@ The visualization is much clearer with a graphical representation:
 >>> d.graphviz_output("example.png")
 ```
 
+![First example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/example.png)
 
 A command-line tool for reading files with lists of strings, with one string per line, is also available:
 
