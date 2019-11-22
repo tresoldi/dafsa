@@ -80,7 +80,31 @@ Which will produce the following graph:
 
 ![DNA example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/dna.png)
 
+Sequences are by default processed one character at time, with each character
+assumed to be a single token. Pre-tokenized data can be provided to the
+library in the format of a Python list or tuple, or specified in source by
+using spaces as token delimiters:
+
+```
+$ cat resources/phonemes.txt
+o kː j o
+o r e kː j o
+n a z o
+s e n t i r e
+s e n s o
+ɡ u a r d a r e
+a m a r e
+v o l a r e
+
+$ dafsa resources/phonemes.txt -t png -o phonemes.png
+```
+
+![Phoneme example](https://raw.githubusercontent.com/tresoldi/dafsa/master/doc/phonemes.png)
+
 ## Changelog
+
+Version 0.2.1:
+  - Added support for segmented data
 
 Version 0.2:
   - Added support for weighted edges and nodes
@@ -132,14 +156,14 @@ Other alternatives are the `adfa` and `minim` packages, written in C/C++, writte
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2. Jena. Available at: https://github.com/tresoldi/dafsa
+> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2.1. Jena. Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
 
 ```
 @misc{Tresoldi2019dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2.1},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
   year = {2019},
