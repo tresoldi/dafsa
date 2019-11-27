@@ -12,11 +12,9 @@ that the list of strings can be sorted before computation.
 
 # Import Python libraries
 import itertools
-import pathlib
-import subprocess
-import tempfile
 
 # Import other modules
+from . import output
 from . import utils
 
 # TODO: check and guarantee that Edge receives a node, and not a node_id
@@ -575,24 +573,5 @@ class DAFSA:
         dot_source = self.to_dot()
         dot_source = dot_source.encode("utf-8")
 
-        # Write to a named temporary file so we can call `graphviz`
-        handler = tempfile.NamedTemporaryFile()
-        handler.write(dot_source)
-        handler.flush()
-
-        # Get the filetype from the extension and call graphviz
-        suffix = pathlib.PurePosixPath(output_file).suffix
-        subprocess.run(
-            [
-                "dot",
-                "-T%s" % suffix[1:],
-                "-Gdpi=%i" % dpi,
-                "-o",
-                output_file,
-                handler.name,
-            ],
-            shell=True,
-        )
-
-        # Close the temporary file
-        handler.close()
+        # Write with `subprocess`
+        output.graphviz_output(dot_source, output_file, dpi)
