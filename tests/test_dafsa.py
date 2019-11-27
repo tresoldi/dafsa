@@ -10,6 +10,7 @@ Tests for the `dafsa` package.
 
 # Import Python libraries
 import unittest
+import sys
 
 # Import the library itself
 import dafsa
@@ -119,3 +120,6 @@ class TestDAFSA(unittest.TestCase):
         assert dafsa_obj.lookup("deny") is not None
         assert dafsa_obj.lookup("dafsa") is None
         assert dafsa_obj.lookup("dawg") is None
+
+if __name__ == "__main__":
+    sys.exit(unittest.main())
