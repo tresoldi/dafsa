@@ -591,7 +591,7 @@ class DAFSA:
                 output_file,
                 handler.name,
             ],
-            shell=False,
+            shell=True,
         )
 
         # Close the temporary file
