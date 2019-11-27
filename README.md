@@ -111,12 +111,9 @@ Version 0.2.1:
 Version 0.2:
 
   - Added support for weighted edges and nodes
-
   - Added DOT export and Graphviz generation
-
   - Refined minimization method, which can be skipped if desired (resulting
     in a standard trie)
-
   - Added examples in the resources, also used for test data
 
 Version 0.1:
@@ -128,17 +125,12 @@ Version 0.1:
 Version 0.3:
 
   - Start integration with `networkx`, including:
-
     - Exporting DAFSA in standard network formats
-
     - Computation of shortest or *k*-shortest paths, along with
     cumulative edge and/or node weights
-
   - Preliminary generation of minimal regular expressions matching the
     contents of a DAFSA
-
   - Allow to join attributes in single sub-paths
-
   - Allow to replace final nodes with edges to ``end-of-sequence``
     nodes (possibly as a default)
 
@@ -146,16 +138,14 @@ Version 0.4:
 
   - Profile code and make faster and less resource hungry, using
     multiple threads wherever possible, memoization, etc.
-
   - Work on options for nicer graphviz output (colors, widths, etc.)
-
   - Decide how (and if) to implement a `.__gt__()` method for
     the nodes, both before and after the final minimization
 
 Version 1.0:
 
   - Add code from Daciuk's packages in an extra directory, along with
-  notes on license
+    notes on license
 
 Please note that this library is under development and still needs performance optimizations: common experiments such as building a DAFSA for the contents of `/usr/share/dict/words` will take many minutes in a common machine.
 

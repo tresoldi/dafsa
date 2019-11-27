@@ -1,2 +1,4 @@
 exclude_paths:
+    - "AUTHORS.md"
+    - "README.md"
     - "tests/*.py"
