@@ -1,0 +1,2 @@
+ignore:
+    - "tests/*.py" # don't consider test files in the coverage
