@@ -255,9 +255,11 @@ class DAFSA:
 
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
+        # TODO: review code
         i = 1
         for previous_seq, seq in utils.pairwise([""] + sequences):
-            print(i, [previous_seq, seq]) ; i += 1
+            #print(i, [previous_seq, seq])
+            i += 1
             self._insert_single_seq(seq, previous_seq, minimize)
 
         # Minimize the entire graph, no restrictions, so that we clean

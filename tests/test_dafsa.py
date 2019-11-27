@@ -9,8 +9,9 @@ Tests for the `dafsa` package.
 """
 
 # Import Python libraries
-import unittest
 import sys
+import tempfile
+import unittest
 
 # Import the library itself
 import dafsa
@@ -144,6 +145,28 @@ class TestDAFSA(unittest.TestCase):
             raise AssertionError
         if not dafsa_obj.lookup("dawg") is None:
             raise AssertionError
+
+    def test_to_graphviz(self):
+        """
+        Tests DOT generation and Graphviz output.
+        """
+
+        # Load strings from file
+        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
+        with open(filename.as_posix()) as handler:
+            strings = [line.strip() for line in handler]
+
+        # build object
+        dafsa_obj = dafsa.DAFSA(strings)
+
+        # Get a temporary filename (on Unix, it can be reused)
+        handler = tempfile.NamedTemporaryFile()
+        output_filename = "%s.png" % handler.name
+        handler.close()
+
+        # Test
+        dafsa_obj.graphviz_output(output_filename)
+
 
 if __name__ == "__main__":
     sys.exit(unittest.main())
