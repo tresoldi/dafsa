@@ -11,6 +11,7 @@ that the list of strings can be sorted before computation.
 """
 
 # Import Python libraries
+from collections import Counter
 import itertools
 
 # Import other modules
@@ -181,12 +182,16 @@ class DAFSAEdge(dict):
         return "{node_id: %i, weight: %i}" % (self.node.node_id, self.weight)
 
 
+# TODO: move to **kwargs everywhere
 class DAFSA:
     """
     Class representing a DAFSA graph.
     """
 
-    def __init__(self, sequences=None, minimize=True, weight=True):
+    # TODO: comment `join_trans`
+    def __init__(
+        self, sequences=None, minimize=True, weight=True, join_trans=False
+    ):
         """
         Initializes a DAFSA object.
 
@@ -227,9 +232,9 @@ class DAFSA:
 
         # Insert the sequences, if provided
         if sequences:
-            self.insert(sequences, minimize, weight)
+            self.insert(sequences, minimize, weight, join_trans)
 
-    def insert(self, sequences, minimize=True, weight=True):
+    def insert(self, sequences, minimize=True, weight=True, join_trans=False):
         """
         Insert a list of sequences to the structure and finalizes it.
 
@@ -245,6 +250,9 @@ class DAFSA:
         weight : bool
             Whether to collect edge weights after minimization. Defaults
             to `True`.
+        join_trans : bool
+            Whether to join single transitions after the final minimization.
+            Defaults to `False`.
         """
 
         # Take a sorted set of the sequences and store its number
@@ -256,7 +264,6 @@ class DAFSA:
         # TODO: review code
         i = 1
         for previous_seq, seq in utils.pairwise([""] + sequences):
-            # print(i, [previous_seq, seq])
             i += 1
             self._insert_single_seq(seq, previous_seq, minimize)
 
@@ -272,6 +279,11 @@ class DAFSA:
         # to decide whether to collect the weights or not.
         if weight:
             self._collect_weights(sequences)
+
+        # After the final minimization, we can join single transitions
+        # if requested
+        if join_trans:
+            self._join_transitions()
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
         """
@@ -379,6 +391,90 @@ class DAFSA:
             # Only leave the loop if the graph was untouched
             if not graph_changed:
                 break
+
+    def _join_transitions(self):
+        # join everything
+        while True:
+            if self._single_join_transitions() == 0:
+                break
+
+        # TODO: do we need to renumber or reorder in any way?
+
+    # TODO: comment, single join transition, returns number of changes
+    # `_join_transitions` should call it until there are no more
+    # joining lefts
+    # TODO: allow to specify the joining string
+    def _single_join_transitions(self):
+        # As the joining changes the overall topography, we unfortunately
+        # need to do one at a time
+        # TODO: look for better algorithm
+
+        # list of transitions to be combined and nodes in such list
+        transitions = []
+        transitions_nodes = []
+
+        # Build inverse map, of which state receives from which other
+        edges = []
+        for source_id, node in self.nodes.items():
+            edges += [
+                (source_id, node.edges[label].node.node_id)
+                for label in node.edges
+            ]
+
+        # Counter for each edge as source and target
+        sources, targets = zip(*edges)
+        sources = Counter(sources)
+        targets = Counter(targets)
+
+        # Select nodes that (a) receive a single transition, (b) are not
+        # final, (c) their source has a single emission
+        for node_id, node in self.nodes.items():
+            if targets[node_id] > 1:
+                continue
+            if sources[node_id] > 1:
+                continue
+            if node.final:
+                continue
+
+            # Get the transition that leads to this node; `transition_to`
+            # is easy because we know to be emitting only one edge
+            # TODO: rename `edge_to`
+            edge_to = [edge for edge in edges if edge[1] == node_id][0]
+            transition_from = [
+                label
+                for label in self.nodes[edge_to[0]].edges
+                if self.nodes[edge_to[0]].edges[label].node.node_id
+                == edge_to[1]
+            ][0]
+            transition_to = list(node.edges.keys())[0]
+
+            # collect the transition as long as it does not involve
+            # nodes already in the list
+            if all([node_id not in transitions_nodes for node_id in edge_to]):
+                transitions_nodes += edge_to
+                transitions.append([edge_to, transition_from, transition_to])
+
+        # Now that we have collected the transitions that we can
+        # combine, combine them creating new transitions
+        # TODO: move to a dictionary?
+        # TODO: account for edge weights
+        for transition in transitions:
+            edge_to, transition_from, transition_to = transition
+            new_target_node = (
+                self.nodes[edge_to[1]].edges[transition_to].node.node_id
+            )
+            new_label = " ".join([transition_from, transition_to])
+
+            # change the transition
+            self.nodes[edge_to[0]].edges[new_label] = DAFSAEdge(
+                self.nodes[edge_to[1]].edges[transition_to].node,
+                self.nodes[edge_to[1]].edges[transition_to].weight,
+            )
+            self.nodes[edge_to[0]].edges.pop(transition_from)
+            self.nodes.pop(edge_to[1])
+
+        # return number of transitions performed
+        return len(transitions)
 
     def _collect_weights(self, sequences):
         """

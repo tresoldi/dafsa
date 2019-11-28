@@ -111,14 +111,15 @@ class TestEdge(unittest.TestCase):
 class TestDAFSA(unittest.TestCase):
     def test_hardcoded(self):
         """
-        Performs a test from a hardcoded list of strings.
+        Performs tests from hardcoded lists of strings.
         """
 
-        seqs = ["tap", "taps", "top", "tops"]
+        seqs = ["tap", "taps", "top", "tops", "dib", "dibs", "tapping", "dibbing"]
 
-        # build object
-        # TODO: write test?
-        dafsa_obj = dafsa.DAFSA(seqs)
+        # build object, without and with joining
+        # TODO: write tests?
+        dafsa_obj_a = dafsa.DAFSA(seqs)
+        dafda_obj_b = dafsa.DAFSA(seqs, join_trans=True)
 
     def test_full_test(self):
         """

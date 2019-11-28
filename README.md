@@ -131,6 +131,7 @@ Version 0.3:
   - Preliminary generation of minimal regular expressions matching the
     contents of a DAFSA
   - Allow to join attributes in single sub-paths
+  - Allow usage of empty transitions
   - Allow to replace final nodes with edges to ``end-of-sequence``
     nodes (possibly as a default)
 
@@ -144,6 +145,7 @@ Version 0.4:
 
 Version 1.0:
 
+  - Full documentation
   - Add code from Daciuk's packages in an extra directory, along with
     notes on license
 
