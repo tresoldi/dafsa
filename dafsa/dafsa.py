@@ -453,13 +453,11 @@ class DAFSA:
         edges = []
         for source_id, node in self.nodes.items():
             edges += [
-                (source_id, node.edges[label].node.node_id)
+                {"source": source_id, "target": node.edges[label].node.node_id}
                 for label in node.edges
             ]
-
-        sources, targets = zip(*edges)
-        sources = Counter(sources)
-        targets = Counter(targets)
+        sources = Counter([edge["source"] for edge in edges])
+        targets = Counter([edge["target"] for edge in edges])
 
         # Select nodes that (a) receive a single transition, (b) are not
         # final, (c) their source has a single emission
@@ -475,39 +473,49 @@ class DAFSA:
 
             # Get the transition that leads to this node; `transition_to`
             # is easy because we know to be emitting only one edge
-            edge_info = [edge for edge in edges if edge[1] == node_id][0]
-            transition_from = [
+            edge_info = [edge for edge in edges if edge["target"] == node_id][0]
+            label_from = [
                 label
-                for label in self.nodes[edge_info[0]].edges
-                if self.nodes[edge_info[0]].edges[label].node.node_id
-                == edge_info[1]
+                for label in self.nodes[edge_info["source"]].edges
+                if self.nodes[edge_info["source"]].edges[label].node.node_id
+                == edge_info["target"]
             ][0]
-            transition_to = list(node.edges.keys())[0]
+            label_to = list(node.edges.keys())[0]
 
             # collect the transition as long as it does not involve
             # nodes already in the list
             if all([node_id not in transitions_nodes for node_id in edge_info]):
                 transitions_nodes += edge_info
-                transitions.append([edge_info, transition_from, transition_to])
+                transitions.append(
+                    {
+                        "edge": edge_info,
+                        "label_from": label_from,
+                        "label_to": label_to,
+                    }
+                )
 
         # Now that we have collected the transitions that we can
         # combine, combine them creating new transitions
-        # TODO: move to a dictionary?
-        # TODO: account for edge weights
         for transition in transitions:
-            edge_to, transition_from, transition_to = transition
-            new_target_node = (
-                self.nodes[edge_to[1]].edges[transition_to].node.node_id
+            new_label = delimiter.join(
+                [transition["label_from"], transition["label_to"]]
             )
-            new_label = " ".join([transition_from, transition_to])
 
             # change the transition
-            self.nodes[edge_to[0]].edges[new_label] = DAFSAEdge(
-                self.nodes[edge_to[1]].edges[transition_to].node,
-                self.nodes[edge_to[1]].edges[transition_to].weight,
+            self.nodes[transition["edge"]["source"]].edges[
+                new_label
+            ] = DAFSAEdge(
+                self.nodes[transition["edge"]["target"]]
+                .edges[transition["label_to"]]
+                .node,
+                self.nodes[transition["edge"]["target"]]
+                .edges[transition["label_to"]]
+                .weight,
             )
-            self.nodes[edge_to[0]].edges.pop(transition_from)
-            self.nodes.pop(edge_to[1])
+            self.nodes[transition["edge"]["source"]].edges.pop(
+                transition["label_from"]
+            )
+            self.nodes.pop(transition["edge"]["target"])
 
         # return number of transitions performed
         return len(transitions)
@@ -622,11 +630,12 @@ class DAFSA:
     def to_dot(self, **kwargs):
         """
         Returns a representation in the DOT (Graphviz) language.
-        """
 
-        # Get parameters for tweaking the graph
-        label_nodes = kwargs.get("label_nodes", False)
-        weight_scale = kwargs.get("weight_scale", 1.5)
+        Parameters
+        ----------
+        label_nodes
+        weight_scale
+        """
 
         # collect the maximum node weight for later computing the size
         max_weight = max([node.weight for node in self.nodes.values()])
@@ -638,7 +647,7 @@ class DAFSA:
             node_attr = []
 
             # Decide on node label
-            if label_nodes:
+            if kwargs.get("label_nodes", False):
                 node_attr.append('label="%i"' % node.node_id)
             else:
                 node_attr.append('label=""')
@@ -660,9 +669,7 @@ class DAFSA:
             node_attr.append('style="filled"')
 
             # Build the node attributes string
-            node_attr_str = "[%s]" % ",".join(node_attr)
-
-            buf = '"%i" %s ;' % (node.node_id, node_attr_str)
+            buf = '"%i" %s ;' % (node.node_id, "[%s]" % ",".join(node_attr))
             dot_nodes.append(buf)
 
         # add other edges
@@ -673,7 +680,7 @@ class DAFSA:
                     left.node_id,
                     right.node.node_id,
                     attr,
-                    right.weight * weight_scale,
+                    right.weight * kwargs.get("weight_scale", 1.5),
                 )
                 dot_edges.append(buf)
 
