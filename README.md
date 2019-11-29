@@ -128,8 +128,6 @@ Version 0.3:
     - Exporting DAFSA in standard network formats
     - Computation of shortest or *k*-shortest paths, along with
     cumulative edge and/or node weights
-  - Preliminary generation of minimal regular expressions matching the
-    contents of a DAFSA
   - Allow to join attributes in single sub-paths
   - Allow usage of empty transitions
   - Allow to replace final nodes with edges to ``end-of-sequence``
@@ -148,6 +146,13 @@ Version 1.0:
   - Full documentation
   - Add code from Daciuk's packages in an extra directory, along with
     notes on license
+
+After 1.0:
+
+  - Preliminary generation of minimal regular expressions matching the
+    contents of a DAFSA
+  - Consider the addition of empty transitions (or depend on the user
+    aligning those)
 
 Please note that this library is under development and still needs performance optimizations: common experiments such as building a DAFSA for the contents of `/usr/share/dict/words` will take many minutes in a common machine.
 

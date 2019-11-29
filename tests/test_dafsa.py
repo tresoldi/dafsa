@@ -118,6 +118,7 @@ class TestDAFSA(unittest.TestCase):
 
         # build object, without and with joining
         # TODO: write tests?
+        # TODO: test lookup with `join_trans=True`
         dafsa_obj_a = dafsa.DAFSA(seqs)
         dafda_obj_b = dafsa.DAFSA(seqs, join_trans=True)
 
