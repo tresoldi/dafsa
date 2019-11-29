@@ -14,6 +14,9 @@ that the list of strings can be sorted before computation.
 from collections import Counter
 import itertools
 
+# Import 3rd party libraries
+import networkx as nx
+
 # Import other modules
 from . import output
 from . import utils
@@ -696,6 +699,8 @@ class DAFSA:
 
         return source
 
+    # TODO: decide on node label as _to_graphviz?
+    # TODO: how to express final?
     def graphviz_output(self, output_file, dpi=300):
         """
         Generates a visualization by calling the local `graphviz`.
@@ -716,3 +721,26 @@ class DAFSA:
 
         # Write with `subprocess`
         output.graphviz_output(dot_source, output_file, dpi)
+
+    def to_graph(self):
+        """
+        Returns a `networkx` graph for the DAFSA.
+
+        The user can use for everything a normal graph would be used,
+        shortest path, etc...
+        """
+
+        graph = nx.Graph()
+
+        for node_id, node in self.nodes.items():
+            graph.add_node(node_id)
+            graph.nodes[node_id]["final"] = node.final
+
+            for left in self.nodes.values():
+                for label, right in left.edges.items():
+                    l_id = left.node_id
+                    r_id = right.node.node_id
+                    graph.add_edge(l_id, r_id, weight=right.weight)
+                    graph[l_id][r_id]["label"] = label
+
+        return graph

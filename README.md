@@ -140,7 +140,8 @@ Version 0.4:
   - Decide how (and if) to implement a `.__gt__()` method for
     the nodes, both before and after the final minimization
   - Allow to replace final nodes with edges to ``end-of-sequence``
-      nodes (possibly as a default)
+      nodes (possibly as a default) -- probably better to just have an
+      end-transition
 
 Version 1.0:
 

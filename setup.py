@@ -33,7 +33,7 @@ setup(
         "directed acyclic word graph",
     ],
     include_package_data=True,
-    install_requires=[],
+    install_requires=["networkx"],
     entry_points={"console_scripts": ["dafsa=dafsa.__main__:main"]},
     test_suite="tests",
     tests_require=[],
