@@ -6,6 +6,26 @@
 Welcome to dafsa's documentation!
 =================================
 
+Lorem ipsum 2
+
+.. image:: https://img.shields.io/pypi/v/dafsa.svg
+   :alt: PyPI
+   :target: https://pypi.org/project/dafsa
+
+.. image:: https://travis-ci.org/tresoldi/dafsa.svg?branch=master
+   :alt: Travis
+   :target: https://travis-ci.org/tresoldi/dafsa
+
+.. image:: https://codecov.io/gh/tresoldi/dafsa/branch/master/graph/badge.svg
+   :alt: codecov
+   :target: https://codecov.io/gh/tresoldi/dafsa
+
+.. image:: https://api.codacy.com/project/badge/Grade/a2b47483ff684590b1208dbb4bbfc3ee
+   :alt: Codacy
+   :target: https://www.codacy.com/manual/tresoldi/dafsa?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=tresoldi/dafsa&amp;utm_campaign=Badge_Grade
+
+development
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
