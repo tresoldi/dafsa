@@ -540,6 +540,8 @@ class DAFSA:
                 node = node.edges[token].node
                 node.weight += 1
 
+    # TODO: support lookup after transition joining, deciding whether
+    # to multiply or not
     def lookup(self, seq):
         """
         Checks if a sequence is expressed by the graph.

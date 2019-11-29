@@ -104,6 +104,9 @@ $ dafsa resources/phonemes.txt -t png -o phonemes.png
 
 ## Changelog
 
+Version 0.3:
+  - Allow to join transitions in single sub-paths
+
 Version 0.2.1:
 
   - Added support for segmented data
@@ -128,10 +131,6 @@ Version 0.3:
     - Exporting DAFSA in standard network formats
     - Computation of shortest or *k*-shortest paths, along with
     cumulative edge and/or node weights
-  - Allow to join attributes in single sub-paths
-  - Allow usage of empty transitions
-  - Allow to replace final nodes with edges to ``end-of-sequence``
-    nodes (possibly as a default)
 
 Version 0.4:
 
@@ -140,6 +139,8 @@ Version 0.4:
   - Work on options for nicer graphviz output (colors, widths, etc.)
   - Decide how (and if) to implement a `.__gt__()` method for
     the nodes, both before and after the final minimization
+  - Allow to replace final nodes with edges to ``end-of-sequence``
+      nodes (possibly as a default)
 
 Version 1.0:
 
