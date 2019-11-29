@@ -106,6 +106,7 @@ $ dafsa resources/phonemes.txt -t png -o phonemes.png
 
 Version 0.3:
   - Allow to join transitions in single sub-paths
+  - Allows to export a DAFSA as a `networkx` graph
 
 Version 0.2.1:
 
@@ -124,13 +125,6 @@ Version 0.1:
   - First public release.
 
 ## Roadmap
-
-Version 0.3:
-
-  - Start integration with `networkx`, including:
-    - Exporting DAFSA in standard network formats
-    - Computation of shortest or *k*-shortest paths, along with
-    cumulative edge and/or node weights
 
 Version 0.4:
 
@@ -168,14 +162,14 @@ Other alternatives are the `adfa` and `minim` packages, written in C/C++, writte
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2.1. Jena. Available at: <https://github.com/tresoldi/dafsa>
+> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.3. Jena. Available at: <https://github.com/tresoldi/dafsa>
 
 In BibTeX:
 
 ```bibtex
 @misc{Tresoldi2019dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.2.1},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.3},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
   year = {2019},

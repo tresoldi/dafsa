@@ -169,6 +169,22 @@ class TestDAFSA(unittest.TestCase):
         # Test
         dafsa_obj.graphviz_output(output_filename)
 
+    def test_to_graph(self):
+        """
+        Test `networkx` graph export.
+        """
+
+        # Load strings from file
+        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
+        with open(filename.as_posix()) as handler:
+            strings = [line.strip() for line in handler]
+
+        # build object
+        dafsa_obj = dafsa.DAFSA(strings)
+
+        # Run function
+        # TODO: assert results
+        dafsa_obj.to_graph()
 
 if __name__ == "__main__":
     sys.exit(unittest.main())
