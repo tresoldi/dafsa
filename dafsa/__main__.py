@@ -65,7 +65,7 @@ def main():
         seqs = [line.strip() for line in handler]
 
     # Split data into tokens if there are spaces
-    spaces = [' ' in seq for seq in seqs]
+    spaces = [" " in seq for seq in seqs]
     if any(spaces):
         seqs = [seq.split() for seq in seqs]
 

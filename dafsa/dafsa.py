@@ -18,9 +18,7 @@ import itertools
 from . import output
 from . import utils
 
-# TODO: check and guarantee that Edge receives a node, and not a node_id
-
-
+# comment on internal node_id, meaningless
 class DAFSANode:
     """
     Class representing a node in the DAFSA.
@@ -39,7 +37,7 @@ class DAFSANode:
 
     def __init__(self, node_id):
         """
-        Initializes a DAFSAEdge.
+        Initializes a DAFSANode.
 
         Parameters
         ----------
@@ -78,7 +76,6 @@ class DAFSANode:
 
         return buf
 
-    # TODO: include self.weight
     def __repr__(self):
         """
         Return an unambigous textual representation of the node.
@@ -97,9 +94,10 @@ class DAFSANode:
             [
                 "|".join(
                     [
-                        "#%i:<%s>/%i"
+                        "#%i/%i:<%s>/%i"
                         % (
                             self.edges[label].node.node_id,
+                            self.weight,
                             label,
                             self.edges[label].weight,
                         )
@@ -165,7 +163,7 @@ class DAFSAEdge(dict):
         node : DafsaNode
             Reference to the target node, mandatory.
         weight : int
-            Edge weight as collected from training data. Defaults to 1.
+            Edge weight as collected from training data. Defaults to 0.
         """
 
         # Call super class initialization.
@@ -174,7 +172,11 @@ class DAFSAEdge(dict):
         # for implementing fuzzy automata.
         super().__init__()
 
-        # Set values
+        # Validate values and set
+        if not isinstance(node, DAFSANode):
+            raise TypeError(
+                "`node` must be a DAFSANode (perhaps a node_id was passed?)."
+            )
         self.node = node
         self.weight = weight
 
@@ -182,16 +184,12 @@ class DAFSAEdge(dict):
         return "{node_id: %i, weight: %i}" % (self.node.node_id, self.weight)
 
 
-# TODO: move to **kwargs everywhere
 class DAFSA:
     """
     Class representing a DAFSA graph.
     """
 
-    # TODO: comment `join_trans`
-    def __init__(
-        self, sequences=None, minimize=True, weight=True, join_trans=False
-    ):
+    def __init__(self, sequences=None, **kwargs):
         """
         Initializes a DAFSA object.
 
@@ -206,6 +204,9 @@ class DAFSA:
         weight : bool
             Whether to collect edge weights after minimization. Defaults
             to `True`.
+        join_trans: bool
+            Whether to join sequences of transitions into single compound
+            transitions when possible. Defaults to `False`.
         """
 
         # Initializes an internal counter iterator, which is used to
@@ -232,9 +233,9 @@ class DAFSA:
 
         # Insert the sequences, if provided
         if sequences:
-            self.insert(sequences, minimize, weight, join_trans)
+            self.insert(sequences, **kwargs)
 
-    def insert(self, sequences, minimize=True, weight=True, join_trans=False):
+    def insert(self, sequences, **kwargs):
         """
         Insert a list of sequences to the structure and finalizes it.
 
@@ -253,7 +254,17 @@ class DAFSA:
         join_trans : bool
             Whether to join single transitions after the final minimization.
             Defaults to `False`.
+        delimiter : str
+            If `join_trans` is set to `True`, informs the string to be
+            used a transition symbol delimiter. Defaults to `" "` (single
+            white space).
         """
+
+        # get parameters
+        minimize = kwargs.get("minimize", True)
+        weight = kwargs.get("weight", True)
+        join_trans = kwargs.get("join_trans", False)
+        delimiter = kwargs.get("delimiter", " ")
 
         # Take a sorted set of the sequences and store its number
         sequences = sorted(sequences)
@@ -261,10 +272,7 @@ class DAFSA:
 
         # Make sure the words are sorted and add a dummy empty previous
         # word for the loop
-        # TODO: review code
-        i = 1
         for previous_seq, seq in utils.pairwise([""] + sequences):
-            i += 1
             self._insert_single_seq(seq, previous_seq, minimize)
 
         # Minimize the entire graph, no restrictions, so that we clean
@@ -283,7 +291,7 @@ class DAFSA:
         # After the final minimization, we can join single transitions
         # if requested
         if join_trans:
-            self._join_transitions()
+            self._join_transitions(delimiter)
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
         """
@@ -337,7 +345,7 @@ class DAFSA:
         `False` the `minimize` flag (returning a trie). Due to the logic in
         place for the DAFSA minimization, this ends up executed as a
         non-efficient code, where all comparisons fails, but it is
-        necessary to do it this way to clean the list of unchecked nodes.
+        necessary to do it this watransitionsy to clean the list of unchecked nodes.
         This is not an implementation problem: this class is not supposed
         to be used for generating tries (there are more efficient ways of
         doing that), but it worth having the flag in place for experiments.
@@ -392,28 +400,56 @@ class DAFSA:
             if not graph_changed:
                 break
 
-    def _join_transitions(self):
-        # join everything
+    def _join_transitions(self, delimiter):
+        """
+        Internal function for joining unique edges.
+
+        The function joins paths of unique edges into single edges with
+        compound transitions, removing redundant nodes. A redundant node
+        is defined as one that (a) is not final, (b) emits a single transition,
+        (b) receives a single transition, and (d) its source emits a single
+        transition.
+
+        Internally, the function will call the `._joining_round()`
+        method until no more candidates for joining are available.
+        Performing everything in a single step would require a more complex
+        logic.
+
+        Parameters
+        ----------
+        delimiter : str
+            The string to be used as a transition delimiter.
+        """
+
+        # Perform joining operations until no more are possible
         while True:
-            if self._single_join_transitions() == 0:
+            if self._joining_round(delimiter) == 0:
                 break
 
-        # TODO: do we need to renumber or reorder in any way?
+    def _joining_round(self, delimiter):
+        """
+        Internal function for the unique-edge joining algorithm.
 
-    # TODO: comment, single join transition, returns number of changes
-    # `_join_transitions` should call it until there are no more
-    # joining lefts
-    # TODO: allow to specify the joining string
-    def _single_join_transitions(self):
-        # As the joining changes the overall topography, we unfortunately
-        # need to do one at a time
-        # TODO: look for better algorithm
+        This function will be called a successive number of times by
+        `._join_transitions()`, until no more candidates for unique-edge
+        joining are available (as informed by its return value).
 
-        # list of transitions to be combined and nodes in such list
-        transitions = []
-        transitions_nodes = []
+        Parameters
+        ----------
+        delimiter : str
+            The string to be used as a transition delimiter.
 
-        # Build inverse map, of which state receives from which other
+        Returns
+        -------
+        num_operations: int
+            The number of joining operations that was performed. When zero,
+            it signals that no more joining is possible.
+        """
+
+        # Build inverse map of which state receives from which other state,
+        # along with a counter for `sources` and `targets` so that we
+        # can exclude nodes receiving more that one edge and/or emitting
+        # more than one edge
         edges = []
         for source_id, node in self.nodes.items():
             edges += [
@@ -421,13 +457,14 @@ class DAFSA:
                 for label in node.edges
             ]
 
-        # Counter for each edge as source and target
         sources, targets = zip(*edges)
         sources = Counter(sources)
         targets = Counter(targets)
 
         # Select nodes that (a) receive a single transition, (b) are not
         # final, (c) their source has a single emission
+        transitions = []
+        transitions_nodes = []
         for node_id, node in self.nodes.items():
             if targets[node_id] > 1:
                 continue
@@ -438,21 +475,20 @@ class DAFSA:
 
             # Get the transition that leads to this node; `transition_to`
             # is easy because we know to be emitting only one edge
-            # TODO: rename `edge_to`
-            edge_to = [edge for edge in edges if edge[1] == node_id][0]
+            edge_info = [edge for edge in edges if edge[1] == node_id][0]
             transition_from = [
                 label
-                for label in self.nodes[edge_to[0]].edges
-                if self.nodes[edge_to[0]].edges[label].node.node_id
-                == edge_to[1]
+                for label in self.nodes[edge_info[0]].edges
+                if self.nodes[edge_info[0]].edges[label].node.node_id
+                == edge_info[1]
             ][0]
             transition_to = list(node.edges.keys())[0]
 
             # collect the transition as long as it does not involve
             # nodes already in the list
-            if all([node_id not in transitions_nodes for node_id in edge_to]):
-                transitions_nodes += edge_to
-                transitions.append([edge_to, transition_from, transition_to])
+            if all([node_id not in transitions_nodes for node_id in edge_info]):
+                transitions_nodes += edge_info
+                transitions.append([edge_info, transition_from, transition_to])
 
         # Now that we have collected the transitions that we can
         # combine, combine them creating new transitions

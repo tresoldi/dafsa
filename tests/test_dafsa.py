@@ -51,9 +51,9 @@ class TestNode(unittest.TestCase):
             raise AssertionError
         if not repr(node_b) == "F()":
             raise AssertionError
-        if not repr(node_c) == "n(#1:<x>/2)":
+        if not repr(node_c) == "n(#1/0:<x>/2)":
             raise AssertionError
-        if not repr(node_d) == "n(#1:<x>/1)":
+        if not repr(node_d) == "n(#1/0:<x>/1)":
             raise AssertionError
 
         # __eq__ assertions

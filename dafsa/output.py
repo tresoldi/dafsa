@@ -7,6 +7,7 @@ import pathlib
 import subprocess
 import tempfile
 
+
 def graphviz_output(dot_source, output_file, dpi=300):
     """
     Generates a visualization by calling the local `graphviz`.
@@ -38,7 +39,7 @@ def graphviz_output(dot_source, output_file, dpi=300):
             handler.name,
         ],
         check=True,
-        shell=False
+        shell=False,
     )
 
     # Close the temporary file
