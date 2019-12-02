@@ -6,8 +6,6 @@
 Welcome to dafsa's documentation!
 =================================
 
-Lorem ipsum 2
-
 .. image:: https://img.shields.io/pypi/v/dafsa.svg
    :alt: PyPI
    :target: https://pypi.org/project/dafsa
@@ -28,7 +26,22 @@ Lorem ipsum 2
    :alt: Documentation Status
    :target: https://dafsa.readthedocs.io/en/latest/?badge=latest
 
-development
+``dafsa`` is a Python library for computing
+`Deterministic Acyclic Finite State
+Automata <https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton>`__
+(also known as “directed acyclic word graphs”, or DAWG) for purposes of
+data exploration and visualization. DAFSAs are data 
+structures derived from `tries <https://en.wikipedia.org/wiki/Trie>`__
+that allow to represent a set of sequences (typically character strings
+or *n*-grams) in the form of a directed acyclic graph with a single
+source vertex (the ``start`` symbol shared by all sequences) and at least one
+sink edge (``end`` symbols, each pointed to by one or more sequences), such
+as in the following image.
+
+.. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png
+   :alt: Example of a DAFSA graph
+
+   Example of a DAFSA graph
 
 .. toctree::
    :maxdepth: 2
