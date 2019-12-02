@@ -106,11 +106,18 @@ $ dafsa resources/phonemes.txt -t png -o phonemes.png
 
 ![Phoneme example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/phonemes.png)
 
+Graphs can have paths of single transitions condensed to a sole transition,
+as in:
+
+
+![Reduced Phoneme example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
+
 ## Changelog
 
 Version 0.3:
   - Allow to join transitions in single sub-paths
   - Allows to export a DAFSA as a `networkx` graph
+  - Preliminary documentation at [ReadTheDocs](https://dafsa.readthedocs.io)
 
 Version 0.2.1:
 
@@ -131,19 +138,24 @@ Version 0.1:
 ## Roadmap
 
 Version 0.4:
+  - Full documentation for existing code
+  - Consider allowing the generation of graphs with no emissions from
+    final states (replaced with an edge to a final token)
+  - Consider allowing the generation of empty transitions without the
+    usage of alignments
+  - Work on options for nicer graphviz output (colors, widths, etc.)
+  - Allow to access all options from command-line
+  - Consider adding GML export, perhaps even as a standard
+
+Version 0.5:
 
   - Profile code and make faster and less resource hungry, using
     multiple threads wherever possible, memoization, etc.
-  - Work on options for nicer graphviz output (colors, widths, etc.)
   - Decide how (and if) to implement a `.__gt__()` method for
     the nodes, both before and after the final minimization
-  - Allow to replace final nodes with edges to ``end-of-sequence``
-      nodes (possibly as a default) -- probably better to just have an
-      end-transition
 
 Version 1.0:
 
-  - Full documentation
   - Add code from Daciuk's packages in an extra directory, along with
     notes on license
 

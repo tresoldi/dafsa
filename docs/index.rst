@@ -41,7 +41,8 @@ as in the following image.
 .. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png
    :alt: Example of a DAFSA graph
 
-   Example of a DAFSA graph
+   Example of a DAFSA graph from a selection of segmented Italian words
+   transcribed in the International Phonetic Alphabet
 
 .. toctree::
    :maxdepth: 2
