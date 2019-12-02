@@ -120,7 +120,7 @@ class TestDAFSA(unittest.TestCase):
         # TODO: write tests?
         # TODO: test lookup with `join_trans=True`
         dafsa_obj_a = dafsa.DAFSA(seqs)
-        dafda_obj_b = dafsa.DAFSA(seqs, join_trans=True)
+        dafsa_obj_b = dafsa.DAFSA(seqs, join_trans=True)
 
     def test_full_test(self):
         """
@@ -133,19 +133,29 @@ class TestDAFSA(unittest.TestCase):
             strings = [line.strip() for line in handler]
 
         # build object
-        dafsa_obj = dafsa.DAFSA(strings)
+        dafsa_obj_a = dafsa.DAFSA(strings)
+        dafsa_obj_b = dafsa.DAFSA(strings, join_trans=True)
 
         # don't print
-        text = str(dafsa_obj)
+        text = str(dafsa_obj_a)
+        text = str(dafsa_obj_b)
 
         # simple checks
-        if not dafsa_obj.lookup("den") is None:
+        if not dafsa_obj_a.lookup("den") is None:
             raise AssertionError
-        if not dafsa_obj.lookup("deny") is not None:
+        if not dafsa_obj_b.lookup("den") is None:
             raise AssertionError
-        if not dafsa_obj.lookup("dafsa") is None:
+        if not dafsa_obj_a.lookup("deny") is not None:
             raise AssertionError
-        if not dafsa_obj.lookup("dawg") is None:
+        if not dafsa_obj_b.lookup("deny") is not None:
+            raise AssertionError
+        if not dafsa_obj_a.lookup("dafsa") is None:
+            raise AssertionError
+        if not dafsa_obj_b.lookup("dafsa") is None:
+            raise AssertionError
+        if not dafsa_obj_a.lookup("dawg") is None:
+            raise AssertionError
+        if not dafsa_obj_b.lookup("dawg") is None:
             raise AssertionError
 
     def test_to_graphviz(self):

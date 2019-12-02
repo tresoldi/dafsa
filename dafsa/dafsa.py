@@ -12,6 +12,7 @@ that the list of strings can be sorted before computation.
 
 # Import Python libraries
 from collections import Counter
+import copy
 import itertools
 
 # Import 3rd party libraries
@@ -218,8 +219,12 @@ class DAFSA:
 
         # List of nodes in the graph (during minimization, it is the list
         # of unique nodes that have been checked for duplicates).
-        # Includes by default a root node
+        # Includes by default a root node. We also initialize to `None`
+        # the .lookup_nodes property, which is used mostly by .lookup
+        # and will be equivalent to .nodes if no single path joining is
+        # performed
         self.nodes = {0: DAFSANode(next(self._iditer))}
+        self.lookup_nodes = None
 
         # Internal list of nodes that still hasn't been checked for
         # duplicates; note that the data structure, a list of
@@ -233,6 +238,12 @@ class DAFSA:
         # `.num_sequences()` method in analogy to the number of nodes and
         # edges.
         self._num_sequences = None
+
+        # Store information on single transition joining (`join_trans`)
+        # and corresponding `delimiter` which are needed, in case of
+        # single transition joining, by the `.lookup` method.
+        self._join_trans = kwargs.get("join_trans", False)
+        self._delimiter = kwargs.get("delimiter", None)
 
         # Insert the sequences, if provided
         if sequences:
@@ -292,7 +303,11 @@ class DAFSA:
             self._collect_weights(sequences)
 
         # After the final minimization, we can join single transitions
-        # if requested
+        # if requested. In any case, we will make a copy of nodes and edges
+        # in their current state, which can be used by other functions
+        # and methods (mainly .lookup()) as well as by the user, if so
+        # desired.
+        self.lookup_nodes = copy.deepcopy(self.nodes)
         if join_trans:
             self._join_transitions(delimiter)
 
@@ -545,6 +560,7 @@ class DAFSA:
 
     # TODO: support lookup after transition joining, deciding whether
     # to multiply or not
+    # TODO: should sum weights?
     def lookup(self, seq):
         """
         Checks if a sequence is expressed by the graph.
@@ -568,7 +584,7 @@ class DAFSA:
         """
 
         # Start at the root
-        node = self.nodes[0]
+        node = self.lookup_nodes[0]
 
         # If we can follow a path, it is valid, otherwise return None
         for token in seq:
