@@ -1,6 +1,7 @@
 version: 2
 
-formats: html
+formats:
+    - html
 
 python:
     version: 3.5
