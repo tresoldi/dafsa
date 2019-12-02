@@ -112,6 +112,24 @@ as in:
 
 ![Reduced Phoneme example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
 
+And, by means of DOT export, ASCII graphs can also be generated with
+3rd party tools:
+
+```
+                                   G                                A
+                               +---------------------+          +----------+
+                               |                     v          |          v
+      #====#  C   +---+  G   +---+  C   +---+  G   +---+  A   +---+  T   +---+  A   #===#
+  +-- H 0  H ---> | 5 | ---> | 6 | ---> | 7 | ---> | 8 | ---> | 9 | ---> | 3 | ---> H 4 H
+  |   #====#      +---+      +---+      +---+      +---+      +---+      +---+      #===#
+  |     |    A                                                             ^
+  | G   +-----------+                                                      |
+  |                 v                                                      |
+  |   +----+  G   +---+  A   +---+  T                                      |
+  +-> | 20 | ---> | 1 | ---> | 2 | ----------------------------------------+
+      +----+      +---+      +---+
+```
+
 ## Changelog
 
 Version 0.3:
