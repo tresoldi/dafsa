@@ -5,6 +5,8 @@
 [![codecov](https://codecov.io/gh/tresoldi/dafsa/branch/master/graph/badge.svg)](https://codecov.io/gh/tresoldi/dafsa)
 [![Codacy
 Badge](https://api.codacy.com/project/badge/Grade/a2b47483ff684590b1208dbb4bbfc3ee)](https://www.codacy.com/manual/tresoldi/dafsa?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=tresoldi/dafsa&amp;utm_campaign=Badge_Grade)
+[![Documentation
+Status](https://readthedocs.org/projects/dafsa/badge/?version=latest)](https://dafsa.readthedocs.io/en/latest/?badge=latest)
 
 DAFSA is a library for computing [Deterministic Acyclic Finite State Automata](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton) (also known as "directed acyclic word graphs", or DAWG). DAFSA are data structures derived from [tries](https://en.wikipedia.org/wiki/Trie) that allow to represent a set of sequences (typically character strings or *n*-grams) in the form of a directed acyclic graph with a single source vertex (the `start` symbol of all sequences) and at least one sink edge (`end` symbols, each pointed to by one or more sequences). In the current implementation, a trait of each node expresses whether it can be used a sink.
 

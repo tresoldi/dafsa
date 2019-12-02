@@ -24,6 +24,10 @@ Lorem ipsum 2
    :alt: Codacy
    :target: https://www.codacy.com/manual/tresoldi/dafsa?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=tresoldi/dafsa&amp;utm_campaign=Badge_Grade
 
+.. image:: https://readthedocs.org/projects/dafsa/badge/?version=latest
+   :alt: Documentation Status
+   :target: https://dafsa.readthedocs.io/en/latest/?badge=latest
+
 development
 
 .. toctree::
