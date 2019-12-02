@@ -10,11 +10,14 @@ README_FILE = (LOCAL_PATH / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="dafsa",
-    version="0.3",
+    version="0.4",
     description="Library for computing Deterministic Acyclic Finite State Automata (DAFSA)",
     long_description=README_FILE,
     long_description_content_type="text/markdown",
     url="https://github.com/tresoldi/dafsa",
+    project_urls = {
+        "Documentation": "https://dafsa.readthedocs.io",
+    },
     author="Tiago Tresoldi",
     author_email="tresoldi@shh.mpg.de",
     license="MIT",
