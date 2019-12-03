@@ -1,16 +1,13 @@
-# encoding: utf-8
-
-# Originally based on public domain code by Steve Hanov, published at
-# http://stevehanov.ca/blog/?id=115
-
 """
 Main module for computing DAFSA/DAWG graphs from list of strings.
 
-Note that this is not intended from incremental use due to the assumption
-that the list of strings can be sorted before computation.
+The library computes a Deterministic Acyclic Finite State Automata from a
+list of sequences in a non incremental way, with no plans to expand to
+incremental computation. The library was originally based on public domain
+code by Steve Hanov, published at `http://stevehanov.ca/blog/?id=115`.
 """
 
-# Import Python libraries
+# Import Python standard libraries
 from collections import Counter
 import copy
 import itertools
@@ -18,23 +15,27 @@ import itertools
 # Import 3rd party libraries
 import networkx as nx
 
-# Import other modules
+# Import other modules from the library
 from . import output
 from . import utils
 
 # comment on internal node_id, meaningless
 class DAFSANode:
     """
-    Class representing a node in the DAFSA.
+    Class representing node objects in a DAFSA.
 
-    This class represents a node in the deterministic acyclic finite state
-    automaton (DAFSA). It carries a `node_id` which must be globally unique
-    in the graph, a list of edges the node points to, and information on
-    whether the node can be final. For matters of minimization, nodes are
-    considered equivalent (as per the `.__eq__()` method) if they have
-    identical edges, with each edge pointing to the same node (edge count
-    and final state are *not* considered). The `.__hash__()` method allows
-    to use a DAFSANode as a dictionary key.
+    Each object carries an internal `node_id` integer identifier which must
+    be locally unique within a DAFSA, but is meaningless. There is no
+    implicit order nor a sequential progression must be observed.
+
+    As in previous implementation by Hanov (2011), minimization is performed
+    by comparing nodes, with equivalence determined by the standard
+    Python `.__eq__()` method which overloads the equality operator. Nodes
+    are considered identical if they have identical edges, which edges
+    pointing from or to the same node. In particular, edge weight and node
+    finalness, respectively expressed by the `.weight` and `.final`
+    properties, are *not* considered. This allows to correctly count edges
+    after minimization and to have final pass-through nodes.
     """
 
     # pylint: disable=too-few-public-methods
@@ -49,19 +50,21 @@ class DAFSANode:
             The global unique ID for the current node.
         """
 
-        # Set values; by default, we start with empty (no edges) and
-        # non-final nodes
-        self.node_id = node_id
+        # Initialize as an empty node
         self.edges = {}
         self.final = False
         self.weight = 0
 
+        # Set values node_id value
+        self.node_id = node_id
+
+    # TODO: add example
     def __str__(self):
         """
         Return a textual representation of the node.
 
         The representation lists any edge, with `id` and `attr`ibute. The
-        edge dictionary is sorted at every call, so that, even if a bit
+        edge dictionary is sorted at every call, so that, even if
         more expansive computationally, the function is guaranteed to be
         idempotent in all implementations.
 
@@ -71,6 +74,8 @@ class DAFSANode:
         the `.__repr__()` method must be used.
         """
 
+        # Build the buffer; please note the differences in implementation
+        # when compared to `.__repr__()`
         buf = ";".join(
             [
                 "|".join([label, str(self.edges[label].node.node_id)])
@@ -80,12 +85,13 @@ class DAFSANode:
 
         return buf
 
+    # TODO: add example
     def __repr__(self):
         """
         Return an unambigous textual representation of the node.
 
         The representation lists any edge, with all properties. The
-        edge dictionary is sorted at every call, so that, even if a bit
+        edge dictionary is sorted at every call, so that, even if
         more expansive computationally, the function is guaranteed to be
         idempotent in all implementations.
 
@@ -94,6 +100,8 @@ class DAFSANode:
         the potentially ambiguous `.__str__()` method must be used.
         """
 
+        # Build the buffer; please note the differences in implementation
+        # when compared to `.__str__()`
         buf = ";".join(
             [
                 "|".join(
@@ -111,6 +119,8 @@ class DAFSANode:
             ]
         )
 
+        # Add node information on start ("0"), final ("F"), or normal node
+        # ("n")
         if self.node_id == 0:
             buf = "0(%s)" % buf
         elif self.final:
@@ -120,7 +130,7 @@ class DAFSANode:
 
         return buf
 
-    def __eq__(self, comp):
+    def __eq__(self, other):
         """
         Checks whether two nodes are equivalent.
 
@@ -128,29 +138,82 @@ class DAFSANode:
         disregarding edge weight), and not for *equality*. Internally,
         it reuses the `.__str__()` method, so that the logic for comparison
         is implemented in a single place.
+
+        Paremeters
+        ----------
+        other : DAFSANode
+            The DAFSANode to be compared with the current one.
+
+        Returns
+        -------
+        eq : bool
+            A boolean indicating if the two nodes are equivalent.
         """
 
-        return str(self) == str(comp)
+        return str(self) == str(other)
 
     def __gt__(self, other):
         """
-        Compares two nodes for sorting purposes.
+        Return a "greater than" comparison between two nodes.
 
         Internally, the method reuses the `.__str__()` method, so that
-        the logic for comparison is implemented in a single place. Note that,
-        currently, this only guarantees that the sorting will always
-        return the same sorted items, without an actual basis on "length"
-        or "information amount" (which would need to be decided).
+        the logic for comparison is implemented in a single place. As such,
+        while it guarantees idempotency when sorting nodes, it does not
+        check for properties suc like "node length", "entropy", or
+        "information amount", only providing a convenient complementary
+        method to `.__eq__()`.
+
+        Paremeters
+        ----------
+        other : DAFSANode
+            The DAFSANode to be compared with the current one.
+
+        Returns
+        -------
+        gt : bool
+            A boolean indicating if the current node is greater than the one
+            it is compared with (that is, if it should be placed after it
+            in an ordered sequence).
         """
 
         return self.__str__() > other.__str__()
 
     def __hash__(self):
         """
-        Returns a hash for the node, based on its string representation.
+        Return a hash for the nodeself.
+
+        The returned has is based on the potentially ambigous string
+        representation provided by the `.__str__()` method, allowing to
+        use nodes as, among others, dictionary keys. The choice of the
+        potentially ambiguous `.__str__()` over `.__repr__()` is intentional
+        and by design and complemented by the `.repr_hash()` method.
+
+        Returns
+        -------
+        hash : number
+            The hash from the (potentially ambigous) textual representation of
+            the current node.
         """
 
         return self.__str__().__hash__()
+
+    def repr_hash(self):
+        """
+        Return a hash for the nodeself.
+
+        The returned has is based on the unambigous string
+        representation provided by the `.__repr__()` method, allowing to
+        use nodes as, among others, dictionary keys. The method is
+        complemented by the `.__hash__()` one.
+
+        Returns
+        -------
+        hash : number
+            The hash from the unambigous textual representation of the
+            current node.
+        """
+
+        return self.__repr__().__hash__()
 
 
 class DAFSAEdge(dict):

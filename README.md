@@ -187,7 +187,8 @@ Version 0.5:
   - Profile code and make faster and less resource hungry, using
     multiple threads wherever possible, memoization, etc.
   - Decide how (and if) to implement a `.__gt__()` method for
-    the nodes, both before and after the final minimization
+    the nodes, both before and after the final minimization (could do
+    for length and all)
 
 Version 1.0:
 
