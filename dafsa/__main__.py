@@ -14,7 +14,7 @@ import argparse
 from dafsa import DAFSA
 
 # TODO: option for minimization from command line
-
+# TODO: option for transition joining
 
 def parse_arguments():
     """
@@ -26,7 +26,7 @@ def parse_arguments():
         "-t",
         "--type",
         type=str,
-        choices=["stdout", "txt", "dot", "png"],
+        choices=["stdout", "dot", "png"],
         default="stdout",
         help="Type of output (default: 'stdout')",
     )
@@ -75,15 +75,11 @@ def main():
     # Generate output
     if args.type == "stdout":
         print(str(dafsa))
-    elif args.type == "txt":
-        with open(args.output, "w") as handler:
-            handler.write(str(dafsa))
-            handler.write("\n")
     elif args.type == "dot":
         with open(args.output, "w") as handler:
             handler.write(dafsa.to_dot())
     elif args.type in ["png"]:
-        dafsa.graphviz_output(args.output, args.dpi)
+        dafsa.to_figure(args.output, args.dpi)
 
 
 if __name__ == "__main__":

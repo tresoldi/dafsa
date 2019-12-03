@@ -72,6 +72,12 @@ class DAFSANode:
         the value returned by this method might be ambiguous, with different
         nodes returning the same value. For unambigous representation,
         the `.__repr__()` method must be used.
+
+        Returns
+        -------
+        string : str
+            The (potentially ambiguous) textual representation of the
+            current node.
         """
 
         # Build the buffer; please note the differences in implementation
@@ -98,6 +104,11 @@ class DAFSANode:
         Please note that, as the return value includes information such as
         edge weight, it cannot be used for minimization. For such purposes,
         the potentially ambiguous `.__str__()` method must be used.
+
+        Returns
+        -------
+        string : str
+            The unambiguous textual representation of the current node.
         """
 
         # Build the buffer; please note the differences in implementation
@@ -178,9 +189,10 @@ class DAFSANode:
 
         return self.__str__() > other.__str__()
 
+    # TODO: add example comparing both
     def __hash__(self):
         """
-        Return a hash for the nodeself.
+        Return a hash for the node.
 
         The returned has is based on the potentially ambigous string
         representation provided by the `.__str__()` method, allowing to
@@ -199,7 +211,7 @@ class DAFSANode:
 
     def repr_hash(self):
         """
-        Return a hash for the nodeself.
+        Return a hash for the node.
 
         The returned has is based on the unambigous string
         representation provided by the `.__repr__()` method, allowing to
@@ -216,9 +228,15 @@ class DAFSANode:
         return self.__repr__().__hash__()
 
 
+# TODO: add .__hash__()
 class DAFSAEdge(dict):
     """
-    Class representing an edge in the DAFSA.
+    Class representing edge objects in a DAFSA.
+
+    This class overloads a normal Python dictionary, and in simpler
+    implementations could potentially be replaced with a pure dictionary.
+    It was implemented as its own object for homogeneity and for planned
+    future expansions, particularly in terms of fuzzy automata.
     """
 
     def __init__(self, node, weight=0):
@@ -227,54 +245,88 @@ class DAFSAEdge(dict):
 
         Parameters
         ----------
-        node : DafsaNode
-            Reference to the target node, mandatory.
+        node : DAFSANode
+            Reference to the target node, mandatory. Please note that it
+            must be a DAFSANode object and *not* a node id.
         weight : int
             Edge weight as collected from training data. Defaults to 0.
         """
 
         # Call super class initialization.
-        # This class currently works as a simple dictionary, but it is already
-        # implemented as a class to allow easy future expansions, particularly
-        # for implementing fuzzy automata.
         super().__init__()
 
-        # Validate values and set
+        # Validate values and set them
         if not isinstance(node, DAFSANode):
             raise TypeError(
-                "`node` must be a DAFSANode (perhaps a node_id was passed?)."
+                "`node` must be a DAFSANode (perhaps a `node_id` was passed?)."
             )
         self.node = node
         self.weight = weight
 
     def __str__(self):
+        """
+        Return a textual representation of the node.
+
+        The representation only include the `node_id`, without information
+        on the node actual contents.
+
+        Returns
+        -------
+        string : str
+            The (potentially ambiguous) textual representation of the
+            current edge.
+        """
+
         return "{node_id: %i, weight: %i}" % (self.node.node_id, self.weight)
 
+    def __repr__(self):
+        """
+        Return a full textual representation of the node.
 
+        The representation includes information on the entire contents of
+        the node.
+
+        Returns
+        -------
+        string : str
+            The unambiguous textual representation of the current edge.
+        """
+
+        return "{node: <%s>, weight: %i}" % (repr(self.node), self.weight)
+
+
+# TODO: see what can be "de-underscored"
+# TODO: comment delimiter
 class DAFSA:
     """
-    Class representing a DAFSA graph.
+    Class representing a DAFSA object.
     """
 
-    def __init__(self, sequences=None, **kwargs):
+    def __init__(self, sequences, **kwargs):
         """
         Initializes a DAFSA object.
 
         Parameters
         ----------
         sequences : list
-            List of sequences to be added to the DAFSA from initialization.
-            Defaults to `None`.
+            List of sequences to be added to the DAFSA object.
         minimize : bool
-            Whether to run the minimization or not in case `sequences` are
-            provided. Defaults to `True`.
+            Whether to minimize the trie into a DAFSA. Defaults to `True`.
         weight : bool
             Whether to collect edge weights after minimization. Defaults
             to `True`.
-        join_trans: bool
+        join_transitions: bool
             Whether to join sequences of transitions into single compound
             transitions when possible. Defaults to `False`.
         """
+
+        # Store arguments either internally in the object for reuse (such
+        # as `"delimiter"`) or in an in-method variable (such as
+        # `"minimize"`)
+        # TODO: rename ._join_trans?
+        self._join_trans = kwargs.get("join_transitions", False)
+        self._delimiter = kwargs.get("delimiter", None)
+        minimize = kwargs.get("minimize", True)
 
         # Initializes an internal counter iterator, which is used to
         # provide unique IDs to nodes
@@ -283,78 +335,40 @@ class DAFSA:
         # List of nodes in the graph (during minimization, it is the list
         # of unique nodes that have been checked for duplicates).
         # Includes by default a root node. We also initialize to `None`
-        # the .lookup_nodes property, which is used mostly by .lookup
-        # and will be equivalent to .nodes if no single path joining is
-        # performed
+        # the .lookup_nodes property, which is used mostly by the
+        # `.lookup()` method and will be equal to the `.nodes` property
+        # if no single path joining is performed.
         self.nodes = {0: DAFSANode(next(self._iditer))}
         self.lookup_nodes = None
 
         # Internal list of nodes that still hasn't been checked for
         # duplicates; note that the data structure, a list of
         # parent, attribute, and child, is different from the result
-        # stored in `self.nodes` after minimization
+        # stored in `self.nodes` after minimization (as such information
+        # is only needed for minimization).
         self._unchecked_nodes = []
 
-        # Variable holding the number of sequences stores; it is initialized
+        # Variable holding the number of sequences stored; it is initialized
         # to `None`, so we can differentiate from empty sets. Note that it
         # is set as an internal variable, to be accessed with the
         # `.num_sequences()` method in analogy to the number of nodes and
         # edges.
         self._num_sequences = None
 
-        # Store information on single transition joining (`join_trans`)
-        # and corresponding `delimiter` which are needed, in case of
-        # single transition joining, by the `.lookup` method.
-        self._join_trans = kwargs.get("join_trans", False)
-        self._delimiter = kwargs.get("delimiter", None)
-
-        # Insert the sequences, if provided
-        if sequences:
-            self.insert(sequences, **kwargs)
-
-    def insert(self, sequences, **kwargs):
-        """
-        Insert a list of sequences to the structure and finalizes it.
-
-        Parameters
-        ----------
-        sequences : list
-            List of sequences to be added to the DAFSA. Internally, the list
-            will be sorted to simplify the minimization logic. Repeated items
-            are inserted as many times as they are found.
-        minimize : bool
-            Whether to run the minimization or not. No minimization will
-            return a full trie. Defaults to True.
-        weight : bool
-            Whether to collect edge weights after minimization. Defaults
-            to `True`.
-        join_trans : bool
-            Whether to join single transitions after the final minimization.
-            Defaults to `False`.
-        delimiter : str
-            If `join_trans` is set to `True`, informs the string to be
-            used a transition symbol delimiter. Defaults to `" "` (single
-            white space).
-        """
-
-        # get parameters
-        minimize = kwargs.get("minimize", True)
-        weight = kwargs.get("weight", True)
-        join_trans = kwargs.get("join_trans", False)
-        delimiter = kwargs.get("delimiter", " ")
-
-        # Take a sorted set of the sequences and store its number
+        # Initiate sequence insertion: 1. takes a sorted set of the
+        # sequences and store its length
         sequences = sorted(sequences)
         self._num_sequences = len(sequences)
 
-        # Make sure the words are sorted and add a dummy empty previous
-        # word for the loop
+        # Make sure the words are sorted, adding a dummy empty `previous`
+        # sequence for the pairwise loop
         for previous_seq, seq in utils.pairwise([""] + sequences):
             self._insert_single_seq(seq, previous_seq, minimize)
 
-        # Minimize the entire graph, no restrictions, so that we clean
-        # `self._unchecked_nodes`.
-        # See comments on the `minimize` flag in the `._minimize()` method.
+        # Perform the minimization for the entire graph, until
+        # `self._unchecked_nodes` is emptied.
+        # The `._minimize()` method will take care of skipping over
+        # if no minimization is requested.
         self._minimize(0, minimize)
 
         # Collect (or update) edge weights if requested. While this means
@@ -362,29 +376,38 @@ class DAFSA:
         # separate step/method: it doesn't affect the computation speed
         # significantly, makes the logic easier to follow, and allows
         # to decide whether to collect the weights or not.
-        if weight:
+        if kwargs.get("weight", True):
             self._collect_weights(sequences)
 
         # After the final minimization, we can join single transitions
-        # if requested. In any case, we will make a copy of nodes and edges
+        # if so requested. In any case, we will make a copy of nodes and edges
         # in their current state, which can be used by other functions
-        # and methods (mainly .lookup()) as well as by the user, if so
+        # and methods (mainly by `.lookup()`) as well as by the user, if so
         # desired.
         self.lookup_nodes = copy.deepcopy(self.nodes)
-        if join_trans:
-            self._join_transitions(delimiter)
+        if self._join_trans:
+            self._join_transitions()
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
         """
-        Internal function for single sequence insertion.
+        Internal method for single sequence insertion.
+
+        Parameters
+        ----------
+        seq: sequence
+            The sequence being inserted.
+        previous_seq : sequence
+            The previous sequence from the sorted list of sequences,
+            for common prefix length computation.
+        minimize : bool
+            Flag indicating whether to perform minimization or not.
         """
 
-        # Obtain the length of the common_prefix between the current word
+        # Obtain the length of the common prefix between the current word
         # and the one added before it, then using ._unchecked_nodes for
         # removing redundant nodes, proceeding from the last one down to
         # the the common prefix size. The list will be truncated at that
         # point.
-        # See comments on the `minimize` flag in the `._minimize()` method.
         prefix_len = utils.common_prefix_length(seq, previous_seq)
         self._minimize(prefix_len, minimize)
 
@@ -418,18 +441,25 @@ class DAFSA:
         """
         Internal method for graph minimization.
 
-        Minimize the graph from the last unchecked item to `index`;
-        final minimization, the default, traverses the entire data
-        structure.
+        Minimize the graph from the last unchecked item until `index`.
+        Final minimization, with `index` equal to zero, will traverse the
+        entire data structure.
 
         The method allows the minimization to be overridden by setting to
         `False` the `minimize` flag (returning a trie). Due to the logic in
         place for the DAFSA minimization, this ends up executed as a
-        non-efficient code, where all comparisons fails, but it is
-        necessary to do it this watransitionsy to clean the list of unchecked nodes.
+        non-efficient code, where all comparisons fail, but it is
+        necessary to do it this way to clean the list of unchecked nodes.
         This is not an implementation problem: this class is not supposed
         to be used for generating tries (there are more efficient ways of
         doing that), but it worth having the flag in place for experiments.
+
+        Parameters
+        ----------
+        index : int
+            The index until the sequence minimization, right to left.
+        minimize : bool
+            Flag indicating whether to perform minimization or not.
         """
 
         # Please note that this loop could be removed, but it would
@@ -481,9 +511,9 @@ class DAFSA:
             if not graph_changed:
                 break
 
-    def _join_transitions(self, delimiter):
+    def _join_transitions(self):
         """
-        Internal function for joining unique edges.
+        Internal method for joining unique edges.
 
         The function joins paths of unique edges into single edges with
         compound transitions, removing redundant nodes. A redundant node
@@ -495,30 +525,20 @@ class DAFSA:
         method until no more candidates for joining are available.
         Performing everything in a single step would require a more complex
         logic.
-
-        Parameters
-        ----------
-        delimiter : str
-            The string to be used as a transition delimiter.
         """
 
         # Perform joining operations until no more are possible
         while True:
-            if self._joining_round(delimiter) == 0:
+            if self._joining_round() == 0:
                 break
 
-    def _joining_round(self, delimiter):
+    def _joining_round(self):
         """
-        Internal function for the unique-edge joining algorithm.
+        Internal method for the unique-edge joining algorithm.
 
         This function will be called a successive number of times by
         `._join_transitions()`, until no more candidates for unique-edge
         joining are available (as informed by its return value).
-
-        Parameters
-        ----------
-        delimiter : str
-            The string to be used as a transition delimiter.
 
         Returns
         -------
@@ -578,7 +598,7 @@ class DAFSA:
         # Now that we have collected the transitions that we can
         # combine, combine them creating new transitions
         for transition in transitions:
-            new_label = delimiter.join(
+            new_label = self._delimiter.join(
                 [transition["label_from"], transition["label_to"]]
             )
 
@@ -603,11 +623,14 @@ class DAFSA:
 
     def _collect_weights(self, sequences):
         """
-        Updates or collects weights for the sequences.
+        Internal method for collecting node and edge weights from sequences.
 
         This method requires the minimized graph to be already in place.
-        As commented in `.insert()`, while it means a second pass at all
-        sequences, it is better to have it as a separate method.
+
+        Parameters
+        ----------
+        sequences : list
+            List of sequences whose node and edge weights will be collected.
         """
 
         for seq in sequences:
@@ -621,21 +644,19 @@ class DAFSA:
                 node = node.edges[token].node
                 node.weight += 1
 
-    # TODO: support lookup after transition joining, deciding whether
-    # to multiply or not
     # TODO: should sum weights?
-    def lookup(self, seq):
+    def lookup(self, sequence):
         """
-        Checks if a sequence is expressed by the graph.
+        Check if a sequence is expressed by the DAFSA.
 
-        The function does not return all possible potential paths, nor
+        The method does not return all possible potential paths, nor
         the cumulative weight: if this is needed, the DAFSA object should
         be converted to a Graph and other libraries, such as `networkx`,
         should be used.
 
         Parameters
         ----------
-        seq : sequence
+        sequence : sequence
             Sequence to be checked for presence/absence.
 
         Returns
@@ -650,7 +671,7 @@ class DAFSA:
         node = self.lookup_nodes[0]
 
         # If we can follow a path, it is valid, otherwise return None
-        for token in seq:
+        for token in sequence:
             if token not in node.edges:
                 return None
             node = node.edges[token].node
@@ -664,33 +685,58 @@ class DAFSA:
 
     def count_nodes(self):
         """
-        Returns the number of minimized nodes in the structure.
+        Return the number of minimized nodes in the structure.
+
+        Returns
+        -------
+        node_count : int
+            Number of minimized nodes in the structure.
         """
 
         return len(self.nodes)
 
     def count_edges(self):
         """
-        Returns the number of minimized edges in the structure.
+        Return the number of minimized edges in the structure.
+
+        Returns
+        -------
+        edge_count : int
+            Number of minimized edges in the structure.
         """
 
         return sum([len(node.edges) for node in self.nodes.values()])
 
     def count_sequences(self):
         """
-        Returns the number of sequences the structure.
+        Return the number of sequences inserted in the structure.
+
+        Please note that the return value mirrors the number of sequences
+        provided during initialization, and *not* a set of it: repeated
+        sequences are accounted, as each will be added a single time to
+        the object.
+
+        Returns
+        -------
+        seq_count : int
+            Number of sequences in the structure.
         """
 
         return self._num_sequences
 
     def __str__(self):
         """
-        Returns a readable, multiline textual representation.
+        Return a readable multiline textual representation of the object.
+
+        Returns
+        -------
+        string : str
+            The textual representation of the object.
         """
 
         # Add basic statistics
         buf = [
-            "DAFSA with %i nodes and %i edges (%i sequences)"
+            "DAFSA with %i nodes and %i edges (%i inserted sequences)"
             % (self.count_nodes(), self.count_edges(), self.count_sequences())
         ]
 
@@ -713,12 +759,22 @@ class DAFSA:
 
     def to_dot(self, **kwargs):
         """
-        Returns a representation in the DOT (Graphviz) language.
+        Return a representation of the DAFSA as a .dot (Graphviz) source code.
 
         Parameters
         ----------
-        label_nodes
-        weight_scale
+        label_nodes : bool
+            A boolean flag indicating whether or not to label nodes with
+            their respective node ids (default: False).
+        weight_scale : float
+            A floating point value indicating how much edges in the
+            graph should be scaled in relation to their frequency
+            (default: 1.5).
+
+        Returns
+        -------
+        source : str
+            The .DOT source code representing the DAFSA.
         """
 
         # collect the maximum node weight for later computing the size
@@ -769,6 +825,7 @@ class DAFSA:
                 dot_edges.append(buf)
 
         # load template and build .dot source
+        # TODO: move to a generic utils. function
         template = utils.RESOURCE_DIR / "template.dot"
         with open(template.as_posix()) as handler:
             source = handler.read()
@@ -778,13 +835,13 @@ class DAFSA:
 
         return source
 
-    # TODO: decide on node label as _to_graphviz?
-    # TODO: how to express final?
-    def graphviz_output(self, output_file, dpi=300):
+    def to_figure(self, output_file, dpi=300, **kwargs):
         """
-        Generates a visualization by calling the local `graphviz`.
+        Generate a figure visualization through a `graphviz` call.
 
-        The filetype will be decided from the extension of the `filename`.
+        The filetype will be decided automatically from the `filename`
+        extension. Please note that this method uses the `subprocess`
+        library and will invoke the local `dot` library.
 
         Parameters
         ----------
@@ -792,10 +849,17 @@ class DAFSA:
             The path to the output file.
         dpi : int
             The output resolution. Defaults to 300.
+        label_nodes : bool
+            A boolean flag indicating whether or not to label nodes with
+            their respective node ids (default: False).
+        weight_scale : float
+            A floating point value indicating how much edges in the
+            graph should be scaled in relation to their frequency
+            (default: 1.5).
         """
 
         # Obtain the source and make it writable
-        dot_source = self.to_dot()
+        dot_source = self.to_dot(**kwargs)
         dot_source = dot_source.encode("utf-8")
 
         # Write with `subprocess`
@@ -803,10 +867,12 @@ class DAFSA:
 
     def to_graph(self):
         """
-        Returns a `networkx` graph for the DAFSA.
+        Generate a `networkx` directeds weighted graph representing the DAFSA.
 
-        The user can use for everything a normal graph would be used,
-        shortest path, etc...
+        Returns
+        -------
+        graph : networkx.Graph
+            A `networkx` Graph representing the current object.
         """
 
         graph = nx.Graph()
