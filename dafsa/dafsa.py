@@ -4,7 +4,7 @@ Main module for computing DAFSA/DAWG graphs from list of strings.
 The library computes a Deterministic Acyclic Finite State Automata from a
 list of sequences in a non incremental way, with no plans to expand to
 incremental computation. The library was originally based on public domain
-code by Steve Hanov, published at `http://stevehanov.ca/blog/?id=115`.
+code by `Steve Hanov (2011) <http://stevehanov.ca/blog/?id=115>`__.
 """
 
 # Import Python standard libraries
@@ -36,6 +36,11 @@ class DAFSANode:
     finalness, respectively expressed by the `.weight` and `.final`
     properties, are *not* considered. This allows to correctly count edges
     after minimization and to have final pass-through nodes.
+
+    Parameters
+    ----------
+    node_id : int
+        The global unique ID for the current node.
     """
 
     # pylint: disable=too-few-public-methods
@@ -43,11 +48,6 @@ class DAFSANode:
     def __init__(self, node_id):
         """
         Initializes a DAFSANode.
-
-        Parameters
-        ----------
-        node_id : int
-            The global unique ID for the current node.
         """
 
         # Initialize as an empty node
@@ -237,19 +237,19 @@ class DAFSAEdge(dict):
     implementations could potentially be replaced with a pure dictionary.
     It was implemented as its own object for homogeneity and for planned
     future expansions, particularly in terms of fuzzy automata.
+
+    Parameters
+    ----------
+    node : DAFSANode
+        Reference to the target node, mandatory. Please note that it
+        must be a DAFSANode object and *not* a node id.
+    weight : int
+        Edge weight as collected from training data. Defaults to 0.
     """
 
     def __init__(self, node, weight=0):
         """
         Initializes a DAFSA edge.
-
-        Parameters
-        ----------
-        node : DAFSANode
-            Reference to the target node, mandatory. Please note that it
-            must be a DAFSANode object and *not* a node id.
-        weight : int
-            Edge weight as collected from training data. Defaults to 0.
         """
 
         # Call super class initialization.
@@ -300,24 +300,24 @@ class DAFSAEdge(dict):
 class DAFSA:
     """
     Class representing a DAFSA object.
+
+    Parameters
+    ----------
+    sequences : list
+        List of sequences to be added to the DAFSA object.
+    minimize : bool
+        Whether to minimize the trie into a DAFSA. Defaults to `True`.
+    weight : bool
+        Whether to collect edge weights after minimization. Defaults
+        to `True`.
+    join_transitions: bool
+        Whether to join sequences of transitions into single compound
+        transitions when possible. Defaults to `False`.
     """
 
     def __init__(self, sequences, **kwargs):
         """
         Initializes a DAFSA object.
-
-        Parameters
-        ----------
-        sequences : list
-            List of sequences to be added to the DAFSA object.
-        minimize : bool
-            Whether to minimize the trie into a DAFSA. Defaults to `True`.
-        weight : bool
-            Whether to collect edge weights after minimization. Defaults
-            to `True`.
-        join_transitions: bool
-            Whether to join sequences of transitions into single compound
-            transitions when possible. Defaults to `False`.
         """
 
         # Store arguments either internally in the object for reuse (such
@@ -647,7 +647,7 @@ class DAFSA:
     # TODO: should sum weights?
     def lookup(self, sequence):
         """
-        Check if a sequence is expressed by the DAFSA.
+        Check if a sequence can be expressed by the DAFSA.
 
         The method does not return all possible potential paths, nor
         the cumulative weight: if this is needed, the DAFSA object should
@@ -867,7 +867,7 @@ class DAFSA:
 
     def to_graph(self):
         """
-        Generate a `networkx` directeds weighted graph representing the DAFSA.
+        Generate a `networkx` directed weighted graph representing the DAFSA.
 
         Returns
         -------

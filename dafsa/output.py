@@ -1,5 +1,8 @@
 """
-Output functions, particularly graphviz.
+Module holding output functions.
+
+Please note that this module is excluded from automatic security analysis,
+as it must perform system calls using `subprocess`.
 """
 
 # Python standard imports
@@ -20,6 +23,11 @@ def graphviz_output(dot_source, output_file, dpi=300):
         The path to the output file.
     dpi : int
         The output resolution. Defaults to 300.
+
+    Returns
+    -------
+    ret : subprocess.CompletedProcess
+        A `CompleteProcess` instance, as returned by the `subprocess` call.
     """
 
     # Write to a named temporary file so we can call `graphviz`
@@ -29,7 +37,7 @@ def graphviz_output(dot_source, output_file, dpi=300):
 
     # Get the filetype from the extension and call graphviz
     suffix = pathlib.PurePosixPath(output_file).suffix
-    subprocess.run(
+    ret = subprocess.run(
         [
             "dot",
             "-T%s" % suffix[1:],
@@ -44,3 +52,5 @@ def graphviz_output(dot_source, output_file, dpi=300):
 
     # Close the temporary file
     handler.close()
+
+    return ret
