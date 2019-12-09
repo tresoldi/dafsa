@@ -205,6 +205,29 @@ class TestDAFSA(unittest.TestCase):
         # TODO: assert results
         dafsa_obj.to_graph()
 
+    def test_to_gml(self):
+        """
+        Test GML export.
+        """
+
+         # Load strings from file
+        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
+        with open(filename.as_posix()) as handler:
+            strings = [line.strip() for line in handler]
+
+        # build object
+        dafsa_obj = dafsa.DAFSA(strings)
+
+        # Run function
+        # TODO: assert results
+        # Get a temporary filename (on Unix, it can be reused)
+        handler = tempfile.NamedTemporaryFile()
+        output_filename = "%s.png" % handler.name
+        handler.close()
+
+        dafsa_obj.write_gml(output_filename)
+
+       
 
 if __name__ == "__main__":
     sys.exit(unittest.main())

@@ -19,21 +19,23 @@ import networkx as nx
 from . import output
 from . import utils
 
+# TODO: consistent naming in export functions?
+
 # comment on internal node_id, meaningless
 class DAFSANode:
     """
     Class representing node objects in a DAFSA.
 
-    Each object carries an internal `node_id` integer identifier which must
+    Each object carries an internal ``node_id`` integer identifier which must
     be locally unique within a DAFSA, but is meaningless. There is no
     implicit order nor a sequential progression must be observed.
 
     As in previous implementation by Hanov (2011), minimization is performed
     by comparing nodes, with equivalence determined by the standard
-    Python `.__eq__()` method which overloads the equality operator. Nodes
+    Python ``.__eq__()`` method which overloads the equality operator. Nodes
     are considered identical if they have identical edges, which edges
     pointing from or to the same node. In particular, edge weight and node
-    finalness, respectively expressed by the `.weight` and `.final`
+    finalness, respectively expressed by the ``.weight`` and ``.final``
     properties, are *not* considered. This allows to correctly count edges
     after minimization and to have final pass-through nodes.
 
@@ -63,7 +65,7 @@ class DAFSANode:
         """
         Return a textual representation of the node.
 
-        The representation lists any edge, with `id` and `attr`ibute. The
+        The representation lists any edge, with ``id`` and ``attr``ibute. The
         edge dictionary is sorted at every call, so that, even if
         more expansive computationally, the function is guaranteed to be
         idempotent in all implementations.
@@ -71,7 +73,7 @@ class DAFSANode:
         Please note that, as counts and final state are not accounted for,
         the value returned by this method might be ambiguous, with different
         nodes returning the same value. For unambigous representation,
-        the `.__repr__()` method must be used.
+        the ``.__repr__()`` method must be used.
 
         Returns
         -------
@@ -103,7 +105,7 @@ class DAFSANode:
 
         Please note that, as the return value includes information such as
         edge weight, it cannot be used for minimization. For such purposes,
-        the potentially ambiguous `.__str__()` method must be used.
+        the potentially ambiguous ``.__str__()`` method must be used.
 
         Returns
         -------
@@ -147,7 +149,7 @@ class DAFSANode:
 
         Please note that this method checks for *equivalence* (in particular,
         disregarding edge weight), and not for *equality*. Internally,
-        it reuses the `.__str__()` method, so that the logic for comparison
+        it reuses the ``.__str__()`` method, so that the logic for comparison
         is implemented in a single place.
 
         Paremeters
@@ -167,12 +169,12 @@ class DAFSANode:
         """
         Return a "greater than" comparison between two nodes.
 
-        Internally, the method reuses the `.__str__()` method, so that
+        Internally, the method reuses the ``.__str__()`` method, so that
         the logic for comparison is implemented in a single place. As such,
         while it guarantees idempotency when sorting nodes, it does not
         check for properties suc like "node length", "entropy", or
         "information amount", only providing a convenient complementary
-        method to `.__eq__()`.
+        method to ``.__eq__()``.
 
         Paremeters
         ----------
@@ -195,10 +197,10 @@ class DAFSANode:
         Return a hash for the node.
 
         The returned has is based on the potentially ambigous string
-        representation provided by the `.__str__()` method, allowing to
+        representation provided by the ``.__str__()`` method, allowing to
         use nodes as, among others, dictionary keys. The choice of the
-        potentially ambiguous `.__str__()` over `.__repr__()` is intentional
-        and by design and complemented by the `.repr_hash()` method.
+        potentially ambiguous ``.__str__()`` over ``.__repr__()`` is intentional
+        and by design and complemented by the ``.repr_hash()`` method.
 
         Returns
         -------
@@ -214,9 +216,9 @@ class DAFSANode:
         Return a hash for the node.
 
         The returned has is based on the unambigous string
-        representation provided by the `.__repr__()` method, allowing to
+        representation provided by the ``.__repr__()`` method, allowing to
         use nodes as, among others, dictionary keys. The method is
-        complemented by the `.__hash__()` one.
+        complemented by the ``.__hash__()`` one.
 
         Returns
         -------
@@ -267,7 +269,7 @@ class DAFSAEdge(dict):
         """
         Return a textual representation of the node.
 
-        The representation only include the `node_id`, without information
+        The representation only include the ``node_id``, without information
         on the node actual contents.
 
         Returns
@@ -306,13 +308,13 @@ class DAFSA:
     sequences : list
         List of sequences to be added to the DAFSA object.
     minimize : bool
-        Whether to minimize the trie into a DAFSA. Defaults to `True`.
+        Whether to minimize the trie into a DAFSA. Defaults to ``True``.
     weight : bool
         Whether to collect edge weights after minimization. Defaults
-        to `True`.
+        to ``True``.
     join_transitions: bool
         Whether to join sequences of transitions into single compound
-        transitions when possible. Defaults to `False`.
+        transitions when possible. Defaults to ``False``.
     """
 
     def __init__(self, sequences, **kwargs):
@@ -441,12 +443,12 @@ class DAFSA:
         """
         Internal method for graph minimization.
 
-        Minimize the graph from the last unchecked item until `index`.
-        Final minimization, with `index` equal to zero, will traverse the
+        Minimize the graph from the last unchecked item until ``index``.
+        Final minimization, with ``index`` equal to zero, will traverse the
         entire data structure.
 
         The method allows the minimization to be overridden by setting to
-        `False` the `minimize` flag (returning a trie). Due to the logic in
+        ``False`` the ``minimize`` flag (returning a trie). Due to the logic in
         place for the DAFSA minimization, this ends up executed as a
         non-efficient code, where all comparisons fail, but it is
         necessary to do it this way to clean the list of unchecked nodes.
@@ -521,7 +523,7 @@ class DAFSA:
         (b) receives a single transition, and (d) its source emits a single
         transition.
 
-        Internally, the function will call the `._joining_round()`
+        Internally, the function will call the ``._joining_round()``
         method until no more candidates for joining are available.
         Performing everything in a single step would require a more complex
         logic.
@@ -537,7 +539,7 @@ class DAFSA:
         Internal method for the unique-edge joining algorithm.
 
         This function will be called a successive number of times by
-        `._join_transitions()`, until no more candidates for unique-edge
+        ``._join_transitions()``, until no more candidates for unique-edge
         joining are available (as informed by its return value).
 
         Returns
@@ -651,7 +653,7 @@ class DAFSA:
 
         The method does not return all possible potential paths, nor
         the cumulative weight: if this is needed, the DAFSA object should
-        be converted to a Graph and other libraries, such as `networkx`,
+        be converted to a Graph and other libraries, such as ``networkx``,
         should be used.
 
         Parameters
@@ -765,11 +767,11 @@ class DAFSA:
         ----------
         label_nodes : bool
             A boolean flag indicating whether or not to label nodes with
-            their respective node ids (default: False).
+            their respective node ids (default: ``False``).
         weight_scale : float
             A floating point value indicating how much edges in the
             graph should be scaled in relation to their frequency
-            (default: 1.5).
+            (default: ``1.5``).
 
         Returns
         -------
@@ -837,25 +839,25 @@ class DAFSA:
 
     def to_figure(self, output_file, dpi=300, **kwargs):
         """
-        Generate a figure visualization through a `graphviz` call.
+        Generate a figure visualization through a ``graphviz`` call.
 
-        The filetype will be decided automatically from the `filename`
-        extension. Please note that this method uses the `subprocess`
-        library and will invoke the local `dot` library.
+        The filetype will be decided automatically from the ``filename``
+        extension. Please note that this method uses the ``subprocess``
+        library and will invoke the local ``dot`` library.
 
         Parameters
         ----------
         output_file : str
             The path to the output file.
         dpi : int
-            The output resolution. Defaults to 300.
+            The output resolution. Defaults to ``300``.
         label_nodes : bool
             A boolean flag indicating whether or not to label nodes with
-            their respective node ids (default: False).
+            their respective node ids (default: ``False``).
         weight_scale : float
             A floating point value indicating how much edges in the
             graph should be scaled in relation to their frequency
-            (default: 1.5).
+            (default: ``1.5``).
         """
 
         # Obtain the source and make it writable
@@ -867,12 +869,12 @@ class DAFSA:
 
     def to_graph(self):
         """
-        Generate a `networkx` directed weighted graph representing the DAFSA.
+        Generate a ``networkx`` directed weighted graph representing the DAFSA.
 
         Returns
         -------
         graph : networkx.Graph
-            A `networkx` Graph representing the current object.
+            A ``networkx`` Graph representing the current object.
         """
 
         graph = nx.Graph()
@@ -889,3 +891,16 @@ class DAFSA:
                     graph[l_id][r_id]["label"] = label
 
         return graph
+
+    def write_gml(self, filename):
+        """
+        Write the DAFSA in GML format to the file `filename`.
+        
+        Parameters
+        ----------
+        filename : str
+            The filename to write. Files whose names end with .gz or
+            .bz2 will be compressed.
+        """
+
+        nx.readwrite.gml.write_gml(self.to_graph(), filename)
