@@ -326,8 +326,9 @@ class DAFSA:
         # as `"delimiter"`) or in an in-method variable (such as
         # `"minimize"`)
         # TODO: rename ._join_trans?
+        # TODO: comment on delimiter
         self._join_trans = kwargs.get("join_transitions", False)
-        self._delimiter = kwargs.get("delimiter", None)
+        self._delimiter = kwargs.get("delimiter", " ")
         minimize = kwargs.get("minimize", True)
 
         # Initializes an internal counter iterator, which is used to
@@ -895,7 +896,7 @@ class DAFSA:
     def write_gml(self, filename):
         """
         Write the DAFSA in GML format to the file `filename`.
-        
+
         Parameters
         ----------
         filename : str

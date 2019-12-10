@@ -16,6 +16,7 @@ from dafsa import DAFSA
 # TODO: option for minimization from command line
 # TODO: option for transition joining
 
+
 def parse_arguments():
     """
     Parses arguments and returns a namespace.
@@ -29,6 +30,12 @@ def parse_arguments():
         choices=["stdout", "dot", "png"],
         default="stdout",
         help="Type of output (default: 'stdout')",
+    )
+    parser.add_argument(
+        "-j",
+        "--join_transitions",
+        action="store_true",
+        help="Whether to join sequences of transitions into single compound transitions (default: false)",
     )
     parser.add_argument(
         "--dpi",
@@ -70,7 +77,7 @@ def main():
         seqs = [seq.split() for seq in seqs]
 
     # build object
-    dafsa = DAFSA(seqs)
+    dafsa = DAFSA(seqs, join_transitions=args.join_transitions)
 
     # Generate output
     if args.type == "stdout":

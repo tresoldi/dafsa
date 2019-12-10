@@ -13,6 +13,7 @@ from pathlib import Path
 # `zip_safe=False` to setup.py
 RESOURCE_DIR = Path(__file__).parent.parent / "resources"
 
+
 def common_prefix_length(seq_a, seq_b):
     """
     Return the length of the common prefix between two sequences.

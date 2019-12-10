@@ -94,6 +94,7 @@ Or as Unicode box art:
 
 Version 0.4:
   - Full documentation for existing code
+  - Added GML export
 
 Version 0.3:
   - Allow to join transitions in single sub-paths
@@ -119,9 +120,7 @@ Version 0.1:
 ## Roadmap
 
 Version 0.4:
-  - Work on options for nicer graphviz output (colors, widths, etc.)
   - Allow to access all options from command-line
-  - Consider adding GML export, perhaps even as a standard
 
 Version 0.5:
   - Profile code and make faster and less resource hungry, using
@@ -139,6 +138,7 @@ After 1.0:
     contents of a DAFSA
   - Consider the addition of empty transitions (or depend on the user
     aligning those)
+  - Work on options for nicer graphviz output (colors, widths, etc.)
 
 ## Author and citation
 
