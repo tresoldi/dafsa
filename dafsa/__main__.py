@@ -14,6 +14,7 @@ import argparse
 from dafsa import DAFSA
 
 # TODO: option for minimization from command line
+# TODO: option for transition joining
 
 
 def parse_arguments():
@@ -26,9 +27,15 @@ def parse_arguments():
         "-t",
         "--type",
         type=str,
-        choices=["stdout", "txt", "dot", "png"],
+        choices=["stdout", "dot", "png", "pdf", "svg", "gml"],
         default="stdout",
         help="Type of output (default: 'stdout')",
+    )
+    parser.add_argument(
+        "-j",
+        "--join_transitions",
+        action="store_true",
+        help="Whether to join sequences of transitions into single compound transitions (default: false)",
     )
     parser.add_argument(
         "--dpi",
@@ -70,20 +77,18 @@ def main():
         seqs = [seq.split() for seq in seqs]
 
     # build object
-    dafsa = DAFSA(seqs)
+    dafsa = DAFSA(seqs, join_transitions=args.join_transitions)
 
     # Generate output
     if args.type == "stdout":
         print(str(dafsa))
-    elif args.type == "txt":
-        with open(args.output, "w") as handler:
-            handler.write(str(dafsa))
-            handler.write("\n")
     elif args.type == "dot":
         with open(args.output, "w") as handler:
             handler.write(dafsa.to_dot())
-    elif args.type in ["png"]:
-        dafsa.graphviz_output(args.output, args.dpi)
+    elif args.type in ["png", "pdf", "svg"]:
+        dafsa.to_figure(args.output, args.dpi)
+    elif args.type == "gml":
+        dafsa.write_gml(args.output)
 
 
 if __name__ == "__main__":

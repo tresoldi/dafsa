@@ -1,4 +1,9 @@
-# encoding: utf-8
+"""
+Module holding a number of utility functions.
+
+The module also exports a `RESOURCE_DIR` object of type `pathlib.Path`,
+pointing to the local `resources` directory.
+"""
 
 # Import Python libraries
 import itertools
@@ -8,10 +13,31 @@ from pathlib import Path
 # `zip_safe=False` to setup.py
 RESOURCE_DIR = Path(__file__).parent.parent / "resources"
 
-# Define some auxiliary functions
+
 def common_prefix_length(seq_a, seq_b):
     """
-    Returns the length of the common prefix between two sequences.
+    Return the length of the common prefix between two sequences.
+
+    Parameters
+    ----------
+    seq_a : iter
+        An iterable holding the first sequence.
+    seq_b : iter
+        An iterable holding the second sequence.
+
+    Returns
+    -------
+    length: int
+        The length of the common prefix between `seq_a` and `seq_b`.
+
+    Examples
+    --------
+
+    >>> import dafsa
+    >>> dafsa.utils.common_prefix_length("abcde", "abcDE")
+    3
+    >>> dafsa.utils.common_prefix_length("abcde", "ABCDE")
+    0
     """
 
     common_prefix_len = 0
@@ -25,9 +51,22 @@ def common_prefix_length(seq_a, seq_b):
 
 def pairwise(iterable):
     """
-    Iterates pairwise over an iterable.
+    Iterate pairwise over an iterable.
 
-    s -> (s0,s1), (s1,s2), (s2, s3), ...
+    The function follows the recipe offered on Python's `itertools`
+    documentation.
+
+    Parameters
+    ----------
+    iterable : iter
+        The iterable to be iterate pairwise.
+
+    Examples
+    --------
+
+    >>> import dafsa
+    >>> list(dafsa.utils.pairwise([1,2,3,4,5]))
+    [(1, 2), (2, 3), (3, 4), (4, 5)]
     """
 
     elem_a, elem_b = itertools.tee(iterable)

@@ -114,7 +114,16 @@ class TestDAFSA(unittest.TestCase):
         Performs tests from hardcoded lists of strings.
         """
 
-        seqs = ["tap", "taps", "top", "tops", "dib", "dibs", "tapping", "dibbing"]
+        seqs = [
+            "tap",
+            "taps",
+            "top",
+            "tops",
+            "dib",
+            "dibs",
+            "tapping",
+            "dibbing",
+        ]
 
         # build object, without and with joining
         # TODO: write tests?
@@ -158,7 +167,7 @@ class TestDAFSA(unittest.TestCase):
         if not dafsa_obj_b.lookup("dawg") is None:
             raise AssertionError
 
-    def test_to_graphviz(self):
+    def test_to_figure(self):
         """
         Tests DOT generation and Graphviz output.
         """
@@ -177,7 +186,7 @@ class TestDAFSA(unittest.TestCase):
         handler.close()
 
         # Test
-        dafsa_obj.graphviz_output(output_filename)
+        dafsa_obj.to_figure(output_filename)
 
     def test_to_graph(self):
         """
@@ -195,6 +204,30 @@ class TestDAFSA(unittest.TestCase):
         # Run function
         # TODO: assert results
         dafsa_obj.to_graph()
+
+    def test_to_gml(self):
+        """
+        Test GML export.
+        """
+
+         # Load strings from file
+        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
+        with open(filename.as_posix()) as handler:
+            strings = [line.strip() for line in handler]
+
+        # build object
+        dafsa_obj = dafsa.DAFSA(strings)
+
+        # Run function
+        # TODO: assert results
+        # Get a temporary filename (on Unix, it can be reused)
+        handler = tempfile.NamedTemporaryFile()
+        output_filename = "%s.png" % handler.name
+        handler.close()
+
+        dafsa_obj.write_gml(output_filename)
+
+       
 
 if __name__ == "__main__":
     sys.exit(unittest.main())

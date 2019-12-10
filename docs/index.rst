@@ -50,6 +50,7 @@ as in the following image.
 
    readme
    quickstart
+   Modules <source/modules.rst>
 
 Indices and tables
 ==================

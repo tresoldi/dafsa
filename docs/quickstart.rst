@@ -94,3 +94,6 @@ specified in source by using spaces as token delimiters:
    :alt: Phoneme example
 
    Phoneme example
+
+
+   Please note that this library is under development and still needs performance optimizations: common experiments such as building a DAFSA for the contents of `/usr/share/dict/words` will take many minutes in a common machine.
