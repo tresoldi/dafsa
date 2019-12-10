@@ -50,7 +50,8 @@ DAFSA with 8 nodes and 9 edges (4 inserted sequences)
 
 ![First example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
-* Graphical, ASCII, and Unicode (through third-party applications)
+* Output can be textual, GML, DOT or (via dot and third-party software)
+  PNG, PDF, ASCII-art and Unicode-art
 
 ![DNA example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/dna.png)
 
@@ -68,8 +69,6 @@ DAFSA with 8 nodes and 9 edges (4 inserted sequences)
   +-> | 20 | ---> | 1 | ---> | 2 | ----------------------------------------+
       +----+      +---+      +---+
 ```
-
-Or as Unicode box art:
 
 ```
                                    G                                A
@@ -144,11 +143,12 @@ After 1.0:
 ## Author and citation
 
 The library is developed by Tiago Tresoldi (tresoldi@shh.mpg.de).
-The author was supported during development by the
-[ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en)
-for the project [CALC](http://calc.digling.org)
-(Computer-Assisted Language Comparison: Reconciling Computational and Classical
-Approaches in Historical Linguistics).
+
+The author has received funding from the European Research Council (ERC)
+under the European Union’s Horizon 2020 research and innovation
+programme (grant agreement
+No. [ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en),
+[Computer-Assisted Language Comparison](https://digling.org/calc/).
 
 If you use `dafsa`, please cite it as:
 
