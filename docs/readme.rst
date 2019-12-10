@@ -70,7 +70,7 @@ How to cite
 If you use ``dafsa``, please cite it as:
 
    Tresoldi, Tiago (2019). DAFSA, a a library for computing
-   Deterministic Acyclic Finite State Automata. Version 0.3. Jena.
+   Deterministic Acyclic Finite State Automata. Version 0.4. Jena.
    Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
@@ -79,7 +79,7 @@ In BibTeX:
 
    @misc{Tresoldi2019dafsa,
      author = {Tresoldi, Tiago},
-     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.3},
+     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.4},
      howpublished = {\url{https://github.com/tresoldi/dafsa}},
      address = {Jena},
      year = {2019},
@@ -118,9 +118,8 @@ Author
 
 Tiago Tresoldi (tresoldi@shh.mpg.de)
 
-The author was supported during development by the `ERC Grant
-#715618 <https://cordis.europa.eu/project/rcn/206320/factsheet/en>`__
-for the project `CALC <http://calc.digling.org>`__ (Computer-Assisted
-Language Comparison: Reconciling Computational and Classical Approaches
-in Historical Linguistics), led by `Johann-Mattis
-List <http://www.lingulist.de>`__.
+The author was supported during development by the
+`ERC Grant #715618 <https://cordis.europa.eu/project/rcn/206320/factsheet/en>`__
+for the project `CALC <http://calc.digling.org>`__
+(Computer-Assisted Language Comparison: Reconciling Computational and Classical
+Approaches in Historical Linguistics).
