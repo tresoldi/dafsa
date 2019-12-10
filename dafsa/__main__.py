@@ -13,10 +13,6 @@ import argparse
 # Import our library
 from dafsa import DAFSA
 
-# TODO: option for minimization from command line
-# TODO: option for transition joining
-
-
 def parse_arguments():
     """
     Parses arguments and returns a namespace.
@@ -35,7 +31,8 @@ def parse_arguments():
         "-j",
         "--join_transitions",
         action="store_true",
-        help="Whether to join sequences of transitions into single compound transitions (default: false)",
+        help="Whether to join sequences of transitions into single compound "
+        "transitions (default: false)",
     )
     parser.add_argument(
         "--dpi",
@@ -86,7 +83,7 @@ def main():
         with open(args.output, "w") as handler:
             handler.write(dafsa.to_dot())
     elif args.type in ["png", "pdf", "svg"]:
-        dafsa.to_figure(args.output, args.dpi)
+        dafsa.write_figure(args.output, args.dpi)
     elif args.type == "gml":
         dafsa.write_gml(args.output)
 

@@ -198,7 +198,7 @@ class TestDAFSA(unittest.TestCase):
         handler.close()
 
         # Test
-        dafsa_obj.to_figure(output_filename)
+        dafsa_obj.write_figure(output_filename)
 
     def test_to_graph(self):
         """

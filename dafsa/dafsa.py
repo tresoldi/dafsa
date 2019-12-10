@@ -19,8 +19,6 @@ import networkx as nx
 from . import output
 from . import utils
 
-# TODO: consistent naming in export functions?
-
 # comment on internal node_id, meaningless
 class DAFSANode:
     """
@@ -307,14 +305,17 @@ class DAFSA:
     ----------
     sequences : list
         List of sequences to be added to the DAFSA object.
-    minimize : bool
-        Whether to minimize the trie into a DAFSA. Defaults to ``True``.
     weight : bool
         Whether to collect edge weights after minimization. Defaults
         to ``True``.
     join_transitions: bool
         Whether to join sequences of transitions into single compound
         transitions when possible. Defaults to ``False``.
+    minimize : bool
+        Whether to minimize the trie into a DAFSA. Defaults to ``True``; this
+        option is implemented for development and testing purposes and
+        it is not intended for users (there are specific and better libraries
+        and algorithms to build tries).
     """
 
     def __init__(self, sequences, **kwargs):
@@ -838,7 +839,32 @@ class DAFSA:
 
         return source
 
-    def to_figure(self, output_file, dpi=300, **kwargs):
+    def to_graph(self):
+        """
+        Generate a ``networkx`` directed weighted graph representing the DAFSA.
+
+        Returns
+        -------
+        graph : networkx.Graph
+            A ``networkx`` Graph representing the current object.
+        """
+
+        graph = nx.Graph()
+
+        for node_id, node in self.nodes.items():
+            graph.add_node(node_id)
+            graph.nodes[node_id]["final"] = node.final
+
+            for left in self.nodes.values():
+                for label, right in left.edges.items():
+                    l_id = left.node_id
+                    r_id = right.node.node_id
+                    graph.add_edge(l_id, r_id, weight=right.weight)
+                    graph[l_id][r_id]["label"] = label
+
+        return graph
+
+    def write_figure(self, output_file, dpi=300, **kwargs):
         """
         Generate a figure visualization through a ``graphviz`` call.
 
@@ -867,31 +893,6 @@ class DAFSA:
 
         # Write with `subprocess`
         output.graphviz_output(dot_source, output_file, dpi)
-
-    def to_graph(self):
-        """
-        Generate a ``networkx`` directed weighted graph representing the DAFSA.
-
-        Returns
-        -------
-        graph : networkx.Graph
-            A ``networkx`` Graph representing the current object.
-        """
-
-        graph = nx.Graph()
-
-        for node_id, node in self.nodes.items():
-            graph.add_node(node_id)
-            graph.nodes[node_id]["final"] = node.final
-
-            for left in self.nodes.values():
-                for label, right in left.edges.items():
-                    l_id = left.node_id
-                    r_id = right.node.node_id
-                    graph.add_edge(l_id, r_id, weight=right.weight)
-                    graph[l_id][r_id]["label"] = label
-
-        return graph
 
     def write_gml(self, filename):
         """
