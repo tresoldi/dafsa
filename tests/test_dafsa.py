@@ -78,6 +78,9 @@ class TestNode(unittest.TestCase):
         if not hash(node_a) != hash(node_c):
             raise AssertionError
 
+        # repr_hash
+        assert node_a.repr_hash() != node_b.repr_hash()
+
 
 class TestEdge(unittest.TestCase):
     def test_edge(self):
@@ -88,6 +91,10 @@ class TestEdge(unittest.TestCase):
         # Missing node
         with self.assertRaises(TypeError):
             edge_a = dafsa.dafsa.DAFSAEdge()
+
+        # Wrong type
+        with self.assertRaises(TypeError):
+            edge_a = dafsa.dafsa.DAFSAEdge(1)
 
         # Create nodes for testing
         node_a = dafsa.dafsa.DAFSANode(15)
@@ -106,6 +113,11 @@ class TestEdge(unittest.TestCase):
             raise AssertionError
         if not str(edge_c) == "{node_id: 16, weight: 0}":
             raise AssertionError
+
+        # __repr__ assertions
+        assert repr(edge_a) == "{node: <F()>, weight: 0}"
+        assert repr(edge_b) == "{node: <F()>, weight: 2}"
+        assert repr(edge_c) == "{node: <n()>, weight: 0}"
 
 
 class TestDAFSA(unittest.TestCase):
@@ -129,7 +141,7 @@ class TestDAFSA(unittest.TestCase):
         # TODO: write tests?
         # TODO: test lookup with `join_trans=True`
         dafsa_obj_a = dafsa.DAFSA(seqs)
-        dafsa_obj_b = dafsa.DAFSA(seqs, join_trans=True)
+        dafsa_obj_b = dafsa.DAFSA(seqs, join_transitions=True)
 
     def test_full_test(self):
         """
@@ -210,7 +222,7 @@ class TestDAFSA(unittest.TestCase):
         Test GML export.
         """
 
-         # Load strings from file
+        # Load strings from file
         filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
         with open(filename.as_posix()) as handler:
             strings = [line.strip() for line in handler]
@@ -227,7 +239,6 @@ class TestDAFSA(unittest.TestCase):
 
         dafsa_obj.write_gml(output_filename)
 
-       
 
 if __name__ == "__main__":
     sys.exit(unittest.main())
