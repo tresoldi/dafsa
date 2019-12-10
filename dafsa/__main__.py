@@ -27,7 +27,7 @@ def parse_arguments():
         "-t",
         "--type",
         type=str,
-        choices=["stdout", "dot", "png"],
+        choices=["stdout", "dot", "png", "pdf", "svg", "gml"],
         default="stdout",
         help="Type of output (default: 'stdout')",
     )
@@ -85,8 +85,10 @@ def main():
     elif args.type == "dot":
         with open(args.output, "w") as handler:
             handler.write(dafsa.to_dot())
-    elif args.type in ["png"]:
+    elif args.type in ["png", "pdf", "svg"]:
         dafsa.to_figure(args.output, args.dpi)
+    elif args.type == "gml":
+        dafsa.write_gml(args.output)
 
 
 if __name__ == "__main__":

@@ -326,7 +326,7 @@ class DAFSA:
         # as `"delimiter"`) or in an in-method variable (such as
         # `"minimize"`)
         # TODO: rename ._join_trans?
-        # TODO: comment on delimiter
+        # TODO: comment on deliimter
         self._join_trans = kwargs.get("join_transitions", False)
         self._delimiter = kwargs.get("delimiter", " ")
         minimize = kwargs.get("minimize", True)
@@ -851,7 +851,7 @@ class DAFSA:
         output_file : str
             The path to the output file.
         dpi : int
-            The output resolution. Defaults to ``300``.
+            The output resolution, if applicable. Defaults to ``300``.
         label_nodes : bool
             A boolean flag indicating whether or not to label nodes with
             their respective node ids (default: ``False``).
