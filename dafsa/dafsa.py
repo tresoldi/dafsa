@@ -91,7 +91,7 @@ class DAFSANode:
         # when compared to `.__repr__()`
         buf = ";".join(
             [
-                "|".join([label, str(self.edges[label].node.node_id)])
+                "%s|%i" % (label, self.edges[label].node.node_id)
                 for label in sorted(self.edges)
             ]
         )
@@ -175,7 +175,23 @@ class DAFSANode:
             A boolean indicating if the two nodes are equivalent.
         """
 
-        return str(self) == str(other)
+        # This is the most sensitive method for performance, as the string
+        # conversion is quite expansive computationally. We thus check
+        # for difference in less expansive ways before calling __str__.
+        if len(self.edges) != len(other.edges):
+            return False
+
+        # Direct comparison, without building a string, so we can leave
+        # as soon as possible
+        for label in self.edges:
+            if label not in other.edges:
+                return False
+
+            if self.edges[label].node.node_id != other.edges[label].node.node_id:
+                return False
+
+#        return str(self) == str(other)
+        return True
 
     def __gt__(self, other):
         """
