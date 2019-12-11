@@ -16,7 +16,6 @@ affiliations:
    index: 1
 date: 12 December 2019
 bibliography: paper.bib
-
 ---
 
 # Summary
@@ -74,11 +73,7 @@ edge weights, nor it is intended for exporting the internal structure as
 a graph.
 
 Other alternatives are the ``adfa`` and ``minim`` packages, written in
-C/C++, written by Jan Daciuk. The personal webpage hosting them has been
-offline for years, with a version at the `Wayback
-Machine <https://web.archive.org/web/20160531133017/http://galaxy.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/minim.html>`__
-available. Note that the archived version does *not* include the
-packages.
+C/C++, written by Jan Daciuk. Note on archive.
 
 # Citations
 
