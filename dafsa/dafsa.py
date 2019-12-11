@@ -712,13 +712,11 @@ class DAFSA:
 
         Returns
         -------
-        node : DAFSANode or None
-            Either a DAFSANode with a final state that can be reached
-            following the specified sequence, or None if no path can
-            be found.
-        weight : int or None
-            Either the cumulative weight for the path leading to the final
-            state eing returned, or None if no path can be found.
+        node : tuple of DAFSANode and int, or None
+            Either a tuple with a DAFSANode referring to the final state
+            that can be reached by following the specified sequence,
+            plus the cumulative weight for reaching it, or None if no path
+            can be found.
         """
 
         # Start at the root
@@ -728,14 +726,14 @@ class DAFSA:
         cum_weight = 0
         for token in sequence:
             if token not in node.edges:
-                return None, None
+                return None
             cum_weight += node.edges[token].weight
             node = node.edges[token].node
 
         # Check if the last node is indeed a final one (so we don't
         # match prefixes alone)
         if not node.final:
-            return None, None
+            return None
 
         return node, cum_weight
 

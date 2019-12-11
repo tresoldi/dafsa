@@ -7,8 +7,8 @@ A minimal usage is shown here:
 
 .. code:: python
 
-   >>> import dafsa
-   >>> d = dafsa.DAFSA(["tap", "taps", "top", "tops", "dibs"])
+   >>> from dafsa import DAFSA
+   >>> d = DAFSA(["tap", "taps", "top", "tops", "dibs"])
    >>> print(d)
    DAFSA with 7 nodes and 8 edges (5 sequences)
      +-- #0: 0(#1:<d>/1|#5:<t>/4) [('t', 5), ('d', 1)]
@@ -24,33 +24,41 @@ starting node (#0) that advances with either a ``t`` (observed four
 times) or a ``d`` symbol (observed a single time), a subsequent node to
 ``t`` that only advances with ``a`` and ``o`` symbols (#1), and so on.
 
-The visualization is much clearer with a graphical representation:
+The structure is much clearer with a graphical representation:
 
 .. code:: python
 
-   >>> d.graphviz_output("example.png")
+   >>> d.write_figure("example.png")
 
 .. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png
    :alt: First example
 
-   First example
-
 A DAFSA object allows to check for the presence or absence of a sequence
-in its structure, returning a terminal node if it can find a path:
+in its structure, returning a terminal node if it can find a path. If the
+structure was computed using frequency weights, as by default, the
+cumulative path weight is also returned.
 
 .. code:: python
 
    >>> d.lookup("tap")
-   F(#4:<s>/3)
+   (F(#4/5:<s>/3), 10)
    >>> d.lookup("tops")
-   F()
+   (F(), 13)
    >>> d.lookup("tapap") is None
    True
    >>> d.lookup("ta") is None
    True
 
-A command-line tool for reading files with lists of strings, with one
-string per line, is also available:
+Besides a number of alternatives for exporting visualizations, the structures
+can also be exported as ``networkx`` graphs:
+
+.. code:: python
+
+   >>> d.to_graph()
+   <networkx.classes.graph.Graph object at 0x7f51d15b7ac8>
+
+The library includes a command-line tool for reading files with lists of
+sequences, with one sequence per line:
 
 ::
 
@@ -68,8 +76,6 @@ Which will produce the following graph:
 
 .. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/dna.png
    :alt: DNA example
-
-   DNA example
 
 Sequences are by default processed one character at time, with each
 character assumed to be a single token. Pre-tokenized data can be
@@ -93,7 +99,9 @@ specified in source by using spaces as token delimiters:
 .. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/phonemes.png
    :alt: Phoneme example
 
-   Phoneme example
+DAFSA structure can be exported as:
 
-
-   Please note that this library is under development and still needs performance optimizations: common experiments such as building a DAFSA for the contents of `/usr/share/dict/words` will take many minutes in a common machine.
+- PDF
+- SVG
+- GLM
+- DOT

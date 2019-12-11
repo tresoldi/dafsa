@@ -30,12 +30,12 @@ Welcome to dafsa's documentation!
 `Deterministic Acyclic Finite State
 Automata <https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton>`__
 (also known as “directed acyclic word graphs”, or DAWG) for purposes of
-data exploration and visualization. DAFSAs are data 
+data exploration and visualization. DAFSAs are data
 structures derived from `tries <https://en.wikipedia.org/wiki/Trie>`__
 that allow to represent a set of sequences (typically character strings
 or *n*-grams) in the form of a directed acyclic graph with a single
 source vertex (the ``start`` symbol shared by all sequences) and at least one
-sink edge (``end`` symbols, each pointed to by one or more sequences), such
+sink edge (``final`` symbols, each pointed to by one or more sequences), such
 as in the following image.
 
 .. figure:: https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png

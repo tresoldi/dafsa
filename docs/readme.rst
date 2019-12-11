@@ -8,7 +8,7 @@ structures derived from `tries <https://en.wikipedia.org/wiki/Trie>`__
 that allow to represent a set of sequences (typically character strings
 or *n*-grams) in the form of a directed acyclic graph with a single
 source vertex (the ``start`` symbol of all sequences) and at least one
-sink edge (``end`` symbols, each pointed to by one or more sequences).
+sink edge (``final`` symbols, each pointed to by one or more sequences).
 In the current implementation, a trait of each node expresses whether it
 can be used a sink.
 
@@ -64,13 +64,24 @@ Machine <https://web.archive.org/web/20160531133017/http://galaxy.eti.pg.gda.pl/
 available. Note that the archived version does *not* include the
 packages.
 
+Author
+------
+
+The library is developed by Tiago Tresoldi (tresoldi@shh.mpg.de).
+
+The author has received funding from the European Research Council (ERC)
+under the European Union’s Horizon 2020 research and innovation
+programme (grant agreement
+No. `ERC Grant #715618 <https://cordis.europa.eu/project/rcn/206320/factsheet/en>`__,
+`Computer-Assisted Language Comparison <https://digling.org/calc/>`__.
+
 How to cite
 -----------
 
 If you use ``dafsa``, please cite it as:
 
    Tresoldi, Tiago (2019). DAFSA, a a library for computing
-   Deterministic Acyclic Finite State Automata. Version 0.4. Jena.
+   Deterministic Acyclic Finite State Automata. Version 0.5. Jena.
    Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
@@ -79,7 +90,7 @@ In BibTeX:
 
    @misc{Tresoldi2019dafsa,
      author = {Tresoldi, Tiago},
-     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.4},
+     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5},
      howpublished = {\url{https://github.com/tresoldi/dafsa}},
      address = {Jena},
      year = {2019},
@@ -112,14 +123,3 @@ Lucchesi, Cláudio L. and Kowaltowski, Tomasz. “Applications of finite
 automata representing large vocabularies”. *Software-Practice and
 Experience*. 1993: 15–30. `CiteSeerX
 10.1.1.56.5272 <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.56.5272>`__.
-
-Author
-------
-
-Tiago Tresoldi (tresoldi@shh.mpg.de)
-
-The author was supported during development by the
-`ERC Grant #715618 <https://cordis.europa.eu/project/rcn/206320/factsheet/en>`__
-for the project `CALC <http://calc.digling.org>`__
-(Computer-Assisted Language Comparison: Reconciling Computational and Classical
-Approaches in Historical Linguistics).

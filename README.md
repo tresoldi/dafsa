@@ -89,7 +89,7 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
       └────┘      └───┘      └───┘
 ```
 
-* Without or with single-path joining:
+* With or without single-path joining:
 
 ![Phoneme example](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/phonemes.png)
 
@@ -139,7 +139,7 @@ After 1.0:
 
   - Preliminary generation of minimal regular expressions matching the
     contents of a DAFSA
-  - Consider the addition of empty transitions (or depend on the user
+  - Consider adding support for empty transitions (or depend on the user
     aligning those)
   - Work on options for nicer graphviz output (colors, widths, etc.)
 
