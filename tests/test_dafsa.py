@@ -162,49 +162,14 @@ class TestDAFSA(unittest.TestCase):
         text = str(dafsa_obj_b)
 
         # simple checks
-        lookup_node, lookup_weight = dafsa_obj_a.lookup("den")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
-        lookup_node, lookup_weight = dafsa_obj_b.lookup("den")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
+        assert dafsa_obj_a.lookup("den") is None
+        assert dafsa_obj_b.lookup("den") is None
 
-        lookup_node, lookup_weight = dafsa_obj_a.lookup("deny")
-        if lookup_node is None:
-            raise AssertionError
-        if lookup_weight is None:
-            raise AssertionError
-        lookup_node, lookup_weight = dafsa_obj_b.lookup("deny")
-        if lookup_node is None:
-            raise AssertionError
-        if lookup_weight is None:
-            raise AssertionError
+        assert dafsa_obj_a.lookup("deny") is not None
+        assert dafsa_obj_b.lookup("deny") is not None
 
-        lookup_node, lookup_weight = dafsa_obj_a.lookup("dafsa")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
-        lookup_node, lookup_weight = dafsa_obj_b.lookup("dafsa")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
-
-        lookup_node, lookup_weight = dafsa_obj_a.lookup("dawg")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
-        lookup_node, lookup_weight = dafsa_obj_b.lookup("dawg")
-        if not lookup_node is None:
-            raise AssertionError
-        if not lookup_weight is None:
-            raise AssertionError
+        assert dafsa_obj_a.lookup("dafsa") is None
+        assert dafsa_obj_b.lookup("dafsa") is None
 
     def test_to_figure(self):
         """
@@ -268,4 +233,12 @@ class TestDAFSA(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    sys.exit(unittest.main())
+    # Explicitly creating and running a test suite allows to profile
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestNode)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestEdge)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestDAFSA)
+    unittest.TextTestRunner(verbosity=2).run(suite)
