@@ -97,6 +97,10 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 
 ## Changelog
 
+Version 0.5:
+  - Improvements in speed, particularly in the `__eq__()` method of
+    `DAFSANode` and the `_minimize()` method of `DAFSA`.
+
 Version 0.4:
   - Full documentation for existing code
   - Added GML, PDF, and SVG export
