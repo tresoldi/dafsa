@@ -187,10 +187,13 @@ class DAFSANode:
             if label not in other.edges:
                 return False
 
-            if self.edges[label].node.node_id != other.edges[label].node.node_id:
+            if (
+                self.edges[label].node.node_id
+                != other.edges[label].node.node_id
+            ):
                 return False
 
-#        return str(self) == str(other)
+        #        return str(self) == str(other)
         return True
 
     def __gt__(self, other):
@@ -556,24 +559,30 @@ class DAFSA:
                 # compare each `node` with the `child` (using the internal
                 # `.__eq__()` method), and carry the key/index in case
                 # it is found.
-                child_idx = [
-                    node_idx
-                    for node_idx, node in self.nodes.items()
-                    if node == child and minimize
-                ]
-
-                if child_idx:
+                if not minimize:
+                    self.nodes[child.node_id] = child
+                else:
                     # Use the first node that matches, and make sure to
                     # carry the information about final state of the
                     # child, if that is the case
-                    if parent.edges[token].node.final:
-                        self.nodes[child_idx[0]].final = True
-                    parent.edges[token].node = self.nodes[child_idx[0]]
+                    child_idx = None
+                    for node_idx, node in self.nodes.items():
+                        if node == child:
+                            child_idx = node_idx
+                            break
 
-                    # Mark the graph as changed, so we restart the loop
-                    graph_changed = True
-                else:
-                    self.nodes[child.node_id] = child
+                    if child_idx:
+                        # Use the first node that matches, and make sure to
+                        # carry the information about final state of the
+                        # child, if that is the case
+                        if parent.edges[token].node.final:
+                            self.nodes[child_idx].final = True
+                        parent.edges[token].node = self.nodes[child_idx]
+
+                        # Mark the graph as changed, so we restart the loop
+                        graph_changed = True
+                    else:
+                        self.nodes[child.node_id] = child
 
             # Only leave the loop if the graph was untouched
             if not graph_changed:
