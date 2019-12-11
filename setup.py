@@ -10,7 +10,7 @@ README_FILE = (LOCAL_PATH / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="dafsa",
-    version="0.4",
+    version="0.5",
     description="Library for computing Deterministic Acyclic Finite State Automata (DAFSA)",
     long_description=README_FILE,
     long_description_content_type="text/markdown",
@@ -31,7 +31,7 @@ setup(
     keywords=[
         "dafsa",
         "dawg",
-        "finite state",
+        "finite state automata",
         "deterministic acyclic finite state automaton",
         "directed acyclic word graph",
     ],
