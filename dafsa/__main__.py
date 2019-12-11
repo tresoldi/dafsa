@@ -13,6 +13,7 @@ import argparse
 # Import our library
 from dafsa import DAFSA
 
+
 def parse_arguments():
     """
     Parses arguments and returns a namespace.

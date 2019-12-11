@@ -162,21 +162,48 @@ class TestDAFSA(unittest.TestCase):
         text = str(dafsa_obj_b)
 
         # simple checks
-        if not dafsa_obj_a.lookup("den") is None:
+        lookup_node, lookup_weight = dafsa_obj_a.lookup("den")
+        if not lookup_node is None:
             raise AssertionError
-        if not dafsa_obj_b.lookup("den") is None:
+        if not lookup_weight is None:
             raise AssertionError
-        if not dafsa_obj_a.lookup("deny") is not None:
+        lookup_node, lookup_weight = dafsa_obj_b.lookup("den")
+        if not lookup_node is None:
             raise AssertionError
-        if not dafsa_obj_b.lookup("deny") is not None:
+        if not lookup_weight is None:
             raise AssertionError
-        if not dafsa_obj_a.lookup("dafsa") is None:
+
+        lookup_node, lookup_weight = dafsa_obj_a.lookup("deny")
+        if lookup_node is None:
             raise AssertionError
-        if not dafsa_obj_b.lookup("dafsa") is None:
+        if lookup_weight is None:
             raise AssertionError
-        if not dafsa_obj_a.lookup("dawg") is None:
+        lookup_node, lookup_weight = dafsa_obj_b.lookup("deny")
+        if lookup_node is None:
             raise AssertionError
-        if not dafsa_obj_b.lookup("dawg") is None:
+        if lookup_weight is None:
+            raise AssertionError
+
+        lookup_node, lookup_weight = dafsa_obj_a.lookup("dafsa")
+        if not lookup_node is None:
+            raise AssertionError
+        if not lookup_weight is None:
+            raise AssertionError
+        lookup_node, lookup_weight = dafsa_obj_b.lookup("dafsa")
+        if not lookup_node is None:
+            raise AssertionError
+        if not lookup_weight is None:
+            raise AssertionError
+
+        lookup_node, lookup_weight = dafsa_obj_a.lookup("dawg")
+        if not lookup_node is None:
+            raise AssertionError
+        if not lookup_weight is None:
+            raise AssertionError
+        lookup_node, lookup_weight = dafsa_obj_b.lookup("dawg")
+        if not lookup_node is None:
+            raise AssertionError
+        if not lookup_weight is None:
             raise AssertionError
 
     def test_to_figure(self):

@@ -58,7 +58,6 @@ class DAFSANode:
         # Set values node_id value
         self.node_id = node_id
 
-    # TODO: add example
     def __str__(self):
         """
         Return a textual representation of the node.
@@ -72,6 +71,14 @@ class DAFSANode:
         the value returned by this method might be ambiguous, with different
         nodes returning the same value. For unambigous representation,
         the ``.__repr__()`` method must be used.
+
+.. code:: python
+        >>> from dafsa import DAFSANode, DAFSAEdge
+        >>> node = DAFSANode(0)
+        >>> node.final = True
+        >>> node.edges["x"] = DAFSAEdge(DAFSANode(1), 1)
+        >>> str(node)
+        'x|1'
 
         Returns
         -------
@@ -91,7 +98,6 @@ class DAFSANode:
 
         return buf
 
-    # TODO: add example
     def __repr__(self):
         """
         Return an unambigous textual representation of the node.
@@ -104,6 +110,14 @@ class DAFSANode:
         Please note that, as the return value includes information such as
         edge weight, it cannot be used for minimization. For such purposes,
         the potentially ambiguous ``.__str__()`` method must be used.
+
+.. code:: python
+        >>> from dafsa import DAFSANode, DAFSAEdge
+        >>> node = DAFSANode(0)
+        >>> node.final = True
+        >>> node.edges["x"] = DAFSAEdge(DAFSANode(1), 1)
+        >>> repr(node)
+        '0(#1/0:<x>/1)'
 
         Returns
         -------
@@ -189,7 +203,6 @@ class DAFSANode:
 
         return self.__str__() > other.__str__()
 
-    # TODO: add example comparing both
     def __hash__(self):
         """
         Return a hash for the node.
@@ -228,7 +241,6 @@ class DAFSANode:
         return self.__repr__().__hash__()
 
 
-# TODO: add .__hash__()
 class DAFSAEdge(dict):
     """
     Class representing edge objects in a DAFSA.
@@ -294,9 +306,45 @@ class DAFSAEdge(dict):
 
         return "{node: <%s>, weight: %i}" % (repr(self.node), self.weight)
 
+    def __hash__(self):
+        """
+        Return a hash for the edge.
+
+        The returned has is based on the potentially ambigous string
+        representation provided by the ``.__str__()`` method, allowing to
+        use edges as, among others, dictionary keys. The choice of the
+        potentially ambiguous ``.__str__()`` over ``.__repr__()`` is intentional
+        and by design and complemented by the ``.repr_hash()`` method.
+
+        Returns
+        -------
+        hash : number
+            The hash from the (potentially ambigous) textual representation of
+            the current edge.
+        """
+
+        return self.__str__().__hash__()
+
+    def repr_hash(self):
+        """
+        Return a hash for the edge.
+
+        The returned has is based on the unambigous string
+        representation provided by the ``.__repr__()`` method, allowing to
+        use edges as, among others, dictionary keys. The method is
+        complemented by the ``.__hash__()`` one.
+
+        Returns
+        -------
+        hash : number
+            The hash from the unambigous textual representation of the
+            current edge.
+        """
+
+        return self.__repr__().__hash__()
+
 
 # TODO: see what can be "de-underscored"
-# TODO: comment delimiter
 class DAFSA:
     """
     Class representing a DAFSA object.
@@ -311,6 +359,9 @@ class DAFSA:
     join_transitions: bool
         Whether to join sequences of transitions into single compound
         transitions when possible. Defaults to ``False``.
+    delimiter : str
+        The delimiter to use in case of joining single path transitions.
+        Defaults to a single white space (` `).
     minimize : bool
         Whether to minimize the trie into a DAFSA. Defaults to ``True``; this
         option is implemented for development and testing purposes and
@@ -327,7 +378,6 @@ class DAFSA:
         # as `"delimiter"`) or in an in-method variable (such as
         # `"minimize"`)
         # TODO: rename ._join_trans?
-        # TODO: comment on deliimter
         self._join_trans = kwargs.get("join_transitions", False)
         self._delimiter = kwargs.get("delimiter", " ")
         minimize = kwargs.get("minimize", True)
@@ -648,7 +698,6 @@ class DAFSA:
                 node = node.edges[token].node
                 node.weight += 1
 
-    # TODO: should sum weights?
     def lookup(self, sequence):
         """
         Check if a sequence can be expressed by the DAFSA.
@@ -665,27 +714,32 @@ class DAFSA:
 
         Returns
         -------
-        ret : DAFSANode or None
+        node : DAFSANode or None
             Either a DAFSANode with a final state that can be reached
             following the specified sequence, or None if no path can
             be found.
+        weight : int or None
+            Either the cumulative weight for the path leading to the final
+            state eing returned, or None if no path can be found.
         """
 
         # Start at the root
         node = self.lookup_nodes[0]
 
         # If we can follow a path, it is valid, otherwise return None
+        cum_weight = 0
         for token in sequence:
             if token not in node.edges:
-                return None
+                return None, None
+            cum_weight += node.edges[token].weight
             node = node.edges[token].node
 
         # Check if the last node is indeed a final one (so we don't
         # match prefixes alone)
         if not node.final:
-            return None
+            return None, None
 
-        return node
+        return node, cum_weight
 
     def count_nodes(self):
         """
@@ -829,7 +883,6 @@ class DAFSA:
                 dot_edges.append(buf)
 
         # load template and build .dot source
-        # TODO: move to a generic utils. function
         template = utils.RESOURCE_DIR / "template.dot"
         with open(template.as_posix()) as handler:
             source = handler.read()

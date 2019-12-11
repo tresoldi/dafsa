@@ -27,4 +27,4 @@ __author__ = "Tiago Tresoldi"
 __email__ = "tresoldi@shh.mpg.de"
 
 # Build the namespace
-from dafsa.dafsa import DAFSA
+from dafsa.dafsa import DAFSANode, DAFSAEdge, DAFSA
