@@ -99,7 +99,11 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 
 Version 0.5:
   - Improvements in speed, particularly in the `__eq__()` method of
-    `DAFSANode` and the `_minimize()` method of `DAFSA`.
+    `DAFSANode` and the `_minimize()` method of `DAFSA`. The computation
+    of a DAFSA for the contents of `/usr/share/dict/words` in the test
+    machine (99,171 sequences) is now performed in under 8 minutes.
+  - Added code from Daciuk's packages in an extra directory, along with
+    notes on license
 
 Version 0.4:
   - Full documentation for existing code
@@ -128,12 +132,6 @@ Version 0.1:
   - First public release.
 
 ## Roadmap
-
-Version 0.5:
-  - Profile code and make faster and less resource hungry, using
-    multiple threads wherever possible, memoization, etc.
-  - Add code from Daciuk's packages in an extra directory, along with
-    notes on license
 
 Version 1.0:
   - Publish in journal
