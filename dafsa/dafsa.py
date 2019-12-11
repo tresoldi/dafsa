@@ -344,7 +344,6 @@ class DAFSAEdge(dict):
         return self.__repr__().__hash__()
 
 
-# TODO: see what can be "de-underscored"
 class DAFSA:
     """
     Class representing a DAFSA object.
@@ -361,7 +360,7 @@ class DAFSA:
         transitions when possible. Defaults to ``False``.
     delimiter : str
         The delimiter to use in case of joining single path transitions.
-        Defaults to a single white space (` `).
+        Defaults to a single white space (`" "`).
     minimize : bool
         Whether to minimize the trie into a DAFSA. Defaults to ``True``; this
         option is implemented for development and testing purposes and
@@ -377,8 +376,7 @@ class DAFSA:
         # Store arguments either internally in the object for reuse (such
         # as `"delimiter"`) or in an in-method variable (such as
         # `"minimize"`)
-        # TODO: rename ._join_trans?
-        self._join_trans = kwargs.get("join_transitions", False)
+        self._join_trans_flag = kwargs.get("join_transitions", False)
         self._delimiter = kwargs.get("delimiter", " ")
         minimize = kwargs.get("minimize", True)
 
@@ -439,7 +437,7 @@ class DAFSA:
         # and methods (mainly by `.lookup()`) as well as by the user, if so
         # desired.
         self.lookup_nodes = copy.deepcopy(self.nodes)
-        if self._join_trans:
+        if self._join_trans_flag:
             self._join_transitions()
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
