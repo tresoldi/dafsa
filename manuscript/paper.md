@@ -20,13 +20,13 @@ bibliography: paper.bib
 
 # Summary
 
-Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyclic word graphs", or DAWG) are data structures derived from tries used to represent collections of strings by means of directed acyclic graphs with a single source vertex (the `start` of all sequences), at least one sink edge (`final` nodes, each pointed to by one or more edges), and edge labels carrying information on the sequence of characters that compose the strings [@Black:2008; @Blumer:1985; @Lucchesi:1993]. A compact variant [@Crochemore:1997] condenses the structure by merging every node which is an only child with its parent, concatenating the labels. The resulting graph can be used as special type of finite state recognizer, accepting all and only the strings it was built upon. An illustration of a basic DAFSA is provided in Figure 1.
+Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyclic word graphs", or DAWG) are data structures derived from tries used to represent collections of strings by means of directed acyclic graphs with a single source vertex (the `start` of all sequences), at least one sink node (each pointed to by one or more edges), and edge labels carrying information on the sequence of characters that compose the strings [@Black:2008; @Blumer:1985; @Lucchesi:1993]. A compact variant [@Crochemore:1997] condenses the structure by merging every node which is an only child with its parent, concatenating the labels. The resulting graph can be used as special type of finite state recognizer, accepting all and only the strings it was built upon. An illustration of a basic DAFSA is provided in Figure 1.
 
 ![Visual representation of a DAFSA for the list of strings `"dibs"`, `"tap"`, `"top"`, `"taps"`, and `"tops"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
 DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available. In particular, as a consequence of the available implementations being designed for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
 
-This work describe [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
+This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
 
 # Installation, Usage, & Examples
 
@@ -64,7 +64,7 @@ transcribed.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/ph
 
 The structures are not condensed by default, as in Figure 2, but condensation
 can be performed by setting the `condense` flag when initializing the
-object, as in the following snippet and Figure 3:
+object, as done in the following snippet and illustrated in Figure 3:
 
 ```python
 >>> words = [
@@ -90,12 +90,15 @@ $ dafsa -c -t pdf -o phonemes.pdf phonemes.txt
 # Alternatives
 
 The main alternatives to `dafsa`,
-such as the Python [`DAWG` library](https://github.com/pytries/DAWG)
+such as the Python [`DAWG` library](https://github.com/pytries/DAWG),
 are based on `dwagdic` C++ library,
 designed for production usage as memory-efficient data
 structures. The unsupported `adfa` and `minim` packages by
 @Daciuk:2000 are closer in intention, as well as the Python
-prototype by @Havon:2011.
+prototype by @Havon:2011. Similar functionalities are offered by a number
+of tools for analysis of genetic data, usually as a visualization of
+sequence alignments, but none as an independent tool that can be used
+with generic lists of strings.
 
 # Code Availability
 
