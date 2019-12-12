@@ -71,7 +71,8 @@ object, as done in the following snippet and illustrated in Figure 3:
     "o kː j o", "o r e kː j o", "n a z o",
     "s e", "s e n t i r e", "s e n s o",
     "g u a r d a r e", "a m a r e", "v o l a r e"]
->>> d = DAFSA(words, condense=True) # SEPARATOR
+>>> words = [word.split() for word in words]
+>>> d = DAFSA(words, condense=True)
 ```
 
 ![A condensed DAFSA for the same list of 9 Italian words phonetically

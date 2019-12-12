@@ -20,7 +20,6 @@ from . import output
 from . import utils
 
 # TODO: add a separator and interface with __main__
-# TODO: rename join_trnasitions to condense
 
 # comment on internal node_id, meaningless
 class DAFSANode:
@@ -377,9 +376,9 @@ class DAFSA:
     weight : bool
         Whether to collect edge weights after minimization. Defaults
         to ``True``.
-    join_transitions: bool
+    condense: bool
         Whether to join sequences of transitions into single compound
-        transitions when possible. Defaults to ``False``.
+        transitions whenever possible. Defaults to ``False``.
     delimiter : str
         The delimiter to use in case of joining single path transitions.
         Defaults to a single white space (`" "`).
@@ -398,7 +397,6 @@ class DAFSA:
         # Store arguments either internally in the object for reuse (such
         # as `"delimiter"`) or in an in-method variable (such as
         # `"minimize"`)
-        self._join_trans_flag = kwargs.get("join_transitions", False)
         self._delimiter = kwargs.get("delimiter", " ")
         minimize = kwargs.get("minimize", True)
 
@@ -459,8 +457,8 @@ class DAFSA:
         # and methods (mainly by `.lookup()`) as well as by the user, if so
         # desired.
         self.lookup_nodes = copy.deepcopy(self.nodes)
-        if self._join_trans_flag:
-            self._join_transitions()
+        if kwargs.get("condense", False):
+            self.condense()
 
     def _insert_single_seq(self, seq, previous_seq, minimize):
         """
@@ -591,9 +589,9 @@ class DAFSA:
             if not graph_changed:
                 break
 
-    def _join_transitions(self):
+    def condense(self):
         """
-        Internal method for joining unique edges.
+        Condenses the automaton, merging single-child nodes with their parents.
 
         The function joins paths of unique edges into single edges with
         compound transitions, removing redundant nodes. A redundant node

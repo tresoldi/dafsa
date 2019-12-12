@@ -29,11 +29,11 @@ def parse_arguments():
         help="Type of output (default: 'stdout')",
     )
     parser.add_argument(
-        "-j",
-        "--join_transitions",
+        "-c",
+        "--condense",
         action="store_true",
-        help="Whether to join sequences of transitions into single compound "
-        "transitions (default: false)",
+        help="Whether to condense the automaton, joining sequences of "
+        "transitions into single compound transitions (default: false)",
     )
     parser.add_argument(
         "--dpi",
@@ -75,7 +75,7 @@ def main():
         seqs = [seq.split() for seq in seqs]
 
     # build object
-    dafsa = DAFSA(seqs, join_transitions=args.join_transitions)
+    dafsa = DAFSA(seqs, condense=args.condense)
 
     # Generate output
     if args.type == "stdout":
