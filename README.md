@@ -145,6 +145,12 @@ After 1.0:
     aligning those)
   - Work on options for nicer graphviz output (colors, widths, etc.)
 
+## Community guidelines
+
+While the author can be contacted directly for support, it is recommended
+that third parties use GitHub standard features, such as issues and
+pull requests, to contribute, report problems, or seek support.
+
 ## Author and citation
 
 The library is developed by Tiago Tresoldi (tresoldi@shh.mpg.de).

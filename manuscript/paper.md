@@ -20,18 +20,20 @@ bibliography: paper.bib
 
 # Summary
 
-Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyclic word graphs", or DAWG) are data structures derived from tries used to represent collections of strings by means of directed acyclic graphs with a single source vertex (the `start` of all sequences), at least one sink node (each pointed to by one or more edges), and edge labels carrying information on the sequence of characters that compose the strings [@Black:2008; @Blumer:1985; @Lucchesi:1993]. A compact variant [@Crochemore:1997] condenses the structure by merging every node which is an only child with its parent, concatenating the labels. The resulting graph can be used as special type of finite state recognizer, accepting all and only the strings it was built upon. An illustration of a basic DAFSA is provided in Figure 1.
+This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing graphs representing a list of strings that allow to visualize and inspect patterns of substrings. The library is designed for usage by linguists in studies on morphology and formal grammars in general, allowing for faster, easier, and simpler generation of visualizations. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered. An illustration of a basic DAFSA is provided in Figure 1.
 
 ![Visual representation of a DAFSA for the list of strings `"dibs"`, `"tap"`, `"top"`, `"taps"`, and `"tops"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
-DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available. In particular, as a consequence of the available implementations being designed for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
+# Background
 
-This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general, allowing for faster, easier, and simpler generation of visualizations. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
+Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyclic word graphs", or DAWG) are data structures derived from tries used to represent collections of strings by means of directed acyclic graphs with a single source vertex (the `start` of all sequences), at least one sink node (each pointed to by one or more edges), and edge labels carrying information on the sequence of characters that compose the strings [@Black:2008; @Blumer:1985; @Lucchesi:1993]. A compact variant [@Crochemore:1997] condenses the structure by merging every node which is an only child with its parent, concatenating the labels. The resulting graph can be used as special type of finite state recognizer, accepting all and only the strings it was built upon.
+
+DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available, an absence that constitutes the statement of need for this work. In particular, as a consequence of the available implementations being designed for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
 
 # Installation, Usage, & Examples
 
 The library can be installed with the standard `pip` tool for
-package management.
+package management, which takes care of installing the required dependencies.
 
 ```bash
 $ pip install dafsa
