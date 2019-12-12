@@ -97,6 +97,9 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 
 ## Changelog
 
+Version 0.5.1:
+  - Minor changes in preparation for submission (including tagged release)
+
 Version 0.5:
   - Improvements in speed, particularly in the `__eq__()` method of
     `DAFSANode` and the `_minimize()` method of `DAFSA`. The computation
@@ -163,14 +166,14 @@ No. [ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5. Jena. Available at: <https://github.com/tresoldi/dafsa>
+> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5.1. Jena. Available at: <https://github.com/tresoldi/dafsa>
 
 In BibTeX:
 
 ```bibtex
 @misc{Tresoldi2019dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5.1.},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
   year = {2019},

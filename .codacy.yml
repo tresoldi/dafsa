@@ -3,4 +3,5 @@ exclude_paths:
     - "README.md"
     - "dafsa/__init__.py"
     - "dafsa/output.py"
+    - "manuscript/*"
     - "tests/*.py"

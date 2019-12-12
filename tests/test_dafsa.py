@@ -119,6 +119,11 @@ class TestEdge(unittest.TestCase):
         assert repr(edge_b) == "{node: <F()>, weight: 2}"
         assert repr(edge_c) == "{node: <n()>, weight: 0}"
 
+        # hashes
+        assert hash(edge_a) != edge_a.repr_hash()
+        assert hash(edge_b) != edge_b.repr_hash()
+        assert hash(edge_c) != edge_c.repr_hash()
+
 
 class TestDAFSA(unittest.TestCase):
     def test_hardcoded(self):
@@ -138,10 +143,8 @@ class TestDAFSA(unittest.TestCase):
         ]
 
         # build object, without and with joining
-        # TODO: write tests?
-        # TODO: test lookup with `join_trans=True`
         dafsa_obj_a = dafsa.DAFSA(seqs)
-        dafsa_obj_b = dafsa.DAFSA(seqs, join_transitions=True)
+        dafsa_obj_b = dafsa.DAFSA(seqs, condense=True)
 
     def test_full_test(self):
         """

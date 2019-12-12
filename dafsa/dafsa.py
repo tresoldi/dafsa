@@ -19,8 +19,6 @@ import networkx as nx
 from . import output
 from . import utils
 
-# TODO: add a separator and interface with __main__
-
 # comment on internal node_id, meaningless
 class DAFSANode:
     """
