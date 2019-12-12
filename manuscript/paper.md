@@ -24,9 +24,9 @@ Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyc
 
 ![Visual representation of a DAFSA for the list of strings `"dibs"`, `"tap"`, `"top"`, `"taps"`, and `"tops"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
-DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available. In particular, as a consequence of the available implementations being design for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
+DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available. In particular, as a consequence of the available implementations being designed for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
 
-Here we describe [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
+This work describe [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
 
 # Installation, Usage, & Examples
 
@@ -49,7 +49,7 @@ initialize it with the list of strings:
 
 The library will by default collect frequency weights for each edge and node.
 The resulting structures
-can be exported in either a custom textual format (using the Python standard
+can be exported in either a custom textual format (using the standard
 `repr()` command)
 or in GML format (using the `.write_gml()` method),
 as well as converted to equivalent `networkx` graphs (using the
@@ -67,20 +67,15 @@ can be performed by setting the `condense` flag when initializing the
 object, as in the following snippet and Figure 3:
 
 ```python
->>>
-"o kː j o"
-"o r e kː j o"
-"n a z o"
-"s e"
-"s e n t i r e"
-"s e n s o"
-"ɡ u a r d a r e"
-"a m a r e"
-"v o l a r e"
+>>> words = [
+    "o kː j o", "o r e kː j o", "n a z o",
+    "s e", "s e n t i r e", "s e n s o",
+    "g u a r d a r e", "a m a r e", "v o l a r e"]
+>>> d = DAFSA(words, condense=True) # SEPARATOR
 ```
 
 ![A condensed DAFSA for the same list of 9 Italian words phonetically
-transcribed.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
+transcribed used in Figure 2.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
 
 A command-line `dafsa` tool is provided along with the library.
 Assuming the data reside in a `phonemes.txt`
