@@ -55,7 +55,7 @@ The library will by default collect frequency weights for each edge and node.
 We can export the resulting structures in either a custom textual format (using the standard
 `repr()` command)
 or in GML format (using the `.write_gml()` method),
-or convert them to equivalent `networkx` graphs (using the
+or convert them to equivalent graphs in the `networkx` library (using the
 `.to_graph()` method). Visualizations can be
 generated through DOT source code (using the `.to_dot()` method), and
 manipulated according to the users' preferences and needs. An auxiliary
