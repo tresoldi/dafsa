@@ -53,7 +53,7 @@ manipulated according to the users' preferences and needs. An auxiliary
 `.write_figure()` method allows to quickly generate figures in PNG, SVG,
 or PDF format if `graphviz` is available, as in Figure 2.
 
-![Non-condensed]](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/phonemes.png)
+![Non-condensed](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/phonemes.png)
 
 The structures are not condensed by default, as in Figure 2, but condensation
 can be performed by setting the `condense` flag when initializing the
@@ -72,7 +72,7 @@ object, as in the following snippet and Figure 3:
 "v o l a r e"
 ```
 
-![condensed]](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
+![condensed](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/reduced_phonemes.png)
 
 A command-line `dafsa` tool is provided along with the library and allows
 to perform all the actions. Assuming the data resides in a `phonemes.txt`
