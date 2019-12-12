@@ -31,8 +31,8 @@ Here we describe [`dafsa`](https://pypi.org/project/dafsa/), a Python library fo
 # Installation, Usage, & Examples
 
 The library can be installed with the standard `pip` tool for
-package management. Detailed instructions on how to use the library
-can be found in the [official documentation](https://dafsa.readthedocs.io/en/latest/quickstart.html),
+package management. Instructions on how to use the library
+can be found in the [documentation](https://dafsa.readthedocs.io/en/latest/quickstart.html),
 but for most purposes it is enough to create a new `DAFSA` object and
 initialize it with the list of strings:
 
@@ -90,6 +90,13 @@ The main alternatives to this library are based on `dwagdic` C++ library,
 intended for production usage as memory-efficient data
 structures, or on unsupported `adfa` and `minim` packages by
 @Daciuk:2000.
+
+# Code Availability
+
+The `dafsa` source code is on GitHub at
+[https://github.com/tresoldi/dafsa](https://github.com/tresoldi/dafsa)
+and the documentation is at
+[https://dafsa.readthedocs.io/](https://dafsa.readthedocs.io/).
 
 # Acknowledgements
 
