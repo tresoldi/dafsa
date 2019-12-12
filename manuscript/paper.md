@@ -26,7 +26,7 @@ Deterministic Acyclic Finite State Automata (DAFSA, also known as "directed acyc
 
 DAFSAs are commonly used for the memory-efficient storage of sets of strings, particularly in spell checking and in non-probabilistic set membership check [@Blumer:1985; @Ciura:2001; @Lucchesi:1993; @Havon:2011]. While there have been proposals for using them in treating and analyzing pattern repetitions, especially in genomics [@Crochemore:1997], no general-purpose library designed for such exploration and visualization is available. In particular, as a consequence of the available implementations being designed for efficient set membership testing, no library exploring the potential of DAFSAs for investigating frequency of substring patterns, providing an alternative to structural and graphical visualization of language models or grammars, is available.
 
-This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
+This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing these automata and designed for usage in linguistic morphology and formal grammars in general, allowing for faster, easier, and simpler generation of visualizations. Structures can be condensed if desired, frequency weights are collected by default, and a number of export options are offered.
 
 # Installation, Usage, & Examples
 

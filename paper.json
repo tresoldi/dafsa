@@ -1,0 +1,23 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "http://orcid.org/0000-0002-2863-1467",
+      "@type": "Person",
+      "email": "tresoldi@shh.mpg.de",
+      "name": "Tiago Tresoldi",
+      "affiliation": "Department of Linguistic and Cultural Evolution, Max Planck Institute for the Science of Human History"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/tresoldi/dafsa",
+  "datePublished": "2019-12-12",
+  "dateModified": "2019-12-12",
+  "dateCreated": "2019-12-12",
+  "description": "A Python library for Deterministic Acyclic Finite State Automata",
+  "keywords": "finite state automata, deterministic acyclic finite state automaton, sequence analysis",
+  "license": "MIT",
+  "title": "dafsa",
+  "version": "v0.5.1"
+}
