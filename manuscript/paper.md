@@ -20,9 +20,9 @@ bibliography: paper.bib
 
 # Summary
 
-This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing graphs representing a list of strings that allow to identify, visualize, and inspect patterns of substrings. The library is designed for usage by linguists in studies on morphology and formal grammars, and is intended for faster, easier, and simpler generation of visualizations.
+This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library for computing graphs from lists of strings for identifying, visualizing, and inspecting patterns of substrings. The library is designed for usage by linguists in studies on morphology and formal grammars, and is intended for faster, easier, and simpler generation of visualizations.
 It collects frequency weights by default, it can condense structures, and it provides several export options.
-Figure 1 depicts a basic DAFSA, based upon five English words.
+Figure 1 depicts a basic DAFSA, based upon five English words and generated with default settings.
 
 ![Visual representation of a DAFSA for the list of strings `"dibs"`, `"tap"`, `"top"`, `"taps"`, and `"tops"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
@@ -35,7 +35,7 @@ DAFSAs are mostly used for the memory-efficient storage of sets of strings, such
 # Installation, Usage, & Examples
 
 The library can be installed with the standard `pip` tool for
-package management, which takes care of installing the required dependencies.
+package management:
 
 ```bash
 $ pip install dafsa
@@ -44,7 +44,8 @@ $ pip install dafsa
 The [documentation](https://dafsa.readthedocs.io/en/latest/quickstart.html)
 offers detailed instructions on how to use the library.
 For most purposes it is sufficient to create a new `DAFSA` object and
-initialize it with the list of strings:
+initialize it with the list of strings, as in the generation of the graph
+for Figure 1:
 
 ```python
 >>> from dafsa import DAFSA
@@ -71,7 +72,7 @@ object, as done in the following code snippet and illustrated in Figure 3:
 
 ```python
 >>> words = [
-    "o kː j o", "o r e kː j o", "n a z o",
+    "o k: j o", "o r e k: j o", "n a z o",
     "s e", "s e n t i r e", "s e n s o",
     "g u a r d a r e", "a m a r e", "v o l a r e"]
 >>> words = [word.split() for word in words]
@@ -93,8 +94,8 @@ $ dafsa -c -t pdf -o phonemes.pdf phonemes.txt
 
 # Alternatives
 
-The main alternatives to `dafsa`,
-such as the Python [`DAWG` library](https://github.com/pytries/DAWG),
+The main alternatives to this library,
+such as the Python [`DAWG` package](https://github.com/pytries/DAWG),
 are based on `dwagdic` C++ library,
 designed for production usage of memory- and speed-efficient data
 structures. The unsupported `adfa` and `minim` packages by
@@ -106,9 +107,10 @@ with generic lists of strings.
 
 # Code and Documentation Availability
 
-The `dafsa` source code is on GitHub at
-[https://github.com/tresoldi/dafsa](https://github.com/tresoldi/dafsa)
-and the documentation is at
+The `dafsa` source code is available on GitHub at
+[https://github.com/tresoldi/dafsa](https://github.com/tresoldi/dafsa).
+
+The documentation is available at
 [https://dafsa.readthedocs.io/](https://dafsa.readthedocs.io/).
 
 # Acknowledgements
