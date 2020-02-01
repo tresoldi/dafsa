@@ -57,7 +57,7 @@ class TestNode(unittest.TestCase):
             raise AssertionError
 
         # __eq__ assertions
-        if not node_a == node_b:
+        if node_a == node_b:
             raise AssertionError
         if not node_c == node_d:
             raise AssertionError

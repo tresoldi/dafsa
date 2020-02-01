@@ -160,9 +160,7 @@ class DAFSANode:
         Checks whether two nodes are equivalent.
 
         Please note that this method checks for *equivalence* (in particular,
-        disregarding edge weight), and not for *equality*. Internally,
-        it reuses the ``.__str__()`` method, so that the logic for comparison
-        is implemented in a single place.
+        disregarding edge weight), and not for *equality*.
 
         Paremeters
         ----------
@@ -181,6 +179,11 @@ class DAFSANode:
         if len(self.edges) != len(other.edges):
             return False
 
+        # By our definition, final nodes cannot be equal to non-final
+        # nodes, even with equal transitions.
+        if self.final != other.final:
+            return False
+
         # Direct comparison, without building a string, so we can leave
         # as soon as possible
         for label in self.edges:
@@ -193,7 +196,6 @@ class DAFSANode:
             ):
                 return False
 
-        #        return str(self) == str(other)
         return True
 
     def __gt__(self, other):
