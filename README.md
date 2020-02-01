@@ -154,6 +154,9 @@ While the author can be contacted directly for support, it is recommended
 that third parties use GitHub standard features, such as issues and
 pull requests, to contribute, report problems, or seek support.
 
+Contributing guidelines, including a code of conduct, can be found in
+the CONTRIBUTING.md file.
+
 ## Author and citation
 
 The library is developed by Tiago Tresoldi (tresoldi@shh.mpg.de).
