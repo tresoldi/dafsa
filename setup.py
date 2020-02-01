@@ -14,7 +14,7 @@ with open('requirements.txt') as fp:
 # This call to setup() does all the work
 setup(
     name="dafsa",
-    version="0.5.1",
+    version="0.6", # remember to sync with __init__.py
     description="Library for computing Deterministic Acyclic Finite State Automata (DAFSA)",
     long_description=README_FILE,
     long_description_content_type="text/markdown",

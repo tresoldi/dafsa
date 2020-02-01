@@ -97,6 +97,10 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 
 ## Changelog
 
+Version 0.6:
+  - Documentation improvements following JOSS review
+  - Fixed bug where node finality was not considered in minimization
+
 Version 0.5.1:
   - Minor changes in preparation for submission (including tagged release)
 

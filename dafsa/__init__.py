@@ -22,7 +22,7 @@ as in:
 """
 
 # Version of the dafsa package
-__version__ = "0.5.1"
+__version__ = "0.6"
 __author__ = "Tiago Tresoldi"
 __email__ = "tresoldi@shh.mpg.de"
 
