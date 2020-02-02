@@ -814,7 +814,7 @@ class DAFSA:
             The textual representation of the object.
         """
 
-        # Add basic statistics
+        # Add basic statistics, being aware of singular/plural
         buf = [
             "DAFSA with %i nodes and %i edges (%i inserted sequences)"
             % (self.count_nodes(), self.count_edges(), self.count_sequences())

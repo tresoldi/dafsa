@@ -27,6 +27,8 @@ In any standard Python environment, `dafsa` can be installed with:
 $ pip install dafsa
 ```
 
+A `conda` package is also available.
+
 Detailed instructions on how to use the library can be found in the
 [official documentation](https://dafsa.readthedocs.io/en/latest/quickstart.html).
 For most purposes, it is enough to pass a list of sequences to
@@ -173,14 +175,14 @@ No. [ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5.1. Jena. Available at: <https://github.com/tresoldi/dafsa>
+> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6. Jena. Available at: <https://github.com/tresoldi/dafsa>
 
 In BibTeX:
 
 ```bibtex
 @misc{Tresoldi2019dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5.1.},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6.},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
   year = {2019},

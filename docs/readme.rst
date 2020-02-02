@@ -51,6 +51,8 @@ In any standard Python environment, ``dafsa`` can be installed with:
 
    pip install dafsa
 
+A ``conda`` package is also available.
+
 Alternatives
 ------------
 
@@ -66,7 +68,10 @@ C/C++, written by Jan Daciuk. The personal webpage hosting them has been
 offline for years, with a version at the `Wayback
 Machine <https://web.archive.org/web/20160531133017/http://galaxy.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/minim.html>`__
 available. Note that the archived version does *not* include the
-packages.
+packages, which are available in our GitHub repository in the
+``/daciuk`` folder (Jan Daciuk is in no way involved with this library,
+and his code, originally released under the GPL2 license, is copied for
+archival purposes).
 
 Author
 ------
@@ -85,7 +90,7 @@ How to cite
 If you use ``dafsa``, please cite it as:
 
    Tresoldi, Tiago (2019). DAFSA, a a library for computing
-   Deterministic Acyclic Finite State Automata. Version 0.5.1. Jena.
+   Deterministic Acyclic Finite State Automata. Version 0.6. Jena.
    Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
@@ -94,7 +99,7 @@ In BibTeX:
 
    @misc{Tresoldi2019dafsa,
      author = {Tresoldi, Tiago},
-     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.5.1},
+     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6},
      howpublished = {\url{https://github.com/tresoldi/dafsa}},
      address = {Jena},
      year = {2019},
