@@ -100,13 +100,16 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 ## Changelog
 
 Version 0.6:
+
   - Documentation improvements following JOSS review
   - Fixed bug where node finality was not considered in minimization
 
 Version 0.5.1:
+
   - Minor changes in preparation for submission (including tagged release)
 
 Version 0.5:
+
   - Improvements in speed, particularly in the `__eq__()` method of
     `DAFSANode` and the `_minimize()` method of `DAFSA`. The computation
     of a DAFSA for the contents of `/usr/share/dict/words` in the test
@@ -115,11 +118,13 @@ Version 0.5:
     notes on license
 
 Version 0.4:
+
   - Full documentation for existing code
   - Added GML, PDF, and SVG export
   - Allow to access all options from command-line
 
 Version 0.3:
+
   - Allow to join transitions in single sub-paths
   - Allows to export a DAFSA as a `networkx` graph
   - Preliminary documentation at [ReadTheDocs](https://dafsa.readthedocs.io)
@@ -143,6 +148,7 @@ Version 0.1:
 ## Roadmap
 
 Version 1.0:
+
   - Publish in journal
 
 

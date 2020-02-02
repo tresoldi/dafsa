@@ -5,7 +5,7 @@ from setuptools import setup
 LOCAL_PATH = pathlib.Path(__file__).parent
 
 # The text of the README file
-README_FILE = (LOCAL_PATH / "README.md").read_text()
+README_FILE = (LOCAL_PATH / "README.rst").read_text()
 
 # Load requirements, so they are listed in a single place
 with open('requirements.txt') as fp:
@@ -17,7 +17,7 @@ setup(
     version="0.6", # remember to sync with __init__.py
     description="Library for computing Deterministic Acyclic Finite State Automata (DAFSA)",
     long_description=README_FILE,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     url="https://github.com/tresoldi/dafsa",
     project_urls = {
         "Documentation": "https://dafsa.readthedocs.io",
