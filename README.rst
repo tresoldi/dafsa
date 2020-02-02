@@ -1,8 +1,6 @@
 DAFSA
 =====
 
-|PyPI| |Build Status| |codecov| |Codacy Badge| |Documentation Status|
-
 DAFSA is a library for computing `Deterministic Acyclic Finite State
 Automata <https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton>`__
 (also known as “directed acyclic word graphs”, or DAWG). DAFSA are data
@@ -52,7 +50,12 @@ In any standard Python environment, ``dafsa`` can be installed with:
 
    $ pip install dafsa
 
-A ``conda`` package is also available.
+A ``conda`` package is also available, and can be installed (from the
+``tresoldi`` channel) with:
+
+.. code:: bash
+
+   $ conda install -c tresoldi dafsa
 
 Detailed instructions on how to use the library can be found in the
 `official

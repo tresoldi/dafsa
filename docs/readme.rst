@@ -51,7 +51,13 @@ In any standard Python environment, ``dafsa`` can be installed with:
 
    pip install dafsa
 
-A ``conda`` package is also available.
+A ``conda`` package is also available, and can be installed from the
+``tresoldi`` channel with:
+
+::
+
+   conda install -c tresoldi dafsa
+
 
 Alternatives
 ------------

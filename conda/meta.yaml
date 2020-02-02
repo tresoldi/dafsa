@@ -1,0 +1,45 @@
+{% set name = "dafsa" %}
+{% set version = "0.6" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: "9a6d3420af91d159a15db7686337d56bdeabbadd6e3be9933bcdf0af4048435d"
+
+build:
+  number: 0
+  entry_points:
+    - dafsa=dafsa.__main__:main
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
+
+requirements:
+  host:
+    - networkx
+    - pip
+    - python>=3.5
+  run:
+    - networkx
+    - python
+
+test:
+  imports:
+    - dafsa
+    - resources
+  commands:
+    - dafsa --help
+
+about:
+  home: "https://github.com/tresoldi/dafsa"
+  license: "MIT"
+  license_family: "MIT"
+  license_file: ""
+  summary: "Library for computing Deterministic Acyclic Finite State Automata (DAFSA)"
+  doc_url: ""
+  dev_url: ""
+
+extra:
+  recipe-maintainers:
+    - tresoldi 
