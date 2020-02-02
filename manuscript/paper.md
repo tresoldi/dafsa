@@ -24,7 +24,7 @@ This work describes [`dafsa`](https://pypi.org/project/dafsa/), a Python library
 It collects frequency weights by default, it can condense structures, and it provides several export options.
 Figure 1 depicts a basic DAFSA, based upon five English words and generated with default settings.
 
-![Visual representation of a DAFSA for the list of strings `"dibs"`, `"tap"`, `"top"`, `"taps"`, and `"tops"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
+![Visual representation of a DAFSA for the list of strings `"dib"`, `"tip"`, `"tips"`, and `"top"`.](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/example.png)
 
 # Background
 

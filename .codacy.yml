@@ -1,6 +1,7 @@
 exclude_paths:
     - "AUTHORS.md"
     - "README.md"
+    - "CONTRIBUTING.md"
     - "dafsa/__init__.py"
     - "dafsa/output.py"
     - "manuscript/*"
