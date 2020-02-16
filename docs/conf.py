@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- Project information -----------------------------------------------------
 
 project = 'dafsa'
-copyright = '2019, Tiago Tresoldi'
+copyright = '2019-20, Tiago Tresoldi'
 author = 'Tiago Tresoldi'
 
 
