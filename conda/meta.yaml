@@ -1,5 +1,5 @@
 {% set name = "dafsa" %}
-{% set version = "0.6" %}
+{% set version = "1.0" %}
 
 package:
   name: "{{ name|lower }}"
@@ -35,9 +35,9 @@ about:
   home: "https://github.com/tresoldi/dafsa"
   license: "MIT"
   license_family: "MIT"
-  license_file: ""
+  license_file: "https://raw.githubusercontent.com/tresoldi/dafsa/master/LICENSE"
   summary: "Library for computing Deterministic Acyclic Finite State Automata (DAFSA)"
-  doc_url: ""
+  doc_url: "https://dafsa.readthedocs.io/en/latest/index.html"
   dev_url: ""
 
 extra:

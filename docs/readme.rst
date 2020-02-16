@@ -95,20 +95,20 @@ How to cite
 
 If you use ``dafsa``, please cite it as:
 
-   Tresoldi, Tiago (2019). DAFSA, a a library for computing
-   Deterministic Acyclic Finite State Automata. Version 0.6. Jena.
+   Tresoldi, Tiago (2020). DAFSA, a a library for computing
+   Deterministic Acyclic Finite State Automata. Version 1.0. Jena.
    Available at: https://github.com/tresoldi/dafsa
 
 In BibTeX:
 
 .. code:: bibtex
 
-   @misc{Tresoldi2019dafsa,
+   @misc{Tresoldi2020dafsa,
      author = {Tresoldi, Tiago},
-     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6},
+     title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0},
      howpublished = {\url{https://github.com/tresoldi/dafsa}},
      address = {Jena},
-     year = {2019},
+     year = {2020},
    }
 
 References

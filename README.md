@@ -104,6 +104,10 @@ Full documentation is available [at ReadTheDocs.io](https://dafsa.readthedocs.io
 
 ## Changelog
 
+Version 1.0:
+  - Minor code refactoring and linting
+  - Released and published version
+
 Version 0.6:
 
   - Documentation improvements following JOSS review
@@ -152,11 +156,6 @@ Version 0.1:
 
 ## Roadmap
 
-Version 1.0:
-
-  - Publish in journal
-
-
 After 1.0:
 
   - Preliminary generation of minimal regular expressions matching the
@@ -186,16 +185,16 @@ No. [ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2019). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6. Jena. Available at: <https://github.com/tresoldi/dafsa>
+> Tresoldi, Tiago (2020). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0. Jena. Available at: <https://github.com/tresoldi/dafsa>
 
 In BibTeX:
 
 ```bibtex
-@misc{Tresoldi2019dafsa,
+@misc{Tresoldi2020dafsa,
   author = {Tresoldi, Tiago},
-  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 0.6.},
+  title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0.},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
-  year = {2019},
+  year = {2020},
 }
 ```
