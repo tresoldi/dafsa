@@ -186,7 +186,7 @@ No. [ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en
 
 If you use `dafsa`, please cite it as:
 
-> Tresoldi, Tiago (2020). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0. Jena. Available at: <https://github.com/tresoldi/dafsa>
+> Tresoldi, Tiago (2020). DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0. Jena. DOI: 10.5281/zenodo.3668870
 
 In BibTeX:
 
@@ -196,6 +196,7 @@ In BibTeX:
   title = {DAFSA, a a library for computing Deterministic Acyclic Finite State Automata. Version 1.0.},
   howpublished = {\url{https://github.com/tresoldi/dafsa}},
   address = {Jena},
+  doi = {10.5281/zenodo.3668870}.
   year = {2020},
 }
 ```
