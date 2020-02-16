@@ -14,7 +14,7 @@ authors:
 affiliations:
  - name: Department of Linguistic and Cultural Evolution, Max Planck Institute for the Science of Human History
    index: 1
-date: 12 December 2019
+date: 16 February 2020
 bibliography: paper.bib
 ---
 

@@ -12,12 +12,12 @@
   ],
   "identifier": "",
   "codeRepository": "https://github.com/tresoldi/dafsa",
-  "datePublished": "2019-12-12",
-  "dateModified": "2019-12-12",
+  "datePublished": "2020-02-16",
+  "dateModified": "2020-02-16",
   "dateCreated": "2019-12-12",
   "description": "A Python library for Deterministic Acyclic Finite State Automata",
   "keywords": "finite state automata, deterministic acyclic finite state automaton, sequence analysis",
   "license": "MIT",
   "title": "dafsa",
-  "version": "v0.5.1"
+  "version": "1.0"
 }
