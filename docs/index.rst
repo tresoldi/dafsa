@@ -26,6 +26,10 @@ Welcome to dafsa's documentation!
    :alt: Documentation Status
    :target: https://dafsa.readthedocs.io/en/latest/?badge=latest
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg
+   :alt: Zenodo
+   :target: https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg
+
 ``dafsa`` is a Python library for computing
 `Deterministic Acyclic Finite State
 Automata <https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton>`__
