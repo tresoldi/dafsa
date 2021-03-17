@@ -5,10 +5,10 @@ from setuptools import setup
 LOCAL_PATH = pathlib.Path(__file__).parent
 
 # The text of the README file
-README_FILE = (LOCAL_PATH / "README.rst").read_text()
+README_FILE = (LOCAL_PATH / "README.rst").read_text(encoding="utf-8")
 
 # Load requirements, so they are listed in a single place
-with open('requirements.txt') as fp:
+with open('requirements.txt', encoding="utf-8") as fp:
     install_requires = [dep.strip() for dep in fp.readlines()]
 
 # This call to setup() does all the work
