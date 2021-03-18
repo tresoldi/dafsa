@@ -13,6 +13,9 @@ import unittest
 # Import the library itself
 import dafsa
 
+def test_trigger():
+    assert 1 == 1
+
 def test_dummy():
     assert dafsa.dummy() == 42
 
