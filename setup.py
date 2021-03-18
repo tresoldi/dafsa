@@ -24,7 +24,7 @@ setup(
     },
     author="Tiago Tresoldi",
     author_email="tresoldi@shh.mpg.de",
-    license="MIT",
+    license="GNU GPLv3",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
