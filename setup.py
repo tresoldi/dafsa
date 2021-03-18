@@ -10,7 +10,7 @@ from setuptools import setup
 LOCAL_PATH = pathlib.Path(__file__).parent
 
 # The text of the README file
-README_FILE = (LOCAL_PATH / "README.rst").read_text(encoding="utf-8")
+README_FILE = (LOCAL_PATH / "README.md").read_text(encoding="utf-8")
 
 # Load requirements, so they are listed in a single place
 with open("requirements.txt", encoding="utf-8") as fp:
@@ -46,7 +46,7 @@ setup(
     ],
     license="GNU GPLv3",
     long_description=README_FILE,
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown",
     name="dafsa",
     project_urls={
         "Documentation": "https://dafsa.readthedocs.io",
