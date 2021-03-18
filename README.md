@@ -12,6 +12,11 @@ Status](https://readthedocs.org/projects/dafsa/badge/?version=latest)](https://d
 
 DAFSA is a library for computing [Deterministic Acyclic Finite State Automata](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton) (also known as "directed acyclic word graphs", or DAWG). DAFSA are data structures derived from [tries](https://en.wikipedia.org/wiki/Trie) that allow to represent a set of sequences (typically character strings or *n*-grams) in the form of a directed acyclic graph with a single source vertex (the `start` symbol of all sequences) and at least one sink edge (`final` symbols, each pointed to by one or more sequences). In the current implementation, a trait of each node expresses whether it can be used a sink.
 
+**NOTE: the library is currently being rewritten to support arbitrary objects and for solving problems of recursion level
+that are due to the first, more experintal approach. The new version will be released as version 2.0. The code currently
+uses intensively the implementation in the `lexpy` package (which, in fact, lead to a change in the LICENSE of
+this library, now under GPL3)**
+
 The primary difference between DAFSA and tries is that the latter eliminates suffix and infix redundancy, as in the example of Figure 1 (from the linked Wikipedia article) storing the set of strings `"tap"`, `"taps"`, `"top"`, and `"tops"`. Even though DAFSAs cannot be used to store precise frequency information, given that multiple paths might reach the same terminal node, they still allow to estimate the sampling frequency; being acyclic, they can also reject any sequence not included in the training. Fuzzy extensions will allow to estimate the sampling probability of unobserved sequences.
 
 ![Trie vs. DAFSA](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/trie-vs-dafsa.png)
