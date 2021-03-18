@@ -4,4 +4,7 @@ Credits
 Development
 -----------
 
-* Tiago Tresoldi (tresoldi@shh.mpg.de)[mailto:tresoldi@shh.mpg.de]
+* Tiago Tresoldi (tiago.tresoldi@lingfil.uu.se)
+
+Version 2.0 is highly based on [`lexpy`](https://github.com/aosingh/lexpy) code by 
+Abhishek Singh and others, released under GNU GPLv3.
