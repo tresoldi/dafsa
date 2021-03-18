@@ -4,7 +4,7 @@ Setup script for `dafsa`
 
 # Import Python standard libraries
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # The directory containing this file
 LOCAL_PATH = pathlib.Path(__file__).parent
@@ -32,9 +32,12 @@ setup(
         "Topic :: Text Processing :: Indexing",
         "Topic :: Text Processing :: Linguistic",
     ],
-    packages=["dafsa", "resources"],
     description="Library for computing Deterministic Acyclic Finite State Automata (DAFSA)",
     entry_points={"console_scripts": ["dafsa=dafsa.__main__:main"]},
+    extras_require={
+        "dev": ["black", "flake8", "twine", "wheel"],
+        "test": ["pytest"],
+    },
     include_package_data=True,
     install_requires=install_requires,
     keywords=[
@@ -48,6 +51,9 @@ setup(
     long_description=README_FILE,
     long_description_content_type="text/markdown",
     name="dafsa",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    python_requires=">=3.6",
     project_urls={
         "Documentation": "https://dafsa.readthedocs.io",
     },
