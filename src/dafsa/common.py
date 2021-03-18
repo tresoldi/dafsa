@@ -1,62 +1,62 @@
+"""
+Common functions of the library.
+"""
+
+# Import Python standard libraries
 import re
 from contextlib import closing
 
+# Import from local modules
 from .exceptions import InvalidWildCardExpressionError
 
 # A '?' followed by an '*' in the wildcard expr is illegal
-__questionmark_after_asterisk_re = r"\?+(?=\*+)"
-__questionmark_after_asterisk_pattern = re.compile(__questionmark_after_asterisk_re)
+_RE_ASTERISK_QUESTION = re.compile(r"\?+(?=\*+)")
 
 # Any special character apart from '*' or '?' is illegal.
-__illegal_characters_re = r"[^\w?*]+"
-__illegal_characters_pattern = re.compile(__illegal_characters_re)
+_RE_ILLEGAL_CHARS = re.compile(r"[^\w?*]+")
 
 
-def validate_expression(wildcard_expression):
+def validate_expression(expression: str) -> str:
     """
-    Description:
-        Validates and shortens the wild card expression(if needed) without changing the intended meaning .
-    Args:
-        :arg (str) wild card expression
-    Returns:
-        :return (str) A shortened copy of the wild card expression.
-    Raises:
-        :raises (``InvalidWildCardExpressionError``) Any error while validating the expression.
-    Example:
-        ">>> from lexpy._utils import validate_expression"
-        ">>> sample_expr = 'a*?' # Match literal `a` followed by any character Zero or unlimited times."
-        ">>> print(validate_expression(sample_expr)) # Outputs 'a*'"
+    Validate and shorten a wildcard expression.
+
+    The wildcard expression is validated and, if needed, shortened without
+    changing the intended meaning. An `InvalidWildCardExpressionError`
+    exception is raised if the expression cannot be validated.
+
+    :param expression: The wildcard expression to be validated.
+    :return: A shortened copy of the wildcard expression.
     """
 
     try:
-        if (
-            re.search(__questionmark_after_asterisk_pattern, wildcard_expression)
-            is not None
-        ):
+        if re.search(_RE_ASTERISK_QUESTION, expression) is not None:
             raise InvalidWildCardExpressionError(
-                wildcard_expression,
-                "A '?' followed by an '*' in the wildcard expr is illegal",
+                expression,
+                "A '?' followed by an '*' in the wildcard expr is illegal.",
             )
 
-        if re.search(__illegal_characters_pattern, wildcard_expression) is not None:
+        if re.search(_RE_ILLEGAL_CHARS, expression) is not None:
             raise InvalidWildCardExpressionError(
-                wildcard_expression, "Illegal Characters"
+                expression, "Illegal characters in expression."
             )
 
     except InvalidWildCardExpressionError as e:
         raise e
-    result = re.sub(
-        r"\*+", "*", wildcard_expression
-    )  # Replace consecutive * with single *
-    result = re.sub(r"\?+", "?", result)  # Replace consecutive ? with a single ?
-    result = re.sub(
-        r"(\*\?)+", "*", result
-    )  # Replace consecutive '*?' with a single group '*'
+
+    # Replace consecutive * with single *
+    result = re.sub(r"\*+", "*", expression)
+
+    # Replace consecutive ? with a single ?
+    result = re.sub(r"\?+", "?", result)
+
+    # Replace consecutive '*?' with a single group '*'
+    result = re.sub(r"(\*\?)+", "*", result)
+
     return result
 
 
+# TODO: only used in `FSA`, drop it when possible
 def gen_source(source):
-    """"""
     if hasattr(source, "read"):
         input_file = source
     else:
@@ -65,4 +65,3 @@ def gen_source(source):
     with closing(input_file):
         for line in input_file:
             yield line.strip()
-

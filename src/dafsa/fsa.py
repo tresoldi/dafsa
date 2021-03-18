@@ -1,169 +1,192 @@
+# Import Python standard libraries
 import os
 from types import GeneratorType
+from typing import Optional, Tuple
 
+# Import from local modules
 from .common import validate_expression, gen_source
 from .exceptions import InvalidWildCardExpressionError
 
 
 class FSANode:
     """
-    Class for Finite State Automaton(FSA) Node. Both Trie and Directed Acyclic Word Graph (DAWG) node definitions
-    inherit from this class.
+    Class representing a Finite State Automaton (FSA) node.
     """
 
-    __slots__ = "id", "val", "children", "eow", "count"
+    __slots__ = "id", "val", "children", "terminal", "count"
 
-    def __init__(self, _id, val):
+    # TODO: move `val` to arbitrary hashable element
+    def __init__(self, _id: int, val: str):
         """
-        Description:
-            Initialize a Finite State Automaton(FSA) Node.
-        Args:
-            :arg _id (int) Unique numerical ID assigned to this node.
-            :arg val (str) The Letter from alphabet.
+        Initialize a Finite State Automaton(FSA) Node.
+
+        :param _id: A unique numerical ID assigned to this node.
+        :param val: The value associated with the node.
         """
 
         self.id = _id
         self.val = val
-        self.children = {}
-        self.eow = False
-        self.count = 0
+        self.children: dict = {}
+        self.terminal: bool = False
+        self.count: int = 0
 
-    def add_child(self, letter, _id=None):
+    # TODO: move `element` to arbitrary hashable element
+    # TODO: as _id is mandatory, should we invert arg order to mimic __init__?
+    def add_child(self, element: str, _id: int):
         """
-        Description:
-            To add a child edge to the current Node.
-        Args:
-            :arg letter (str) The character label that the child node will have.
-            :arg id (int) Unique numerical ID assigned to this node.
-        """
-        self.children[letter] = FSANode(_id, letter)
+        Adds a child edge to the current node.
 
-    def __getitem__(self, letter):
+        :param element: The character label that the child node will have.
+        :param _id: A unique numerical ID assigned to this node.
         """
-        Description:
-            Returns the child node. To use this method first check if the key is present in the dictionary of children
-            edges or use default as None
-        Args:
-            :arg (str) The letter(or label) corresponding to the child node
-        Returns:
-            :return (FSANode) The child Node
-        """
-        return self.children[letter]
 
-    def __str__(self):
+        self.children[element] = FSANode(_id, element)
+
+    # TODO: decide what to do if the element is missing
+    # TODO: move `element` to arbitrary hashable element
+    def __getitem__(self, element):
         """
-        Description:
-            Outputs a string representation of the FSA node. This is invoked when str(`FSANode`) is called.
-        :return:
+        Returns the child node.
+
+        :param element: The letter (or label) corresponding to the child node.
+        :return: The child node.
         """
+
+        return self.children[element]
+
+    # TODO: follow as closely as possible the representation of version 1.0
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the current FSA node.
+
+        :return: The string representation of the node.
+        """
+
         strarr = [self.val, str(self.count)]
 
-        if self.eow:
+        if self.terminal:
             strarr.append("1")
         else:
             strarr.append("0")
 
-        for letter, node in self.children.items():
-            strarr.append(letter)
+        for element, node in self.children.items():
+            strarr.append(element)
             strarr.append(str(node.id))
 
         return "".join(strarr)
 
-    def __eq__(self, other):
+    def __repr__(self) -> str:
         """
-        Description:
-            Equal only if string representations are same.
-        :param other:
-        :return: bool
-        """
-        return self.__str__() == other.__str__()
+        Returns a nicely formatted textual representation of the current node.
 
-    def __hash__(self):
-        """
-        Description:
-            Call the __hash__() method on the string representation.
-        :return:
-        """
-        return self.__str__().__hash__()
-
-    def __repr__(self):
-        """
-        Description:
-            Returns a nicely formatted string of the FSA node. This is invoked when `repr()` is called.
-        :return:
+        :return: A textual representation of the current node.
         """
         return "{0}(id={1}, label={2}, EOW={3}, count={4})".format(
-            self.__class__.__name__, self.id, self.val, self.eow, self.count
+            self.__class__.__name__, self.id, self.val, self.terminal, self.count
         )
+
+    # TODO: decide whether to use `count` (using __repr__?)
+    def __eq__(self, other) -> bool:
+        """
+        Checks if two FSA nodes are equal.
+
+        Currently, nodes are considered equal if they have the same textual
+        representation.
+
+        :return: A boolean informing whether the two nodes are equal.
+        """
+
+        return self.__str__() == other.__str__()
+
+    # TODO: we should really mode to __repr__, accounting for `count`
+    def __hash__(self):
+        """
+        Return a hash for the current node.
+
+        :return: The hash value for the current node.
+        """
+
+        return self.__str__().__hash__()
 
 
 class FSA:
     """
-    Base Class which defines the common methods both for `Trie` and `DAWG`.
+    Class representing a Finite State Automaton (FSA) node.
+
+    Both tries and dafsas inherit from this class. As many common methods as
+    possible should be moved here.
     """
 
-    __slots__ = "_id", "_num_of_words", "root"
+    __slots__ = "_id", "_num_seqs", "root"
 
-    def __init__(self, root):
+    def __init__(self, root: FSANode):
         self._id = 1
-        self._num_of_words = 1
+        self._num_seqs = 1  # starts with the empty sequence
         self.root = root
 
-    def __contains__(self, word):
+    # TODO: move to arbitrary sequence type
+    # TODO: cache seq len?
+    def __contains__(self, seq: str) -> bool:
         """
-        Description:
-            To enable the use of 'in' keyword on dawg. Returns true if the word is present in dawg else false
-        Args:
-            :arg word (str) The word to be searched
-        Returns:
-            :returns contains (boolean) True or False
+        Checks if a sequence is expressed by the automaton, overloading `in`.
+
+        :param seq: The sequence to be searched.
+        :return: Whether the sequence is expressed by the automaton.
         """
-        if word == "":
-            return True  # The root is an empty string. So it is always present
-        if word is None:
+
+        # The root is an empty string, and always present
+        # TODO: update with arbitrary sequence typing
+        if seq == "":
+            return True
+        if seq is None:
             return False
+
         node = self.root
-        for i, letter in enumerate(word):
-            if letter in node.children:
-                node = node[letter]
-                if node.eow and i == len(word) - 1:
-                    return True
-            else:
+        for idx, element in enumerate(seq):
+            if element not in node.children:
                 return False
+            else:
+                node = node[element]
+                if node.terminal and idx == len(seq) - 1:
+                    return True
+
         return False
 
-    def __contains_prefix(self, prefix):
+    # TODO: move to arbitrary sequence type
+    def __contains_prefix(self, prefix: str) -> Tuple[bool, Optional[FSANode]]:
         """
-        Description:
-            Checks whether the prefix is present in the DAWG. If yes, returns (True, node) where the prefix ends else
-            returns (False, None)
-        Arguments:
-            :arg (str) prefix: The Prefix string
-        Returns:
-            :returns (tuple)(exists, node):  If yes, returns (True, node) where the prefix ends else
-            returns (False, None)
+        Internal method for checking if a prefix is present in the automaton.
+
+        :param prefix: The prefix sequence.
+        :return: A tuple whose first element is a boolean, indicating whether the
+            prefix is found, and whose second element is the node where the
+            prefix ends. If the prefix is not found, the second element will be
+            `None`.
         """
+
         if prefix == "":
             return True, self.root
         if prefix is None:
             return False, None
+
         node = self.root
-        for i, letter in enumerate(prefix):
-            if letter in node.children:
-                node = node[letter]
+        for element in prefix:
+            if element in node.children:
+                node = node[element]
             else:
                 return False, None
+
         return True, node
 
-    def contains_prefix(self, prefix):
+    # TODO: move to arbitrary sequence type
+    def contains_prefix(self, prefix: str) -> bool:
         """
-        Description:
-            Returns a boolean indicating the presence of prefix in the DAWG data-structure
-        Arguments:
-            :arg (str) prefix: The Prefix string
-        Returns:
-            :returns (boolean) True, if present, else False.
+        Checks whether a prefix is present in the automaton.
+
+        :param prefix: The prefix sequence.
+        :return: A boolean indicating whether the prefix is present.
         """
+
         contains, _ = self.__contains_prefix(prefix)
         return contains
 
@@ -184,7 +207,7 @@ class FSA:
         if not node or not wildcard or index < 0:
             return []
 
-        if node.eow and index >= len(wildcard) and current_word:
+        if node.terminal and index >= len(wildcard) and current_word:
             return [(current_word, node.count)] if with_count else [current_word]
 
         if index >= len(wildcard):
@@ -223,7 +246,7 @@ class FSA:
                         with_count=with_count,
                     )
                     words.extend(child_words)
-            elif node.eow and index == len(wildcard) - 1:
+            elif node.terminal and index == len(wildcard) - 1:
                 return [(current_word, node.count)] if with_count else [current_word]
 
         else:
@@ -262,7 +285,7 @@ class FSA:
 
         if wildcard.isalpha():
             present, node = self.__contains_prefix(wildcard)
-            if present and node.eow:
+            if present and node.terminal:
                 words.append((wildcard, node.count)) if with_count else words.append(
                     wildcard
                 )
@@ -329,7 +352,7 @@ class FSA:
         Returns:
             :returns (int) Number of words
         """
-        return max(0, self._num_of_words - 1)
+        return max(0, self._num_seqs - 1)
 
     def search_within_distance(self, word, dist=0, with_count=False):
         row = list(range(len(word) + 1))
@@ -361,7 +384,7 @@ class FSA:
                 r = row[col - 1]
             curr_row.append(min(i, d, r))
 
-        if curr_row[-1] <= dist and node.eow:
+        if curr_row[-1] <= dist and node.terminal:
             words.append((new_word, node.count)) if with_count else words.append(
                 new_word
             )

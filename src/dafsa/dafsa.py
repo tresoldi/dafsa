@@ -54,11 +54,11 @@ class DAFSA(FSA):
                 node = node.children[letter]
                 self._id = _id
 
-            node.eow = True
+            node.terminal = True
             node.count += count
             self.__prev_node = node
 
-        self._num_of_words += count
+        self._num_seqs += count
         self.__prev_word = word
 
     def reduce(self):
