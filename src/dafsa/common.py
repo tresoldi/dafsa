@@ -66,9 +66,3 @@ def gen_source(source):
         for line in input_file:
             yield line.strip()
 
-
-###############################
-
-
-def dummy():
-    return 42

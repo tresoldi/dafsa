@@ -19,25 +19,7 @@ from collections import deque
 
 ###########
 
-input_words = ['ampyx', 'abuzz', 'athie', 'athie', 'athie', 'amato', 'amato', 'aneto', 'aneto', 'aruba',
-               'arrow', 'agony', 'altai', 'alisa', 'acorn', 'abhor', 'aurum', 'albay', 'arbil', 'albin',
-               'almug', 'artha', 'algin', 'auric', 'sore', 'quilt', 'psychotic', 'eyes', 'cap', 'suit',
-               'tank', 'common', 'lonely', 'likeable' 'language', 'shock', 'look', 'pet', 'dime', 'small' 
-               'dusty', 'accept', 'nasty', 'thrill', 'foot', 'steel', 'steel', 'steel', 'steel', 'abuzz']
-input_words = ["dib", "tip", "tips", "top"]
-input_words = [
-"defied",
-"defies",
-"defy",
-"defying",
-"deny",
-"denying",
-"tried",
-"tries",
-"try",
-"trying",
-"tryinginges",
-]
+
 
 
 trie = Trie()

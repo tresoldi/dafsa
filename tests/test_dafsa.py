@@ -5,219 +5,160 @@ test_dafsa
 Tests for the `dafsa` package.
 """
 
-# Import Python libraries
-import sys
-import tempfile
-import unittest
-
 # Import the library itself
 import dafsa
 
-def test_trigger():
-    assert 1 == 1
-
-def test_dummy():
-    assert dafsa.dummy() == 42
-
-OLD_TEST = """
-
-class TestNode(unittest.TestCase):
-    def test_node(self):
-        # Missing ID
-        with self.assertRaises(TypeError):
-            node = dafsa.dafsa.DAFSANode()
-
-        # Create nodes for testing
-        node_a = dafsa.dafsa.DAFSANode(0)
-        node_b = dafsa.dafsa.DAFSANode(1)
-        node_c = dafsa.dafsa.DAFSANode(13)
-        node_d = dafsa.dafsa.DAFSANode(14)
-        node_b.final = True
-        node_c.edges["x"] = dafsa.dafsa.DAFSAEdge(node_b, 2)
-        node_d.edges["x"] = dafsa.dafsa.DAFSAEdge(node_b, 1)
-
-        # __str__ and __repr__ assertions
-        if not str(node_a) == "":
-            raise AssertionError()
-        if not str(node_b) == "":
-            raise AssertionError()
-        if not str(node_c) == "x|1":
-            raise AssertionError()
-        if not str(node_d) == "x|1":
-            raise AssertionError()
-
-        if not repr(node_a) == "0()":
-            raise AssertionError
-        if not repr(node_b) == "F()":
-            raise AssertionError
-        if not repr(node_c) == "n(#1/0:<x>/2)":
-            raise AssertionError
-        if not repr(node_d) == "n(#1/0:<x>/1)":
-            raise AssertionError
-
-        # __eq__ assertions
-        if node_a == node_b:
-            raise AssertionError
-        if not node_c == node_d:
-            raise AssertionError
-        if not node_a != node_c:
-            raise AssertionError
-
-        # __gt__ assertions
-        if not node_a < node_c:
-            raise AssertionError
-        if not node_d > node_b:
-            raise AssertionError
-
-        # __hash__ assertions, follow _str__ for now
-        if not hash(node_a) == hash(node_b):
-            raise AssertionError
-        if not hash(node_c) == hash(node_d):
-            raise AssertionError
-        if not hash(node_a) != hash(node_c):
-            raise AssertionError
-
-        # repr_hash
-        assert node_a.repr_hash() != node_b.repr_hash()
+WORDS1 = ["dib", "tip", "tips", "top"]
+WORDS2 = [
+    "defied",
+    "defies",
+    "defy",
+    "defying",
+    "deny",
+    "denying",
+    "tried",
+    "tries",
+    "try",
+    "trying",
+    "tryinginges",
+]
+WORDS3 = [
+    "ampyx",
+    "abuzz",
+    "athie",
+    "athie",
+    "athie",
+    "amato",
+    "amato",
+    "aneto",
+    "aneto",
+    "aruba",
+    "arrow",
+    "agony",
+    "altai",
+    "alisa",
+    "acorn",
+    "abhor",
+    "aurum",
+    "albay",
+    "arbil",
+    "albin",
+    "almug",
+    "artha",
+    "algin",
+    "auric",
+    "sore",
+    "quilt",
+    "psychotic",
+    "eyes",
+    "cap",
+    "suit",
+    "tank",
+    "common",
+    "lonely",
+    "likeable" "language",
+    "shock",
+    "look",
+    "pet",
+    "dime",
+    "small" "dusty",
+    "accept",
+    "nasty",
+    "thrill",
+    "foot",
+    "steel",
+    "steel",
+    "steel",
+    "steel",
+    "abuzz",
+]
 
 
-class TestEdge(unittest.TestCase):
-    def test_edge(self):
+def test_words1():
+    trie = dafsa.Trie()
+    d = dafsa.DAFSA()
+    trie.add_all(WORDS1)
+    d.add_all(WORDS1)
 
-        # Missing node
-        with self.assertRaises(TypeError):
-            edge_a = dafsa.dafsa.DAFSAEdge()
+    assert len(trie) == 10
+    assert len(d) == 6
+    d.reduce()
+    assert len(d) == 9
 
-        # Wrong type
-        with self.assertRaises(TypeError):
-            edge_a = dafsa.dafsa.DAFSAEdge(1)
-
-        # Create nodes for testing
-        node_a = dafsa.dafsa.DAFSANode(15)
-        node_a.final = True
-        node_b = dafsa.dafsa.DAFSANode(16)
-
-        # Create edges
-        edge_a = dafsa.dafsa.DAFSAEdge(node_a)
-        edge_b = dafsa.dafsa.DAFSAEdge(node_a, 2)
-        edge_c = dafsa.dafsa.DAFSAEdge(node_b)
-
-        # __str__ assertions
-        if not str(edge_a) == "{node_id: 15, weight: 0}":
-            raise AssertionError
-        if not str(edge_b) == "{node_id: 15, weight: 2}":
-            raise AssertionError
-        if not str(edge_c) == "{node_id: 16, weight: 0}":
-            raise AssertionError
-
-        # __repr__ assertions
-        assert repr(edge_a) == "{node: <F()>, weight: 0}"
-        assert repr(edge_b) == "{node: <F()>, weight: 2}"
-        assert repr(edge_c) == "{node: <n()>, weight: 0}"
-
-        # hashes
-        assert hash(edge_a) != edge_a.repr_hash()
-        assert hash(edge_b) != edge_b.repr_hash()
-        assert hash(edge_c) != edge_c.repr_hash()
+    for obj in [trie, d]:
+        assert obj.get_word_count() == 4
+        assert "dib" in obj
+        assert "deny" not in obj
+        assert "ampyx" not in obj
 
 
-class TestDAFSA(unittest.TestCase):
-    def test_hardcoded(self):
+def test_words2():
+    trie = dafsa.Trie()
+    d = dafsa.DAFSA()
+    trie.add_all(WORDS2)
+    d.add_all(WORDS2)
 
-        seqs = [
-            "tap",
-            "taps",
-            "top",
-            "tops",
-            "dib",
-            "dibs",
-            "tapping",
-            "dibbing",
-        ]
+    assert len(trie) == 32
+    assert len(d) == 17
+    d.reduce()
+    assert len(d) == 27
 
-        # build object, without and with joining
-        dafsa_obj_a = dafsa.DAFSA(seqs)
-        dafsa_obj_b = dafsa.DAFSA(seqs, condense=True)
-
-    def test_full_test(self):
+    for obj in [trie, d]:
+        assert obj.get_word_count() == 11
+        assert "dib" not in obj
+        assert "deny" in obj
+        assert "ampyx" not in obj
 
 
-        # Load strings from file
-        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
-        with open(filename.as_posix()) as handler:
-            strings = [line.strip() for line in handler]
+def test_words3():
+    trie = dafsa.Trie()
+    d = dafsa.DAFSA()
+    trie.add_all(WORDS3)
+    d.add_all(WORDS3)
 
-        # build object
-        dafsa_obj_a = dafsa.DAFSA(strings)
-        dafsa_obj_b = dafsa.DAFSA(strings, join_trans=True)
+    assert len(trie) == 170
+    assert len(d) == 144
+    d.reduce()
+    assert len(d) == 149
 
-        # don't print
-        text = str(dafsa_obj_a)
-        text = str(dafsa_obj_b)
+    for obj in [trie, d]:
+        assert obj.get_word_count() == 48
+        assert "dib" not in obj
+        assert "deny" not in obj
+        assert "ampyx" in obj
+        assert tuple(sorted(obj.search_with_prefix("ab"))) == ("abhor", "abuzz")
+        assert tuple(sorted(obj.search_with_prefix("ab", with_count=True))) == (
+            ("abhor", 1),
+            ("abuzz", 2),
+        )
+        assert tuple(sorted(obj.search("a*o*"))) == (
+            "abhor",
+            "acorn",
+            "agony",
+            "amato",
+            "aneto",
+            "arrow",
+        )
+        assert tuple(sorted(obj.search("a*o*", with_count=True))) == (
+            ("abhor", 1),
+            ("acorn", 1),
+            ("agony", 1),
+            ("amato", 2),
+            ("aneto", 2),
+            ("arrow", 1),
+        )
+        assert tuple(obj.search("su?t")) == ("suit",)
+        assert tuple(obj.search("su?t", with_count=True)) == (("suit", 1),)
+        assert tuple(sorted(obj.search_within_distance("arie", dist=2))) == (
+            "arbil",
+            "athie",
+            "auric",
+        )
+        assert tuple(
+            sorted(obj.search_within_distance("arie", dist=2, with_count=True))
+        ) == (("arbil", 1), ("athie", 3), ("auric", 1))
 
-        # simple checks
-        assert dafsa_obj_a.lookup("den") is None
-        assert dafsa_obj_b.lookup("den") is None
-
-        assert dafsa_obj_a.lookup("deny") is not None
-        assert dafsa_obj_b.lookup("deny") is not None
-
-        assert dafsa_obj_a.lookup("dafsa") is None
-        assert dafsa_obj_b.lookup("dafsa") is None
-
-    def test_to_figure(self):
-
-
-        # Load strings from file
-        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
-        with open(filename.as_posix()) as handler:
-            strings = [line.strip() for line in handler]
-
-        # build object
-        dafsa_obj = dafsa.DAFSA(strings)
-
-        # Get a temporary filename (on Unix, it can be reused)
-        handler = tempfile.NamedTemporaryFile()
-        output_filename = "%s.png" % handler.name
-        handler.close()
-
-        # Test
-        # TODO: revert once fixed
-#        dafsa_obj.write_figure(output_filename)
-
-    def test_to_graph(self):
-
-
-        # Load strings from file
-        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
-        with open(filename.as_posix()) as handler:
-            strings = [line.strip() for line in handler]
-
-        # build object
-        dafsa_obj = dafsa.DAFSA(strings)
-
-        # Run function
-        # TODO: assert results
-        dafsa_obj.to_graph()
-
-    def test_to_gml(self):
-
-
-        # Load strings from file
-        filename = dafsa.utils.RESOURCE_DIR / "ciura.txt"
-        with open(filename.as_posix()) as handler:
-            strings = [line.strip() for line in handler]
-
-        # build object
-        dafsa_obj = dafsa.DAFSA(strings)
-
-        # Run function
-        # TODO: assert results
-        # Get a temporary filename (on Unix, it can be reused)
-        handler = tempfile.NamedTemporaryFile()
-        output_filename = "%s.png" % handler.name
-        handler.close()
-
-        dafsa_obj.write_gml(output_filename)
-
-"""
+    trie.add("athie", count=1000)
+    assert tuple(
+        sorted(trie.search_within_distance("arie", dist=2, with_count=True))
+    ) == (("arbil", 1), ("athie", 1003), ("auric", 1))
