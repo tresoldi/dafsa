@@ -72,6 +72,14 @@ WORDS3 = [
     "steel",
     "abuzz",
 ]
+WORDS4 = [
+"CGCGAAA",
+"CGCGATA",
+"CGGAAA",
+"CGGATA",
+"GGATA",
+"AATA",
+]
 
 
 def test_words1():
@@ -162,3 +170,21 @@ def test_words3():
     assert tuple(
         sorted(trie.search_within_distance("arie", dist=2, with_count=True))
     ) == (("arbil", 1), ("athie", 1003), ("auric", 1))
+
+def test_words4():
+    trie = dafsa.Trie()
+    d = dafsa.DAFSA()
+    trie.add_all(WORDS4)
+    d.add_all(WORDS4)
+
+    assert len(trie) == 25
+    assert len(d) == 15
+    d.reduce()
+
+    assert len(d) == 19
+
+    for obj in [trie, d]:
+        assert obj.get_word_count() == 6
+        assert "dib" not in obj
+        assert "deny" not in obj
+        assert "ampyx" not in obj

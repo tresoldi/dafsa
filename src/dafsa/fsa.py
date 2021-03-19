@@ -15,7 +15,7 @@ class FSANode:
 
     __slots__ = "id", "val", "children", "terminal", "count"
 
-    # TODO: move `val` to arbitrary hashable element
+    # TODO: move `value` to arbitrary hashable element
     def __init__(self, _id: int, val: str):
         """
         Initialize a Finite State Automaton(FSA) Node.
@@ -256,7 +256,7 @@ class FSA:
                     child_node,
                     wildcard,
                     index + 1,
-                    current_word + child_node.val,
+                    current_word + child_node.value,
                     with_count=with_count,
                 )
                 words.extend(child_words)
