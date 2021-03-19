@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-from copy import copy
 from collections import defaultdict
+from copy import copy
+from itertools import chain
 
-FILENAME = "resources\dna.txt"
+FILENAME = "resources\\phonemes.txt"
 
 
 class SeqTrie(object):
@@ -14,7 +15,7 @@ class SeqTrie(object):
         self.group_end: bool = group_end
 
         # Used for minimization
-        self.ref_str = None
+        self.ref_id = None
 
         # TODO: do we still need this to be sorted?
         if init:
@@ -39,6 +40,7 @@ class SeqTrie(object):
         self.terminal = True
 
     def __iter__(self):
+        # yield the children or, if there is none, this node itself
         for x in self.children:
             for y in x.__iter__():
                 yield y
@@ -57,6 +59,7 @@ class SeqTrie(object):
             offspring,
         )
 
+    # TODO: copy logic from __str__, making it faster
     def __hash__(self):
         return hash(str(self))
 
@@ -94,17 +97,18 @@ def merge_redundant_nodes(trie):
     # could find a different status leading, as expected, to a different "hash"
     node_dict = {}
     for node in trie:
-        node.ref_str = str(node)
-        if node.ref_str not in node_dict:
-            node_dict[node.ref_str] = node
+        node.ref_id = hash(node)
+        if node.ref_id not in node_dict:
+            node_dict[node.ref_id] = node
             for idx, child_node in enumerate(node.children):
-                node.children[idx] = node_dict[child_node.ref_str]
+                node.children[idx] = node_dict[child_node.ref_id]
 
             node.children = sorted(node.children)
 
-    # Cast all `node_dict` values to tuples, which are hashable
-    # TODO: solve all those tuple casting
-    clist_dict = {tuple(x.children): tuple(x.children) for x in node_dict.values()}
+    # TODO: solve all those tuple casting -- not as easy as it may seem
+    clist_dict = {
+        tuple(node.children): tuple(node.children) for node in node_dict.values()
+    }
     for node in node_dict.values():
         node.children = clist_dict[tuple(node.children)]
 
@@ -157,13 +161,13 @@ def merge_child_list(clist_dict):
     return {_trie: keep for _trie, keep in compress_dict.items() if keep}
 
 
-def build_compression_array(trie, compress_dict):
+def build_compression_array(trie, compress_dict, elements):
     end_node = SeqTrie(terminal=False, value="", group_end=True)
     end_node.children = ()
 
     # Initialize array, with the first element being the end node
     array_length = 1 + sum(len(x[0]) for x in compress_dict.values())
-    array = [0] * array_length
+    array = [None] * array_length
     array[0] = end_node
 
     # Initialize the `clist_indices` dictionaries, with the empty tuple in first position (zero) and the first
@@ -176,10 +180,12 @@ def build_compression_array(trie, compress_dict):
         if len(trie_list) == 1:
             clist_indices[trie_list[0]] = pos
         else:
-            sort_array = [0] * 26
+            # sort_array = [0] * 26
+            sort_array = [0] * len(elements)
             for i, clist in enumerate(trie_list):
                 for y in clist:
-                    sort_array[ord(y.value) - ord("A")] = (i, y)
+                    # sort_array[ord(y.value) - ord("A")] = (i, y)
+                    sort_array[elements.index(y.value)] = (i, y)
 
             trie_list.append([n for i, n in sorted(x for x in sort_array if x)])
             for clist in trie_list[:-1]:
@@ -202,25 +208,35 @@ def build_compression_array(trie, compress_dict):
     return array
 
 
-######################## Read/check word list ###############################
+def get_global_elements(sequences):
+    return sorted(
+        set(
+            chain.from_iterable(
+                [[element for element in sequence] for sequence in sequences]
+            )
+        )
+    )
 
 
 def read_words(filename=FILENAME):
-    wordlist = open(filename).read().split()
-    wordlist = [word.strip() for word in wordlist]
+    lines = open(filename, encoding="utf-8").readlines()
+    lines = [line.strip() for line in lines]
+    if " " in lines[0]:
+        lines = tuple([tuple(w.split()) for w in lines])
 
-    return wordlist
+    return tuple(lines)
 
 
 def main():
     # read data (already sorting)
-    wordlist = sorted(read_words())
-    if not all(all(c.isupper() for c in w) for w in wordlist):
-        raise ValueError("Invalid wordlist")
+    wordlist = tuple(sorted(read_words()))
 
     # build trie
     print("Building trie...")
     trie = SeqTrie(wordlist)
+
+    # Collect all elements so that we can use arbitrary ones and sort
+    elements = get_global_elements(wordlist)
 
     # merge redundant nodes with hashes
     print("Merging redundant nodes...")
@@ -232,7 +248,7 @@ def main():
 
     # Create compressed trie structure
     print("Creating compressed node array...")
-    array = build_compression_array(trie, compress_dict)
+    array = build_compression_array(trie, compress_dict, elements)
     root = array[-1].children
 
     ######################### check trie ###################################
