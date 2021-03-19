@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from sys import argv
 from copy import copy
 from collections import defaultdict
 
@@ -10,22 +9,30 @@ FILENAME = "resources\dna.txt"
 class SeqTrie(object):
     def __init__(self, init=None, terminal=False, value="", group_end=False):
         self.children = []
-        self.terminal = terminal
+        self.terminal :bool= terminal
         self.value = value
-        self.group_end = group_end
+        self.group_end :bool= group_end
 
+        # TODO: do we still need this to be sorted?
         if init:
-            for seq in init:
-                self.add(seq)
+            for seq in sorted(init):
+                self._add(seq)
 
-    def add(self, seq):
-        # only works on pre-sorted word lists!
+    def _add(self, seq):
         for element in seq:
+            # If `self.children` is empty (very first element) or if its element is different,
+            # add a new SeqTrie
             if not self.children or self.children[-1].value != element:
                 self.children.append(SeqTrie())
+
+            # Set the reference of the current element to the last one added, and the `value`
+            # as well. Note that this is very C-like programming, following the original implementation,
+            # and in most cases would be frowned upon (not entirely without reason) by Python
+            # purists -- nonetheless, it *is* the intended implementation
             self = self.children[-1]
             self.value = element
 
+        # Once adding the sequence is over, the last item must be set as a terminal
         self.terminal = True
 
     def __iter__(self):
@@ -79,8 +86,11 @@ def extract_words(array, node_idx, carry=""):
 
 
 def merge_redundant_nodes(trie):
-    # Note that we cannot use an actual "hash", because the elements change and the hash would change and
-    # they would not match; thus, what we do is to set an internal `._ref` element
+    # Note that we cannot use an actual "hash", as the data structure is not preserved with the
+    # modification, and subsequent calls will lead to different hash values; thus, we store
+    # the "reference values", equivalent to hashes, in the internal `_ref` dictionary.
+    _ref = {}
+
     node_dict = {}
     for node in trie:
         node.ref_str = node.build_ref()
