@@ -9,9 +9,12 @@ FILENAME = "resources\dna.txt"
 class SeqTrie(object):
     def __init__(self, init=None, terminal=False, value="", group_end=False):
         self.children = []
-        self.terminal :bool= terminal
+        self.terminal: bool = terminal
         self.value = value
-        self.group_end :bool= group_end
+        self.group_end: bool = group_end
+
+        # Used for minimization
+        self.ref_str = None
 
         # TODO: do we still need this to be sorted?
         if init:
@@ -41,9 +44,9 @@ class SeqTrie(object):
                 yield y
         yield self
 
-    def build_ref(self):
+    def __str__(self):
         if len(self.children) > 0:
-            offspring = ":".join([c.build_ref() for c in self.children])
+            offspring = ":".join([str(c) for c in self.children])
         else:
             offspring = "NONE"
 
@@ -54,11 +57,8 @@ class SeqTrie(object):
             offspring,
         )
 
-    def __str__(self):
-        return str(self.build_ref())
-
     def __hash__(self):
-        return hash(self.build_ref())
+        return hash(str(self))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -86,14 +86,15 @@ def extract_words(array, node_idx, carry=""):
 
 
 def merge_redundant_nodes(trie):
-    # Note that we cannot use an actual "hash", as the data structure is not preserved with the
-    # modification, and subsequent calls will lead to different hash values; thus, we store
-    # the "reference values", equivalent to hashes, in the internal `_ref` dictionary.
-    _ref = {}
-
+    # This function is the core of the compression method, using single references ("hashes") to identify
+    # common paths, as in the common implementation. Note that the hashing function is not called at
+    # each request, but its value is stored as a reference value in the object itself. This is done both
+    # for speed (no need to recompute) and to the logic, inherited from the original C implementation,
+    # where objects are mutable and are manipulated, meaning that subsequent calls to the same object
+    # could find a different status leading, as expected, to a different "hash"
     node_dict = {}
     for node in trie:
-        node.ref_str = node.build_ref()
+        node.ref_str = str(node)
         if node.ref_str not in node_dict:
             node_dict[node.ref_str] = node
             for idx, child_node in enumerate(node.children):
