@@ -77,6 +77,7 @@ def extract_words(array, node_idx, carry=""):
         node_idx += 1
         node = array[node_idx]
 
+
 def merge_redundant_nodes(trie):
     # Note that we cannot use an actual "hash", because the elements change and the hash would change and
     # they would not match; thus, what we do is to set an internal `._ref` element
@@ -85,46 +86,24 @@ def merge_redundant_nodes(trie):
         node.ref_str = node.build_ref()
         if node.ref_str not in node_dict:
             node_dict[node.ref_str] = node
-            for i, y in enumerate(node.children):
-                node.children[i] = node_dict[y.ref_str]
+            for idx, child_node in enumerate(node.children):
+                node.children[idx] = node_dict[child_node.ref_str]
 
-            node.children = tuple(sorted(node.children))
+            node.children = sorted(node.children)
 
-    clist_dict = {x.children: x.children for x in node_dict.values()}
+    # Cast all `node_dict` values to tuples, which are hashable
+    # TODO: solve all those tuple casting
+    clist_dict = {tuple(x.children): tuple(x.children) for x in node_dict.values()}
     for node in node_dict.values():
-        node.children = clist_dict[node.children]
+        node.children = clist_dict[tuple(node.children)]
 
     return clist_dict
 
 
-######################## Read/check word list ###############################
-
-
-def read_words(filename=FILENAME):
-    wordlist = open(filename).read().split()
-    wordlist = [word.strip() for word in wordlist]
-
-    return wordlist
-
-
-def main():
-    # read data (already sorting)
-    wordlist = sorted(read_words())
-    if not all(all(c.isupper() for c in w) for w in wordlist):
-        raise ValueError("Invalid wordlist")
-
-    # build trie
-    print("Building trie...")
-    trie = SeqTrie(wordlist)
-
-    # merge redundant nodes with hashes
-    print("Merging redundant nodes...")
-    clist_dict =  merge_redundant_nodes(trie)
-
-    ########################## Merge child lists ###############################
-
-    print("Merging child lists...")
-
+def merge_child_list(clist_dict):
+    # Initialize `inverse_dict` and `compress_dict`; the latter starts as a dictionary of keys and
+    # lists with pointing to themselves (`compress_dict[x] = [x]`), the first is just for inverse
+    # lookup from each `node` to all `clist`s pointing to that node
     inverse_dict = defaultdict(list)
     compress_dict = {}
     for clist in clist_dict.values():
@@ -134,7 +113,8 @@ def main():
         for node in clist:
             inverse_dict[node].append(clist)
 
-    # Sort tries in `inverse_dict`
+    # Sort node tries in `inverse_dict` by length first and, if necessary, by the sum of occurrences in
+    # the whole dictionary, so that complexity is pushed to the end of the list
     for node in inverse_dict:
         inverse_dict[node].sort(
             key=lambda _trie: (
@@ -143,21 +123,30 @@ def main():
             )
         )
 
-    for clist in sorted(
+    # Obtain a sorted list of `clists` (from the compression dictionary) and iterate over them; note that
+    # the sorting logic is essentially the same as above, but the list is reserved (from the most complex to
+    # the simplest)
+    clist_sorted = sorted(
         compress_dict.keys(),
-        key=lambda x: (len(x), -1 * sum(len(inverse_dict[y]) for y in x)),
+        key=lambda _trie: (
+            len(_trie),
+            -1 * sum(len(inverse_dict[node]) for node in _trie),
+        ),
         reverse=True,
-    ):
-        for other in min((inverse_dict[x] for x in clist), key=len):
+    )
+
+    for clist in clist_sorted:
+        for other in min((inverse_dict[t] for t in clist), key=len):
             if compress_dict[other] and set(clist) < set(compress_dict[other][-1]):
                 compress_dict[other].append(clist)
                 compress_dict[clist] = False
                 break
 
-    compress_dict = {_trie: keep for _trie, keep in compress_dict.items() if keep}
+    # Build the return dictionary with all tries and a boolean indicating whether to keep them
+    return {_trie: keep for _trie, keep in compress_dict.items() if keep}
 
-    # Create compressed trie structure
-    print("Creating compressed node array...")
+
+def build_compression_array(trie, compress_dict):
     end_node = SeqTrie(terminal=False, value="", group_end=True)
     end_node.children = ()
 
@@ -198,6 +187,42 @@ def main():
     root_node = SeqTrie(init=(), terminal=False, value="", group_end=True)
     root_node.children = root
     array.append(root_node)
+
+    return array
+
+
+######################## Read/check word list ###############################
+
+
+def read_words(filename=FILENAME):
+    wordlist = open(filename).read().split()
+    wordlist = [word.strip() for word in wordlist]
+
+    return wordlist
+
+
+def main():
+    # read data (already sorting)
+    wordlist = sorted(read_words())
+    if not all(all(c.isupper() for c in w) for w in wordlist):
+        raise ValueError("Invalid wordlist")
+
+    # build trie
+    print("Building trie...")
+    trie = SeqTrie(wordlist)
+
+    # merge redundant nodes with hashes
+    print("Merging redundant nodes...")
+    clist_dict = merge_redundant_nodes(trie)
+
+    # Merge child lists
+    print("Merging child lists...")
+    compress_dict = merge_child_list(clist_dict)
+
+    # Create compressed trie structure
+    print("Creating compressed node array...")
+    array = build_compression_array(trie, compress_dict)
+    root = array[-1].children
 
     ######################### check trie ###################################
 
