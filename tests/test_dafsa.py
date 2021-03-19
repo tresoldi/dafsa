@@ -17,7 +17,7 @@ def test_trigger():
     assert 1 == 1
 
 def test_dummy():
-    assert dafsa.dummy() == 42
+    assert dafsa.dummy() == 13
 
 OLD_TEST = """
 
