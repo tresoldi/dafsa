@@ -1,8 +1,13 @@
+from typing import Hashable
+
+
 class SeqTrie(object):
-    def __init__(self, init=None, terminal=False, value="", group_end=False):
+    def __init__(
+        self, init=None, terminal=False, value: Hashable = "", group_end=False
+    ):
         self.children = []
         self.terminal: bool = terminal
-        self.value = value
+        self.value: Hashable = value
         self.group_end: bool = group_end
 
         # Used for minimization

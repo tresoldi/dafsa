@@ -5,10 +5,10 @@ __version__ = "2.0"  # remember to sync with setup.py
 __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
-from .common import dummy, read_words, get_global_elements
-from .minarray import extract_words
+from .common import read_words, get_global_elements, extract_words
 from .trie import SeqTrie
 from .minimize import merge_redundant_nodes, merge_child_list, build_compression_array
+from .minimize import minimize_trie
 
 
 def get_dafsa():
@@ -25,20 +25,8 @@ def get_dafsa():
     print("Building trie...")
     trie = SeqTrie(wordlist)
 
-    # merge redundant nodes with hashes
-    print("Merging redundant nodes...")
-    clist_dict = merge_redundant_nodes(trie)
-
-    # Merge child lists
-    print("Merging child lists...")
-    compress_dict = merge_child_list(clist_dict)
-
-    # Collect all elements so that we can use arbitrary ones and sort
-    elements = get_global_elements(wordlist)
-
-    # Create compressed trie structure
-    print("Creating compressed node array...")
-    array = build_compression_array(trie, compress_dict, elements)
+    # TODO: remove wordlist argument
+    array = minimize_trie(trie, wordlist)
     root = array[-1].children
 
     print("Checking output correctness...")
