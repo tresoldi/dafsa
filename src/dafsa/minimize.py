@@ -2,9 +2,10 @@ from collections import defaultdict
 from copy import copy
 from .trie import SeqTrie
 
-def merge_redundant_nodes(trie):
+
+def merge_redundant_nodes(trie: SeqTrie):
     # This function is the core of the compression method, using single references ("hashes") to identify
-    # common paths, as in the common implementation. Note that the hashing function is not called at
+    # common paths, as in the reference implementation. Note that the hashing function is not called at
     # each request, but its value is stored as a reference value in the object itself. This is done both
     # for speed (no need to recompute) and to the logic, inherited from the original C implementation,
     # where objects are mutable and are manipulated, meaning that subsequent calls to the same object
@@ -14,15 +15,14 @@ def merge_redundant_nodes(trie):
         node.ref_id = hash(node)
         if node.ref_id not in node_dict:
             node_dict[node.ref_id] = node
-            for idx, child_node in enumerate(node.children):
-                node.children[idx] = node_dict[child_node.ref_id]
+            node.children = [
+                node_dict[child_node.ref_id] for child_node in node.children
+            ]
 
-            node.children = sorted(node.children)
+        node.children = tuple(sorted(node.children))
 
     # TODO: solve all those tuple casting -- not as easy as it may seem
-    clist_dict = {
-        tuple(node.children): tuple(node.children) for node in node_dict.values()
-    }
+    clist_dict = {node.children: node.children for node in node_dict.values()}
     for node in node_dict.values():
         node.children = clist_dict[tuple(node.children)]
 
@@ -73,6 +73,7 @@ def merge_child_list(clist_dict):
 
     # Build the return dictionary with all tries and a boolean indicating whether to keep them
     return {_trie: keep for _trie, keep in compress_dict.items() if keep}
+
 
 def build_compression_array(trie, compress_dict, elements):
     end_node = SeqTrie(terminal=False, value="", group_end=True)

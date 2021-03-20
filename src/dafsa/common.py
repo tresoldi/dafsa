@@ -1,7 +1,9 @@
 from itertools import chain
 
+
 def dummy():
     return 13
+
 
 def get_global_elements(sequences):
     return sorted(
@@ -11,6 +13,7 @@ def get_global_elements(sequences):
             )
         )
     )
+
 
 def read_words(filename):
     lines = open(filename, encoding="utf-8").readlines()

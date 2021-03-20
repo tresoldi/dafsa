@@ -1,4 +1,3 @@
-
 class SeqTrie(object):
     def __init__(self, init=None, terminal=False, value="", group_end=False):
         self.children = []

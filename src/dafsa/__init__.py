@@ -1,7 +1,7 @@
 # __init__.py
 
 # Version of the dafsa package
-__version__ = "2.0" # remember to sync with setup.py
+__version__ = "2.0"  # remember to sync with setup.py
 __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
@@ -10,8 +10,10 @@ from .minarray import extract_words
 from .trie import SeqTrie
 from .minimize import merge_redundant_nodes, merge_child_list, build_compression_array
 
+
 def get_dafsa():
     from pathlib import Path
+
     filename = Path(__file__).parent.parent.parent / "resources" / "dna.txt"
 
     # read data (already sorting)
@@ -49,3 +51,5 @@ def get_dafsa():
     for node in array:
         counter += 1
         print(counter, node.value, node.group_end, node.terminal, node.children)
+
+    return array
