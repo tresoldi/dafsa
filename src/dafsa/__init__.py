@@ -6,7 +6,7 @@ __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
 from .common import read_words, get_global_elements, extract_words
-from .trie import SeqTrie
+from .searchgraph import SearchGraph
 from .minimize import merge_redundant_nodes, merge_child_list, build_compression_array
 from .minimize import minimize_trie
 
@@ -23,7 +23,7 @@ def get_dafsa():
 
     # build trie
     print("Building trie...")
-    trie = SeqTrie(wordlist)
+    trie = SearchGraph(wordlist)
 
     # TODO: remove wordlist argument
     array = minimize_trie(trie, wordlist)

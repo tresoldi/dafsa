@@ -2,14 +2,14 @@ from collections import defaultdict
 from copy import copy, deepcopy
 from typing import Dict, Hashable, List, Optional, Sequence, Tuple
 
-from .trie import SeqTrie
+from .searchgraph import SearchGraph
 from .common import get_global_elements
 
 
 # TODO: NOTE THAT THE TRIE IS NOT PRESERVED!!! SHOULD WE COPY IT? OPTIONALLY?
 def merge_redundant_nodes(
-    trie: SeqTrie,
-) -> Dict[Tuple[SeqTrie, ...], Tuple[SeqTrie, ...]]:
+    trie: SearchGraph,
+) -> Dict[Tuple[SearchGraph, ...], Tuple[SearchGraph, ...]]:
     # This function is the core of the compression method, using single references ("hashes") to identify
     # common paths, as in the reference implementation. Note that the hashing function is not called at
     # each request, but its value is stored as a reference value in the object itself. This is done both
@@ -38,8 +38,8 @@ def merge_redundant_nodes(
 
 
 def merge_child_list(
-    clist_dict: Dict[Tuple[SeqTrie, ...], Tuple[SeqTrie, ...]]
-) -> Dict[Tuple[SeqTrie], List[Tuple[SeqTrie]]]:
+    clist_dict: Dict[Tuple[SearchGraph, ...], Tuple[SearchGraph, ...]]
+) -> Dict[Tuple[SearchGraph], List[Tuple[SearchGraph]]]:
     # Initialize `inverse_dict` and `compress_dict`; the latter starts as a dictionary of keys and
     # lists with pointing to themselves (`compress_dict[x] = [x]`), the first is just for inverse
     # lookup from each `node` to all `clist`s pointing to that node
@@ -87,16 +87,16 @@ def merge_child_list(
 
 # TODO; can we obtain `elements` from the `trie`?
 def build_compression_array(
-    trie: SeqTrie,
-    compress_dict: Dict[Tuple[SeqTrie], List[Tuple[SeqTrie]]],
+    trie: SearchGraph,
+    compress_dict: Dict[Tuple[SearchGraph], List[Tuple[SearchGraph]]],
     elements: Sequence[Hashable],
 ):
     # Initialize array
     array_length = sum(len(_trie[0]) for _trie in compress_dict.values())
-    array: List[Optional[SeqTrie]] = [None] * array_length
+    array: List[Optional[SearchGraph]] = [None] * array_length
 
     # Insert the first element of the array as the common end node
-    end_node = SeqTrie(terminal=False, value="", group_end=True)
+    end_node = SearchGraph(terminal=False, value="", group_end=True)
     end_node.children = ()  # make sure it is a tuple for hashing TODO: fix this
     array.insert(0, end_node)
 
@@ -129,7 +129,7 @@ def build_compression_array(
         x.children = clist_indices[x.children]
 
     # Build root node and append it to the end of the array
-    root_node = SeqTrie(terminal=False, group_end=True)
+    root_node = SearchGraph(terminal=False, group_end=True)
     root_node.children = clist_indices[trie.children]
     array.append(root_node)
 
