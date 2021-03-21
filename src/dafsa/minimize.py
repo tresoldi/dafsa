@@ -4,10 +4,10 @@ from copy import copy, deepcopy
 from typing import Dict, Hashable, List, Optional, Tuple
 
 # Import from other modules
-from .common import get_global_elements
 from .searchgraph import SearchGraph
 
 # TODO: have __all__? Or let __init__ specify?
+# TODO: minimization -> compression
 
 # Define the NamedTuple for the compressed array (see comments at the end of
 # `build_compression_array()`).
@@ -193,19 +193,28 @@ def build_compression_array(
     return ret
 
 
-def minimize_trie(orig_trie, wordlist):
+def minimize_trie(trie: SearchGraph) -> List[namedtuple]:
+    """
+    Higher level function to minimize a trie.
+
+    :param trie: The trie to be compressed.
+    :return: A list of ArrayEntries with the information to build a compressed
+        graph. Each entry informs the node `value`, whether it is a `group_end`,
+        whether it is a `terminal`, and a pointer to the `child` in the list.
+        The last item is the starting node pointing to the root(s).
+    """
+
     # Make a copy of the trie, as it is not preserved during minimization
     # TODO: can use `copy`? should be a method of itself?
-    trie = deepcopy(orig_trie)
+    trie_copy = deepcopy(trie)
 
-    # merge redundant nodes with hashes
-    clist_dict = merge_redundant_nodes(trie)
+    # Merge redundant nodes with "hashes"
+    clist_dict = merge_redundant_nodes(trie_copy)
 
     # Merge child lists
     compress_dict = merge_child_list(clist_dict)
 
     # Create compressed trie structure
-    elements = get_global_elements(wordlist)
-    array = build_compression_array(trie, compress_dict)
+    array = build_compression_array(trie_copy, compress_dict)
 
     return array
