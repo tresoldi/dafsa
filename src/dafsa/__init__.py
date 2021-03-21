@@ -11,11 +11,7 @@ from .minimize import merge_redundant_nodes, merge_child_list, build_compression
 from .minimize import minimize_trie
 
 
-def get_dafsa():
-    from pathlib import Path
-
-    filename = Path(__file__).parent.parent.parent / "resources" / "dna.txt"
-
+def get_dafsa(filename):
     # read data (already sorting)
     # TODO: move sorting to trie
     # TODO: why tuple?

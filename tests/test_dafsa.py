@@ -6,9 +6,7 @@ Tests for the `dafsa` package.
 """
 
 # Import Python libraries
-import sys
-import tempfile
-import unittest
+from pathlib import Path
 
 # Import the library itself
 import dafsa
@@ -17,7 +15,9 @@ def test_trigger():
     assert 1 == 1
 
 def test_full():
-    arr = dafsa.get_dafsa()
+    filename = Path(__file__).parent.parent / "resources" / "dna.txt"
+
+    arr = dafsa.get_dafsa(filename)
     assert len(arr) == 14
 
 OLD_TEST = """
