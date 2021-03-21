@@ -1,5 +1,6 @@
 # Import Python standard libraries
-from typing import Hashable, Optional, Sequence, Tuple
+from typing import Hashable, List, Optional, Sequence, Tuple
+from itertools import chain
 
 # TODO; add __slots__
 # TODO: can we have `init` and `value` at the same time?
@@ -50,18 +51,42 @@ class SearchGraph:
         # order to obtain an immutable, and thus hashable, element
         self.children = []
 
-        # Set internal variables; `ref_id` is the hash value used for
+        # Set internal variables; `stable_ref` is the hash value used for
         # minimization, which stores the original hash value before
         # manipulation (as modifying the node and/or its children would
         # lead to different hash values)
         self.value: Hashable = value
         self.terminal: bool = terminal
         self.group_end: bool = group_end
-        self.ref_id = None  # TODO: add typing
+        self.stable_ref = None  # TODO: add typing
 
+        # Adds a set of the initial sequences, as weight counting is
+        # performed, if requested, at a different step
         if init:
-            for seq in sorted(init):
+            for seq in sorted(set(init)):
                 self._add(seq)
+
+    def collect_elements(self) -> List[Hashable]:
+        """
+        Build a list of all elements used in the node and its children.
+
+        The returned list includes a copy of each element for each time it is
+        observed (it is *not* a set).
+
+        Note that this could be collected, in a faster way, within the `.add()` method,
+        but for design decisions (also accounting for the mutability of the Graph and
+        the possibility of obtaining the elements for a subset) it was decided to
+        perform it by iteration, even though this computationally more expansive.
+
+        :return: A list of the elements used in the graph.
+        """
+
+        return list(
+            chain.from_iterable(
+                [self.value]
+                + [children.collect_elements() for children in self.children]
+            )
+        )
 
     def _add(self, sequence: Sequence[Hashable]):
         """
@@ -112,7 +137,6 @@ class SearchGraph:
         the are not children, the node itself.
         """
 
-        # yield the children or, if there is none, this node itself
         for node_x in self.children:
             for node_y in node_x:
                 yield node_y
@@ -126,10 +150,10 @@ class SearchGraph:
         return hash(self._internal_repr())
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        return self._internal_repr() == other._internal_repr()
 
     def __lt__(self, other):
         if len(other.children) < len(self.children):
             return True
 
-        return hash(self) < hash(other)
+        return self._internal_repr() < other._internal_repr()

@@ -1,28 +1,47 @@
+# Import Python standard libraries
 from collections import defaultdict
 from copy import copy, deepcopy
 from typing import Dict, Hashable, List, Optional, Sequence, Tuple
 
-from .searchgraph import SearchGraph
+# Import from other modules
 from .common import get_global_elements
+from .searchgraph import SearchGraph
 
+# TODO: have __all__? Or let __init__ specify?
 
-# TODO: NOTE THAT THE TRIE IS NOT PRESERVED!!! SHOULD WE COPY IT? OPTIONALLY?
+# TODO: Rename `trie` to `root node`?
 def merge_redundant_nodes(
     trie: SearchGraph,
 ) -> Dict[Tuple[SearchGraph, ...], Tuple[SearchGraph, ...]]:
-    # This function is the core of the compression method, using single references ("hashes") to identify
-    # common paths, as in the reference implementation. Note that the hashing function is not called at
-    # each request, but its value is stored as a reference value in the object itself. This is done both
-    # for speed (no need to recompute) and to the logic, inherited from the original C implementation,
-    # where objects are mutable and are manipulated, meaning that subsequent calls to the same object
-    # could find a different status leading, as expected, to a different "hash"
+    """
+    Build a dictionary with information for merging redundant nodes.
+
+    This function is the core of the compression method, using single references ("hashes") to identify
+    common paths, as in the reference implementation. Note that the "hashing" function is not called at
+    each request, but its value is stored as a reference value in the object itself. This is done both
+    for speed (no need to recompute) and to follow the logic, inherited from the original C
+    implementation, where objects are mutable and are manipulated, meaning that subsequent calls
+    to the same object could find a different status leading, as expected, to a different "hash".
+
+    The `hashing` function is actually, in this Python implementation, a tuple representation
+    provided by `._internal_repr()`, which, among other advantages, is more easily debuggable and
+    guarantees reproducibility (as Python hashes are, by security design, not reproducible).
+
+    *Note*: This function does not preserve the values and structure of the original graph, by design.
+    If these are necessary, the user must pass a deep-copy.
+
+    :param trie: The root node of the graph ("trie") to be reduced.
+    :return: A dictionary with the redundant tuples of nodes.
+    """
+
+    # Build node dictionary
     node_dict = {}
     for node in trie:
-        node.ref_id = hash(node)
-        if node.ref_id not in node_dict:
-            node_dict[node.ref_id] = node
+        node.stable_ref = node._internal_repr()
+        if node.stable_ref not in node_dict:
+            node_dict[node.stable_ref] = node
             node.children = [
-                node_dict[child_node.ref_id] for child_node in node.children
+                node_dict[child_node.stable_ref] for child_node in node.children
             ]
 
         node.children = tuple(sorted(node.children))
@@ -87,9 +106,7 @@ def merge_child_list(
 
 # TODO; can we obtain `elements` from the `trie`?
 def build_compression_array(
-    trie: SearchGraph,
-    compress_dict: Dict[Tuple[SearchGraph], List[Tuple[SearchGraph]]],
-    elements: Sequence[Hashable],
+    trie: SearchGraph, compress_dict: Dict[Tuple[SearchGraph], List[Tuple[SearchGraph]]]
 ):
     # Initialize array
     array_length = sum(len(_trie[0]) for _trie in compress_dict.values())
@@ -105,6 +122,11 @@ def build_compression_array(
     clist_indices = {(): 0}
     pos = 1
 
+    # Collect all unique elements in a sorted list, so that we can set the positions in
+    # the array
+    elements = sorted(set(trie.collect_elements()))
+
+    # Iterate over all values in the compressed dictionary
     for trie_list in compress_dict.values():
         # If there is a single element, it goes to position; otherwise, add all them
         if len(trie_list) == 1:
@@ -149,6 +171,6 @@ def minimize_trie(orig_trie, wordlist):
 
     # Create compressed trie structure
     elements = get_global_elements(wordlist)
-    array = build_compression_array(trie, compress_dict, elements)
+    array = build_compression_array(trie, compress_dict)
 
     return array
