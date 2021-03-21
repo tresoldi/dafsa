@@ -48,7 +48,7 @@ class SearchGraph:
 
         # Initialize the list of children for the current node; please
         # note that during minimization this will be cast to tuples in
-        # order to obtain an immutable, and thus hashable, element
+        # order to obtain an immutable, and thus hashable, element.
         self.children = []
 
         # Set internal variables; `stable_ref` is the hash value used for
@@ -81,6 +81,7 @@ class SearchGraph:
         :return: A list of the elements used in the graph.
         """
 
+        # TODO: drop the expansive list/chain operations with `if`s?
         return list(
             chain.from_iterable(
                 [self.value]

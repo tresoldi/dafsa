@@ -27,7 +27,7 @@ def get_dafsa():
 
     # TODO: remove wordlist argument
     array = minimize_trie(trie, wordlist)
-    root = array[-1].children
+    root = array[-1].child
 
     print("Checking output correctness...")
     if set(extract_words(array, root)) != set(wordlist):
@@ -38,6 +38,6 @@ def get_dafsa():
     counter = -1
     for node in array:
         counter += 1
-        print(counter, node.value, node.group_end, node.terminal, node.children)
+        print(counter, node.value, node.group_end, node.terminal, node.child)
 
     return array

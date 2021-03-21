@@ -6,7 +6,7 @@ def extract_words(array, node_idx, carry=""):
     if not node.value:
         return
     while True:
-        for x in extract_words(array, node.children, carry + node.value):
+        for x in extract_words(array, node.child, carry + node.value):
             yield x
         if node.terminal:
             yield carry + node.value
