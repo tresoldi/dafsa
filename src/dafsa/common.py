@@ -1,5 +1,11 @@
+import pathlib
+import subprocess
+import tempfile
 from collections import namedtuple
-from typing import Hashable, List, Optional
+from typing import List, Optional
+
+RESOURCE_DIR = pathlib.Path(__file__).parent.parent.parent / "resources"
+
 
 # TODO: return type
 def extract_sequences(
@@ -31,6 +37,46 @@ def extract_sequences(
         # Move to the next node in the group
         node_idx += 1
         node = array[node_idx]
+
+
+def graphviz_output(
+    dot_source: str, output_file: str, dpi: int = 300
+) -> subprocess.CompletedProcess:
+    """
+    Generates a visualization by calling the local `graphviz`.
+
+    The filetype will be decided from the extension of the `filename`.
+
+    :param dot_source: The DOT source to be compiled by GraphViz.
+    :param output_file: The path to the output file.
+    :param dpi : The output resolution, if applicable. Defaults to 300.
+    :return: A `CompleteProcess` instance, as returned by the `subprocess` call.
+    """
+
+    # Write to a named temporary file so we can call `graphviz`
+    handler = tempfile.NamedTemporaryFile()
+    handler.write(dot_source.encode("utf-8"))
+    handler.flush()
+
+    # Get the filetype from the extension and call graphviz
+    suffix = pathlib.PurePosixPath(output_file).suffix
+    ret = subprocess.run(
+        [
+            "dot",
+            "-T%s" % suffix[1:],
+            "-Gdpi=%i" % dpi,
+            "-o",
+            output_file,
+            handler.name,
+        ],
+        check=True,
+        shell=False,
+    )
+
+    # Close the temporary file
+    handler.close()
+
+    return ret
 
 
 def read_words(filename):
