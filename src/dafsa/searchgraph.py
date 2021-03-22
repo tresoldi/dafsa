@@ -29,7 +29,7 @@ class SearchGraph:
 
     def __init__(
         self,
-        init: Optional[Sequence[Sequence[Hashable]]] = None,
+        sequences: Optional[Sequence[Sequence[Hashable]]] = None,
         value: Hashable = "",
         terminal: bool = False,
         group_end: bool = False,
@@ -37,7 +37,7 @@ class SearchGraph:
         """
         Initialization method.
 
-        :param init: A collection of sequence of hashable elements to be added to the search graph.
+        :param sequences: A collection of sequence of hashable elements to be added to the search graph.
             Minimization is *not* performed by default.
         :param value: The value for the node.
         :param terminal: Whether the node is a terminal node in the sequence. Used by minimization,
@@ -62,10 +62,11 @@ class SearchGraph:
 
         # Adds a set of the initial sequences, as weight counting is
         # performed, if requested, at a different step
-        print("....", init)
-        if init:
-            for seq in sorted(set(init)):
-                self._add(tuple(seq))
+        print("....", sequences)
+        if sequences:
+            seqs = tuple([tuple(seq) for seq in sequences])
+            for seq in sorted(set(seqs)):
+                self._add(seq)
 
     def collect_elements(self) -> List[Hashable]:
         """
