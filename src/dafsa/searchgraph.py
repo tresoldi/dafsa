@@ -62,7 +62,6 @@ class SearchGraph:
 
         # Adds a set of the initial sequences, as weight counting is
         # performed, if requested, at a different step
-        print("....", sequences)
         if sequences:
             seqs = tuple([tuple(seq) for seq in sequences])
             for seq in sorted(set(seqs)):
