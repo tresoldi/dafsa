@@ -62,6 +62,7 @@ class SearchGraph:
 
         # Adds a set of the initial sequences, as weight counting is
         # performed, if requested, at a different step
+        print("....", init)
         if init:
             for seq in sorted(set(init)):
                 self._add(seq)
