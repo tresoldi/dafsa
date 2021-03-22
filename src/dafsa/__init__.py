@@ -39,14 +39,14 @@ def get_dafsa(filename):
         (elem[0], elem[1]): edge_labels[elem] for elem in edge_labels
     }
 
-    pos = nx.spring_layout(G)
-    nx.draw_networkx(G, arrows=True, with_labels=True, node_color="skyblue", pos=pos)
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels=formatted_edge_labels, font_color="red"
-    )
-    plt.show()
+#    pos = nx.spring_layout(G)
+#    nx.draw_networkx(G, arrows=True, with_labels=True, node_color="skyblue", pos=pos)
+#    nx.draw_networkx_edge_labels(
+#        G, pos, edge_labels=formatted_edge_labels, font_color="red"
+#    )
+#    plt.show()
 
     dot = array.to_dot()
-    graphviz_output(dot, "temp.png")
+#    graphviz_output(dot, "temp.png")
 
     return array
