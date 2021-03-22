@@ -75,6 +75,7 @@ def main():
     spaces = [" " in seq for seq in seqs]
     if any(spaces):
         seqs = [seq.split() for seq in seqs]
+    print(seqs)
 
     # build object
     dafsa_obj = dafsa.build_dafsa(seqs)
