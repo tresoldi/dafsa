@@ -17,7 +17,9 @@ def test_trigger():
 def test_full():
     filename = Path(__file__).parent.parent / "resources" / "dna.txt"
 
-    arr = dafsa.get_dafsa(filename)
+    wordlist = tuple(sorted(dafsa.common.read_words(filename.as_posix())))
+
+    arr = dafsa.build_dafsa(wordlist)
     assert len(arr) == 14
 
 OLD_TEST = """
