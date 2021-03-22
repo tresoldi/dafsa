@@ -381,7 +381,8 @@ def minimize_trie(trie: SearchGraph) -> DafsaArray:
 
     # Make a copy of the trie, as it is not preserved during minimization
     # TODO: can use `copy`? should be a method of itself?
-    trie_copy = deepcopy(trie)
+    #trie_copy = deepcopy(trie)
+    trie_copy = trie
 
     # Merge redundant nodes with "hashes"
     clist_dict = merge_redundant_nodes(trie_copy)
