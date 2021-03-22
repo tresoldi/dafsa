@@ -12,6 +12,7 @@ from .minimize import minimize_trie
 
 
 def build_dafsa(sequences):
+    # TODO; should move to the object?
     sequences = tuple(sorted(sequences))
 
     # read data (already sorting)
