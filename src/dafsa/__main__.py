@@ -80,13 +80,15 @@ def main():
     dafsa_obj = dafsa.build_dafsa(seqs)
 
     # Generate output
+    # TODO: get filetype from filename?
     if args.type == "stdout":
         print(str(dafsa_obj))
     elif args.type == "dot":
         with open(args.output, "w") as handler:
             handler.write(dafsa_obj.to_dot())
     elif args.type in ["png", "pdf", "svg"]:
-        dafsa_obj.write_figure(args.output, args.dpi)
+        dot_source = dafsa_obj.to_dot()
+        dafsa.common.graphviz_output(dot_source, args.output, args.dpi)
     elif args.type == "gml":
         dafsa_obj.write_gml(args.output)
 
