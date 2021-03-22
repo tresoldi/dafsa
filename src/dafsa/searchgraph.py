@@ -65,7 +65,7 @@ class SearchGraph:
         print("....", init)
         if init:
             for seq in sorted(set(init)):
-                self._add(seq)
+                self._add(tuple(seq))
 
     def collect_elements(self) -> List[Hashable]:
         """
