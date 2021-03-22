@@ -12,6 +12,8 @@ from .minimize import minimize_trie
 
 
 def build_dafsa(sequences):
+    sequences = tuple(sorted(sequences))
+
     # read data (already sorting)
     # build trie
     trie = SearchGraph(sequences)
