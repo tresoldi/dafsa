@@ -18,21 +18,32 @@ def get_dafsa(filename):
     wordlist = tuple(sorted(read_words(filename.as_posix())))
 
     # build trie
-    print("Building trie...")
     trie = SearchGraph(wordlist)
 
-    # TODO: remove wordlist argument
     array = minimize_trie(trie)
 
-    print("Checking output correctness...")
-    if set(extract_sequences(array)) != set(wordlist):
-        exit(1)
+    # TODO: have flag
+    # TODO: move extract_sequences() to DafsaArray
+    if 1 == 2:
+        if set(extract_sequences(array)) != set(wordlist):
+            exit(1)
 
-    print("Number of nodes:", len(array))
+    # array.show()
 
-    counter = -1
-    for node in array:
-        counter += 1
-        print(counter, node.value, node.group_end, node.terminal, node.child)
+    import matplotlib.pyplot as plt
+    import networkx as nx
+
+    G = array.to_graph()
+    edge_labels = nx.get_edge_attributes(G, "label")
+    formatted_edge_labels = {
+        (elem[0], elem[1]): edge_labels[elem] for elem in edge_labels
+    }
+
+    pos = nx.spring_layout(G)
+    nx.draw_networkx(G, arrows=True, with_labels=True, node_color="skyblue", pos=pos)
+    nx.draw_networkx_edge_labels(
+        G, pos, edge_labels=formatted_edge_labels, font_color="red"
+    )
+    plt.show()
 
     return array

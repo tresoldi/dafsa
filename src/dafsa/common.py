@@ -1,7 +1,6 @@
 from collections import namedtuple
 from typing import Hashable, List, Optional
 
-
 # TODO: return type
 def extract_sequences(
     array: List[namedtuple], node_idx: Optional[int] = None, carry=""

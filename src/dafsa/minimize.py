@@ -3,15 +3,74 @@ from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
 from typing import Dict, Hashable, List, Optional, Tuple
 
+# Import 3rd-party libraries
+import networkx as nx
+
 # Import from other modules
 from .searchgraph import SearchGraph
 
 # TODO: have __all__? Or let __init__ specify?
-# TODO: minimization -> compression
+# TODO: minimization -> compression?
 
-# Define the NamedTuple for the compressed array (see comments at the end of
-# `build_compression_array()`).
+# Define the NamedTuple for the elements of a compressed array (see comments at
+# the end of `build_compression_array()`).
 ArrayEntry = namedtuple("ArrayEntry", ["value", "group_end", "terminal", "child"])
+
+
+class DafsaArray:
+    """
+    Class for representing and operating compressed arrays representing dafsas.
+    """
+
+    def __init__(self, entries: List[ArrayEntry]):
+        self.entries = entries
+
+    def show(self):
+        print("Number of nodes:", len(self))
+
+        for idx, node in enumerate(self.entries):
+            print(idx, node.value, node.group_end, node.terminal, node.child)
+
+    def to_graph(self):
+        graph = nx.Graph()
+
+        # List of nodes indices that were visited when building the graph, and to visit (starting with the
+        # last node in the list)
+        visited = []
+        to_visit = [len(self) - 1]
+
+        while to_visit:
+            node_idx = to_visit.pop()
+
+            # Add to list of visited nodes
+            visited.append(node_idx)
+
+            # Obtain the pointer to the first node of the children group
+            ptr = self.entries[node_idx].child
+
+            # Collect all children indexes by checking `group_end`
+            while True:
+                graph.add_edge(node_idx, ptr, label=self.entries[ptr].value)
+
+                if ptr not in visited:
+                    to_visit.append(ptr)
+
+                if self.entries[ptr].group_end:
+                    break
+                else:
+                    ptr += 1
+
+        for i, e in enumerate(self.entries):
+            print(i, e)
+
+        return graph
+
+    def __len__(self) -> int:
+        return len(self.entries)
+
+    def __hash__(self) -> int:
+        return hash(self.entries)
+
 
 # TODO: Rename `trie` to `root node`?
 def merge_redundant_nodes(
@@ -119,7 +178,7 @@ def merge_child_list(
 # TODO; rename `trie` to `root?
 def build_compression_array(
     trie: SearchGraph, compress_dict: Dict[Tuple[SearchGraph], List[Tuple[SearchGraph]]]
-) -> List[namedtuple]:
+) -> List[ArrayEntry]:
     """
     Build a compression array used for building graphs and other output.
 
@@ -193,7 +252,7 @@ def build_compression_array(
     return ret
 
 
-def minimize_trie(trie: SearchGraph) -> List[namedtuple]:
+def minimize_trie(trie: SearchGraph) -> DafsaArray:
     """
     Higher level function to minimize a trie.
 
@@ -215,6 +274,7 @@ def minimize_trie(trie: SearchGraph) -> List[namedtuple]:
     compress_dict = merge_child_list(clist_dict)
 
     # Create compressed trie structure
-    array = build_compression_array(trie_copy, compress_dict)
+    entries = build_compression_array(trie_copy, compress_dict)
+    array = DafsaArray(entries)
 
     return array

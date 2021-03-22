@@ -154,7 +154,7 @@ class SearchGraph:
         return self._internal_repr() == other._internal_repr()
 
     def __lt__(self, other):
-        if len(other.children) < len(self.children):
+        if len(self.children) < len(other.children):
             return True
 
         return self._internal_repr() < other._internal_repr()
