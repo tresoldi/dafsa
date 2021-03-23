@@ -1,6 +1,6 @@
 # Import Python standard libraries
 from collections import defaultdict
-from copy import copy, deepcopy
+from copy import copy
 from typing import Dict, Hashable, List, Optional, Tuple
 from pathlib import Path
 
@@ -12,19 +12,17 @@ from .dafsaarray import ArrayEntry, DafsaArray
 RESOURCE_DIR = Path(__file__).parent.parent.parent / "resources"
 
 # TODO: have __all__? Or let __init__ specify?
-# TODO: minimization -> compression?
 # TODO: add weights
 # TODO: test how it works with `None` elements within the sequence (or zeros)
 
 
-# TODO: Rename `trie` to `root node`?
 def merge_redundant_nodes(
-    trie: Node,
+    root_node: Node,
 ) -> Dict[Tuple[Node, ...], Tuple[Node, ...]]:
     """
     Build a dictionary with information for merging redundant nodes.
 
-    This function is the core of the compression method, using single references ("hashes") to identify
+    This function is the core of the minimization method, using single references ("hashes") to identify
     common paths, as in the reference implementation. Note that the "hashing" function is not called at
     each request, but its value is stored as a reference value in the object itself. This is done both
     for speed (no need to recompute) and to follow the logic, inherited from the original C
@@ -38,13 +36,13 @@ def merge_redundant_nodes(
     *Note*: This function does not preserve the values and structure of the original graph, by design.
     If these are necessary, the user must pass a deep-copy.
 
-    :param trie: The root node of the graph ("trie") to be reduced.
+    :param root_node: The root node of the graph ("trie") to be reduced.
     :return: A dictionary with the redundant tuples of nodes.
     """
 
     # Build node dictionary
     node_dict = {}
-    for node in trie:
+    for node in root_node:
         node.stable_ref = node._internal_repr()
         if node.stable_ref not in node_dict:
             node_dict[node.stable_ref] = node
@@ -75,14 +73,14 @@ def merge_child_list(
     :return: A reduced version of `clist_dist` with merged nodes.
     """
 
-    # Initialize `inverse_dict` and `compress_dict`; the latter starts as a dictionary of keys and
-    # lists with pointing to themselves (`compress_dict[x] = [x]`), the first is just for inverse
+    # Initialize `inverse_dict` and `minim_dict`; the latter starts as a dictionary of keys and
+    # lists with pointing to themselves (`minim_dict[x] = [x]`), the first is just for inverse
     # lookup from each `node` to all `clist`s pointing to that node
     inverse_dict = defaultdict(list)
-    compress_dict = {}
+    minim_dict = {}
     for clist in clist_dict.values():
         if clist:
-            compress_dict[clist] = [clist]
+            minim_dict[clist] = [clist]
             for node in clist:
                 inverse_dict[node].append(clist)
 
@@ -96,11 +94,11 @@ def merge_child_list(
             )
         )
 
-    # Obtain a sorted list of `clists` (from the compression dictionary) and iterate over them; note that
+    # Obtain a sorted list of `clists` (from the minimization dictionary) and iterate over them; note that
     # the sorting logic is essentially the same as above, but the list is reserved (from the most complex to
     # the simplest)
     clist_sorted = sorted(
-        compress_dict.keys(),
+        minim_dict.keys(),
         key=lambda _trie: (
             len(_trie),
             -1 * sum(len(inverse_dict[n]) for n in _trie),
@@ -110,31 +108,30 @@ def merge_child_list(
 
     for clist in clist_sorted:
         for other in min((inverse_dict[t] for t in clist), key=len):
-            if compress_dict[other] and set(clist) < set(compress_dict[other][-1]):
-                compress_dict[other].append(clist)
-                compress_dict[clist] = None
+            if minim_dict[other] and set(clist) < set(minim_dict[other][-1]):
+                minim_dict[other].append(clist)
+                minim_dict[clist] = None
                 break
 
-    # Build the return dictionary with tries and what they compress to; `target` can be `None`, as
+    # Build the return dictionary with tries and what they minimize to; `target` can be `None`, as
     # attributed above, meaning the edge will be dropped
-    return {_trie: target for _trie, target in compress_dict.items() if target}
+    return {_trie: target for _trie, target in minim_dict.items() if target}
 
 
-# TODO; rename `trie` to `root?
-def build_compression_array(
-    trie: Node, compress_dict: Dict[Tuple[Node], List[Tuple[Node]]]
+def build_minim_array(
+    trie: Node, minim_dict: Dict[Tuple[Node], List[Tuple[Node]]]
 ) -> List[ArrayEntry]:
     """
-    Build a compression array used for building graphs and other output.
+    Build a minimization array used for building graphs and other output.
 
-    :param trie: The root node of the graph to be compressed.
-    :param compress_dict: The compression dictionary listing children to be merged, as provided
+    :param trie: The root node of the graph to be minimized.
+    :param minim_dict: The minimization dictionary listing children to be merged, as provided
         by `merge_child_list()`.
     :return: The ordered list of elements that make up the array.
     """
 
-    # Initialize compression array
-    array_length = sum(len(_trie[0]) for _trie in compress_dict.values())
+    # Initialize minimization array
+    array_length = sum(len(_trie[0]) for _trie in minim_dict.values())
     array: List[Optional[Node]] = [None] * array_length
 
     # Insert the first element of the array as the common end node
@@ -150,10 +147,10 @@ def build_compression_array(
     }
 
     # Initialize the `clist_indices` dictionaries, with the empty tuple in first position (zero) and the first
-    # position available (`pos`) as 1 and iterate over all values in the compressed dictionary
+    # position available (`pos`) as 1 and iterate over all values in the minimized dictionary
     clist_indices = {(): 0}
     pos = 1
-    for trie_list in compress_dict.values():
+    for trie_list in minim_dict.values():
         # If there is a single element, it goes to position; otherwise, add all them
         if len(trie_list) == 1:
             clist_indices[trie_list[0]] = pos
@@ -185,12 +182,11 @@ def build_compression_array(
     # At this point, `array` is a list of nodes where we don't obey the `.children` type (a list
     # of other nodes), as they now point to the index in the array itself. This should be
     # an obvious inheritance from C to everybody (they were originally pointers), and while
-    # I can be "excused" for doing that when computing the compression array, as the solution is
+    # I can be "excused" for doing that when computing the minimization array, as the solution is
     # also fast, we should not let this propagate to outside the function. Thus, here I
     # build the actual list of dictionaries that is returned, with plain information.
     # Note that weight is set to 1.0 here in all cases.
     # TODO: deal with weight
-    # TODO: Here using named tuples because of Python3.6 support; move to data classes in the future.
     ret = [
         ArrayEntry(entry.value, entry.group_end, entry.terminal, entry.children, 1.0)
         for entry in array
@@ -199,30 +195,28 @@ def build_compression_array(
     return ret
 
 
+# TODO: implement a copy method to preserve the structure?
 def minimize_trie(trie: Node) -> DafsaArray:
     """
     Higher level function to minimize a trie.
 
-    :param trie: The trie to be compressed.
-    :return: A list of ArrayEntries with the information to build a compressed
+    Note that the original object is *not* preserved.
+
+    :param trie: The trie to be minimized.
+    :return: A list of ArrayEntries with the information to build a minimized
         graph. Each entry informs the node `value`, whether it is a `group_end`,
         whether it is a `terminal`, and a pointer to the `child` in the list.
         The last item is the starting node pointing to the root(s).
     """
 
-    # Make a copy of the trie, as it is not preserved during minimization
-    # TODO: can use `copy`? should be a method of itself?
-    # trie_copy = deepcopy(trie)
-    trie_copy = trie
-
     # Merge redundant nodes with "hashes"
-    clist_dict = merge_redundant_nodes(trie_copy)
+    clist_dict = merge_redundant_nodes(trie)
 
     # Merge child lists
-    compress_dict = merge_child_list(clist_dict)
+    minim_dict = merge_child_list(clist_dict)
 
-    # Create compressed trie structure
-    entries = build_compression_array(trie_copy, compress_dict)
+    # Create minimized trie structure
+    entries = build_minim_array(trie, minim_dict)
     array = DafsaArray(entries)
 
     return array

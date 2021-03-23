@@ -3,9 +3,8 @@ from typing import Hashable, List, Optional, Sequence, Tuple
 from itertools import chain
 
 # TODO; add __slots__
-# TODO: can we have `init` and `value` at the same time?
+# TODO: can we have `sequences` and `value` at the same time?
 # TODO: should `value` default to None instead of empty string?
-# TODO: is `value` used only by minimization?
 class Node:
     """
     Class representing a graph used for locating specific keys from within a set.
@@ -30,20 +29,21 @@ class Node:
     def __init__(
         self,
         sequences: Optional[Sequence[Sequence[Hashable]]] = None,
-        value: Hashable = "",
         terminal: bool = False,
         group_end: bool = False,
+        value: Hashable = "",
     ):
         """
         Initialization method.
 
         :param sequences: A collection of sequence of hashable elements to be added to the search graph.
             Minimization is *not* performed by default.
-        :param value: The value for the node.
         :param terminal: Whether the node is a terminal node in the sequence. Used by minimization,
             should not be passed directly by the user.
         :param group_end: Whether the node represents the end of a group in the minimized array. Used
             by minimization, should not be passed directly by the user.
+        :param value: The value for the node. In most circumstances, it will be used
+            exclusively by the internal methods.
         """
 
         # Initialize the list of children for the current node; please
@@ -82,19 +82,11 @@ class Node:
         :return: A list of the elements used in the graph.
         """
 
-        # TODO: drop the expansive list/chain operations with `if`s?
         # TODO: memoize?
         children_elems = [children.collect_elements() for children in self.children]
         return [self.value] + [
             element for child_element in children_elems for element in child_element
         ]
-
-    #        return list(
-    #            chain.from_iterable(
-    #                [self.value]
-    #                + [children.collect_elements() for children in self.children]
-    ##            )
-    #        )
 
     def _add(self, sequence: Sequence[Hashable]):
         """

@@ -1,6 +1,6 @@
 # Import Python standard libraries
 from collections import namedtuple
-from typing import List
+from typing import Iterator, Hashable, List, Optional, Tuple
 from pathlib import Path
 
 # Import 3rd-party libraries
@@ -20,14 +20,14 @@ class DafsaArray:
     Class for representing and operating compressed arrays representing dafsas.
     """
 
-    def __init__(self, entries: List[ArrayEntry]):
+    def __init__(self, nodes: List[ArrayEntry]):
         # TODO; rename to elements, or nodes
-        self.entries = entries
+        self.nodes = nodes
 
     def show(self):
         print("Number of nodes:", len(self))
 
-        for idx, node in enumerate(self.entries):
+        for idx, node in enumerate(self.nodes):
             print(idx, node.value, node.group_end, node.terminal, node.child)
 
     def to_dot(self, label_nodes: bool = False, weight_scale: float = 1.5) -> str:
@@ -43,11 +43,11 @@ class DafsaArray:
         """
 
         # collect the maximum node weight for later computing the size
-        max_weight = max([node.weight for node in self.entries])
+        max_weight = max([node.weight for node in self.nodes])
 
         # collect all nodes
         dot_nodes = []
-        for node_id, node in enumerate(self.entries):
+        for node_id, node in enumerate(self.nodes):
             # List for collecting node attributes
             node_attr = []
 
@@ -58,7 +58,7 @@ class DafsaArray:
                 node_attr.append('label=""')
 
             # Decide on node shape
-            if node_id == len(self.entries) - 1:
+            if node_id == len(self.nodes) - 1:
                 node_attr.append('shape="doubleoctagon"')
             elif node.terminal:
                 node_attr.append('shape="doublecircle"')
@@ -91,22 +91,22 @@ class DafsaArray:
             visited.append(node_idx)
 
             # Obtain the pointer to the first node of the children group
-            ptr = self.entries[node_idx].child
+            ptr = self.nodes[node_idx].child
 
             # Collect all children indexes by checking `group_end`
             while True:
                 buf = '"%i" -> "%i" [label="%s",penwidth=%i] ;' % (
                     node_idx,
                     ptr,
-                    self.entries[ptr].value,
-                    self.entries[ptr].weight * weight_scale,
+                    self.nodes[ptr].value,
+                    self.nodes[ptr].weight * weight_scale,
                 )
                 dot_edges.append(buf)
 
                 if ptr not in visited:
                     to_visit.append(ptr)
 
-                if self.entries[ptr].group_end:
+                if self.nodes[ptr].group_end:
                     break
                 else:
                     ptr += 1
@@ -141,21 +141,21 @@ class DafsaArray:
             visited.append(node_idx)
 
             # Obtain the pointer to the first node of the children group
-            ptr = self.entries[node_idx].child
+            ptr = self.nodes[node_idx].child
 
             # Collect all children indexes by checking `group_end`
             while True:
                 graph.add_edge(
                     node_idx,
                     ptr,
-                    label=self.entries[ptr].value,
-                    terminal=self.entries[ptr].terminal,
+                    label=self.nodes[ptr].value,
+                    terminal=self.nodes[ptr].terminal,
                 )
 
                 if ptr not in visited:
                     to_visit.append(ptr)
 
-                if self.entries[ptr].group_end:
+                if self.nodes[ptr].group_end:
                     break
                 else:
                     ptr += 1
@@ -173,7 +173,68 @@ class DafsaArray:
         nx.readwrite.gml.write_gml(self.to_graph(), filename)
 
     def __len__(self) -> int:
-        return len(self.entries)
+        """
+        Return the number of direct children.
+
+        :return: The number of children (length of `self.nodes`).
+        """
+        return len(self.nodes)
 
     def __hash__(self) -> int:
-        return hash(self.entries)
+        """
+        Return a hash value for the current node.
+
+        :return: A hash value for the node.
+        """
+        return hash(self.nodes)
+
+
+def extract_sequences(
+    array: DafsaArray, node_idx: Optional[int] = None, carry: Optional[Tuple] = None
+) -> Iterator[List[Hashable]]:
+    """
+    Build an iterator with the sequences included in an array.
+
+    :param array: The array from where to extract the sequences.
+    :param node_idx: The index of the node to serve as root; if not
+        provided, will start from the last one (holding the actual
+        graph root).
+    :param carry: Information carried from the path, used by the
+        method recursively.
+    :return: The sequences expressed by the automaton.
+    """
+
+    # Obtain the root node, defaulting to the last one
+    if node_idx is None:
+        node_idx = array.nodes[-1].child
+
+    node = array.nodes[node_idx]
+
+    # Quit if we hit an empty node; we cannot check for .terminal, as by definition
+    # in a DAFSA a terminal might be continued. This excludes having empty nodes
+    # in the middle of the sequence.
+    # TODO: update code in addition to have the check as `is None`
+    if not node.value:
+        return
+
+    # Recursively build all sequences
+    while True:
+        if not carry:
+            sub_seq = (node.value,)
+        else:
+            sub_seq = carry + (node.value,)
+
+        for ret in extract_sequences(array, node.child, sub_seq):
+            yield ret
+
+        # If we hit a terminal node, just yield what was carried plus the current value
+        if node.terminal:
+            yield sub_seq
+
+        # If we are at a group end, just break out of the `while True` group
+        if node.group_end:
+            break
+
+        # Move to the next node in the group
+        node_idx += 1
+        node = array.nodes[node_idx]

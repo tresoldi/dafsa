@@ -6,61 +6,57 @@ Common functions and variables.
 import pathlib
 import subprocess
 import tempfile
-from typing import Hashable, Iterator, List, Optional, Tuple
+from typing import Hashable, Optional, Sequence, Tuple
 
 # Import from other modules
-from .minimize import DafsaArray
+from .dafsaarray import extract_sequences
+from .minimize import minimize_trie
+from .node import Node
 
-# TODO: move to the array
-def extract_sequences(
-    array: DafsaArray, node_idx: Optional[int] = None, carry: Optional[Tuple] = None
-) -> Iterator[List[Hashable]]:
+
+def build_dafsa(sequences: Sequence[Sequence[Hashable]], check: bool = False):
     """
-    Build an iterator with the sequences included in an array.
+    Build a DAFSA object from a collection of sequences.
 
-    :param array: The array from where to extract the sequences.
-    :param node_idx: The index of the node to serve as root; if not
-        provided, will start from the last one (holding the actual
-        graph root).
-    :param carry: Information carried from the path, used by the
-        method recursively.
-    :return: The sequences expressed by the automaton.
+    This is the "main" function of the library, and the one that will be most
+    used by users.
+
+    :param sequences: The collection of sequences to be used
+        to build the DAFSA object.
+    :param check: Whether to run a check to verify whether the set of
+        sequences returned by the DAFSA matches the input.
+    :return: The DAFSA object minimizing the sequences.
     """
 
-    # Obtain the root node, defaulting to the last one
-    if node_idx is None:
-        node_idx = array.entries[-1].child
+    # Build trie, pointing to the root node, and minimize it
+    root_node = Node(sequences)
+    array = minimize_trie(root_node)
 
-    node = array.entries[node_idx]
+    # Check correctness if requested
+    if check:
+        if set(extract_sequences(array)) != set(sequences):
+            raise ValueError("DAFSA is expressing a different set of sequences.")
 
-    # Quit if we hit an empty node; we cannot check for .terminal, as by definition
-    # in a DAFSA a terminal might be continued. This excludes having empty nodes
-    # in the middle of the sequence.
-    # TODO: update code in addition to have the check as `is None`
-    if not node.value:
-        return
+    #    import matplotlib.pyplot as plt
+    #    import networkx as nx
 
-    # Recursively build all sequences
-    while True:
-        if not carry:
-            sub_seq = (node.value,)
-        else:
-            sub_seq = carry + (node.value,)
+    #    G = array.to_graph()
+    #    edge_labels = nx.get_edge_attributes(G, "label")
+    #    formatted_edge_labels = {
+    #        (elem[0], elem[1]): edge_labels[elem] for elem in edge_labels
+    #    }
 
-        for ret in extract_sequences(array, node.child, sub_seq):
-            yield ret
+    #    pos = nx.spring_layout(G)
+    #    nx.draw_networkx(G, arrows=True, with_labels=True, node_color="skyblue", pos=pos)
+    #    nx.draw_networkx_edge_labels(
+    #        G, pos, edge_labels=formatted_edge_labels, font_color="red"
+    #    )
+    #    plt.show()
 
-        # If we hit a terminal node, just yield what was carried plus the current value
-        if node.terminal:
-            yield sub_seq
+    # dot = array.to_dot()
+    #    graphviz_output(dot, "temp.png")
 
-        # If we are at a group end, just break out of the `while True` group
-        if node.group_end:
-            break
-
-        # Move to the next node in the group
-        node_idx += 1
-        node = array.entries[node_idx]
+    return array
 
 
 def graphviz_output(
@@ -115,10 +111,11 @@ def read_words(
     underscore). If not provided, the function assumes that each character
     constitutes an independent token.
 
-    :param filename:
-    :param encoding:
-    :param delimiter:
-    :return:
+    :param filename: The source file.
+    :param encoding: The encoding of the source file (defaults to `utf-8`).
+    :param delimiter: An optional string to be used as in-sequence
+        delimiter.
+    :return: A collection of the sequences.
     """
 
     lines = open(filename, encoding=encoding).readlines()

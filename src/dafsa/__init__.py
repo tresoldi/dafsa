@@ -5,41 +5,20 @@ __version__ = "2.0"  # remember to sync with setup.py
 __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
-from .common import read_words, extract_sequences, graphviz_output
+# Import from local modules
+from .common import build_dafsa, read_words, extract_sequences, graphviz_output
+from .minimize import (
+    build_minim_array,
+    merge_child_list,
+    merge_redundant_nodes,
+    minimize_trie,
+)
 from .node import Node
-from .minimize import merge_redundant_nodes, merge_child_list, build_compression_array
-from .minimize import minimize_trie
 
-
-def build_dafsa(sequences):
-    # build trie
-    trie = Node(sequences)
-
-    array = minimize_trie(trie)
-
-    # TODO: have flag
-    if set(extract_sequences(array)) != set(sequences):
-        exit(1)
-
-    # array.show()
-
-    import matplotlib.pyplot as plt
-    import networkx as nx
-
-    G = array.to_graph()
-    edge_labels = nx.get_edge_attributes(G, "label")
-    formatted_edge_labels = {
-        (elem[0], elem[1]): edge_labels[elem] for elem in edge_labels
-    }
-
-    #    pos = nx.spring_layout(G)
-    #    nx.draw_networkx(G, arrows=True, with_labels=True, node_color="skyblue", pos=pos)
-    #    nx.draw_networkx_edge_labels(
-    #        G, pos, edge_labels=formatted_edge_labels, font_color="red"
-    #    )
-    #    plt.show()
-
-    dot = array.to_dot()
-    #    graphviz_output(dot, "temp.png")
-
-    return array
+# Build namespace
+__all__ = [
+    "build_dafsa",
+    "extract_sequences",
+    "graphviz_output",
+    "read_words",
+]
