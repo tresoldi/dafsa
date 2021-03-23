@@ -12,9 +12,8 @@ from typing import Hashable, Iterator, List, Optional, Tuple
 from .minimize import DafsaArray
 
 # TODO: move to the array
-# TODO: type for `carry`, held lists
 def extract_sequences(
-    array: DafsaArray, node_idx: Optional[int] = None, carry=None
+    array: DafsaArray, node_idx: Optional[int] = None, carry: Optional[Tuple] = None
 ) -> Iterator[List[Hashable]]:
     """
     Build an iterator with the sequences included in an array.
@@ -23,7 +22,8 @@ def extract_sequences(
     :param node_idx: The index of the node to serve as root; if not
         provided, will start from the last one (holding the actual
         graph root).
-    :param carry:
+    :param carry: Information carried from the path, used by the
+        method recursively.
     :return: The sequences expressed by the automaton.
     """
 
@@ -33,7 +33,10 @@ def extract_sequences(
 
     node = array.entries[node_idx]
 
-    # TODO: necessary when moving to sequences of arbitrary elements?
+    # Quit if we hit an empty node; we cannot check for .terminal, as by definition
+    # in a DAFSA a terminal might be continued. This excludes having empty nodes
+    # in the middle of the sequence.
+    # TODO: update code in addition to have the check as `is None`
     if not node.value:
         return
 

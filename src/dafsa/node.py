@@ -6,7 +6,7 @@ from itertools import chain
 # TODO: can we have `init` and `value` at the same time?
 # TODO: should `value` default to None instead of empty string?
 # TODO: is `value` used only by minimization?
-class SearchGraph:
+class Node:
     """
     Class representing a graph used for locating specific keys from within a set.
 
@@ -107,9 +107,9 @@ class SearchGraph:
 
         for element in sequence:
             # If `self.children` is empty (very first element) or if its element is different,
-            # add a new SearchGraph
+            # add a new Node
             if not self.children or self.children[-1].value != element:
-                self.children.append(SearchGraph())
+                self.children.append(Node())
 
             # Set the reference of the current element to the last one added, and the `value`
             # as well. Note that this is very C-like programming, following the original implementation,

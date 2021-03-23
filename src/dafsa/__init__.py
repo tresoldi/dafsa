@@ -6,14 +6,14 @@ __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
 from .common import read_words, extract_sequences, graphviz_output
-from .searchgraph import SearchGraph
+from .node import Node
 from .minimize import merge_redundant_nodes, merge_child_list, build_compression_array
 from .minimize import minimize_trie
 
 
 def build_dafsa(sequences):
     # build trie
-    trie = SearchGraph(sequences)
+    trie = Node(sequences)
 
     array = minimize_trie(trie)
 
