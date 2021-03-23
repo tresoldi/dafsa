@@ -1,21 +1,37 @@
+"""
+Common functions and variables.
+"""
+
+# Import Python standard libraries
 import pathlib
 import subprocess
 import tempfile
-from collections import namedtuple
-from typing import List, Optional
+from typing import Hashable, Iterator, List, Optional, Tuple
 
-RESOURCE_DIR = pathlib.Path(__file__).parent.parent.parent / "resources"
+# Import from other modules
+from .minimize import DafsaArray
 
-
-# TODO: return type
+# TODO: move to the array
+# TODO: type for `carry`, held lists
 def extract_sequences(
-    array: List[namedtuple], node_idx: Optional[int] = None, carry=""
-):
+    array: DafsaArray, node_idx: Optional[int] = None, carry=None
+) -> Iterator[List[Hashable]]:
+    """
+    Build an iterator with the sequences included in an array.
+
+    :param array: The array from where to extract the sequences.
+    :param node_idx: The index of the node to serve as root; if not
+        provided, will start from the last one (holding the actual
+        graph root).
+    :param carry:
+    :return: The sequences expressed by the automaton.
+    """
+
     # Obtain the root node, defaulting to the last one
     if node_idx is None:
-        node_idx = array[-1].child
+        node_idx = array.entries[-1].child
 
-    node = array[node_idx]
+    node = array.entries[node_idx]
 
     # TODO: necessary when moving to sequences of arbitrary elements?
     if not node.value:
@@ -23,12 +39,17 @@ def extract_sequences(
 
     # Recursively build all sequences
     while True:
-        for ret in extract_sequences(array, node.child, carry + node.value):
+        if not carry:
+            sub_seq = (node.value,)
+        else:
+            sub_seq = carry + (node.value,)
+
+        for ret in extract_sequences(array, node.child, sub_seq):
             yield ret
 
         # If we hit a terminal node, just yield what was carried plus the current value
         if node.terminal:
-            yield carry + node.value
+            yield sub_seq
 
         # If we are at a group end, just break out of the `while True` group
         if node.group_end:
@@ -36,7 +57,7 @@ def extract_sequences(
 
         # Move to the next node in the group
         node_idx += 1
-        node = array[node_idx]
+        node = array.entries[node_idx]
 
 
 def graphviz_output(
@@ -79,10 +100,36 @@ def graphviz_output(
     return ret
 
 
-def read_words(filename):
-    lines = open(filename, encoding="utf-8").readlines()
-    lines = [line.strip() for line in lines]
-    if " " in lines[0]:
-        lines = tuple([tuple(w.split()) for w in lines])
+def read_words(
+    filename: str, delimiter: Optional[str] = None, encoding: str = "utf-8"
+) -> Tuple[Tuple[str]]:
+    """
+    Auxiliary function for reading textual lists of sequences.
 
-    return tuple(lines)
+    The function assumes there file holds one sequence per line. An optional
+    `delimiter` might be provided, indicating the string the delimits
+    the tokens of each sequence (usually, if used, a space or an
+    underscore). If not provided, the function assumes that each character
+    constitutes an independent token.
+
+    :param filename:
+    :param encoding:
+    :param delimiter:
+    :return:
+    """
+
+    lines = open(filename, encoding=encoding).readlines()
+    seqs = [line.strip() for line in lines]
+
+    # Split data into tokens if delimiters are found
+    if delimiter:
+        delims = any([delimiter in seq for seq in seqs])
+    else:
+        delims = False
+
+    if delims:
+        seqs = [tuple(seq.split()) for seq in seqs]
+    else:
+        seqs = [tuple([char for char in seq]) for seq in seqs]
+
+    return tuple(seqs)

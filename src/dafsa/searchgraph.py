@@ -85,15 +85,16 @@ class SearchGraph:
         # TODO: drop the expansive list/chain operations with `if`s?
         # TODO: memoize?
         children_elems = [children.collect_elements() for children in self.children]
-        return [self.value] + [element for child_element in
-                               children_elems for element in child_element]
+        return [self.value] + [
+            element for child_element in children_elems for element in child_element
+        ]
 
-#        return list(
-#            chain.from_iterable(
-#                [self.value]
-#                + [children.collect_elements() for children in self.children]
-##            )
-#        )
+    #        return list(
+    #            chain.from_iterable(
+    #                [self.value]
+    #                + [children.collect_elements() for children in self.children]
+    ##            )
+    #        )
 
     def _add(self, sequence: Sequence[Hashable]):
         """

@@ -12,20 +12,14 @@ from .minimize import minimize_trie
 
 
 def build_dafsa(sequences):
-    # TODO; should move to the object?
-    sequences = tuple(sorted(sequences))
-
-    # read data (already sorting)
     # build trie
     trie = SearchGraph(sequences)
 
     array = minimize_trie(trie)
 
     # TODO: have flag
-    # TODO: move extract_sequences() to DafsaArray
-    #    if 1 == 2:
-    #        if set(extract_sequences(array)) != set(wordlist):
-    #            exit(1)
+    if set(extract_sequences(array)) != set(sequences):
+        exit(1)
 
     # array.show()
 

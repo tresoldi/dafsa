@@ -2,18 +2,22 @@
 from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
 from typing import Dict, Hashable, List, Optional, Tuple
+from pathlib import Path
 
 # Import 3rd-party libraries
 import networkx as nx
 
 # Import from other modules
 from .searchgraph import SearchGraph
-from .common import RESOURCE_DIR
+
+# Define the resource directory, used for building outputs
+RESOURCE_DIR = Path(__file__).parent.parent.parent / "resources"
 
 # TODO: have __all__? Or let __init__ specify?
 # TODO: minimization -> compression?
 # TODO: add compression as binary array (load and save?)
 # TODO: add weights
+# TODO: test how it works with `None` elements within the sequence (or zeros)
 
 # Define the NamedTuple for the elements of a compressed array (see comments at
 # the end of `build_compression_array()`).
@@ -381,7 +385,7 @@ def minimize_trie(trie: SearchGraph) -> DafsaArray:
 
     # Make a copy of the trie, as it is not preserved during minimization
     # TODO: can use `copy`? should be a method of itself?
-    #trie_copy = deepcopy(trie)
+    # trie_copy = deepcopy(trie)
     trie_copy = trie
 
     # Merge redundant nodes with "hashes"
