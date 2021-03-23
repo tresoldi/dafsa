@@ -21,14 +21,13 @@ class DafsaArray:
     """
 
     def __init__(self, nodes: List[ArrayEntry]):
-        # TODO; rename to elements, or nodes
+        """
+        Initialization method.
+
+        :param nodes: The ordered list of nodes that make the array.
+        """
+
         self.nodes = nodes
-
-    def show(self):
-        print("Number of nodes:", len(self))
-
-        for idx, node in enumerate(self.nodes):
-            print(idx, node.value, node.group_end, node.terminal, node.child)
 
     def to_dot(self, label_nodes: bool = False, weight_scale: float = 1.5) -> str:
         """
@@ -76,7 +75,9 @@ class DafsaArray:
             dot_nodes.append(buf)
 
         # add other edges
-        # TODO: almost same logic of to_graph(), should merge
+        # NOTE: this is essentially the same logic of the `.to_graph()` method, but it
+        # decided to replicate the logic in order to make it clearer and easier to
+        # thinker with
         dot_edges = []
 
         # List of nodes indices that were visited when building the graph, and to visit (starting with the
@@ -179,6 +180,20 @@ class DafsaArray:
         :return: The number of children (length of `self.nodes`).
         """
         return len(self.nodes)
+
+    def __repr__(self) -> str:
+        """
+        Return a long textual representation of the array.
+
+        :return: The textual representation.
+        """
+
+        buf = [
+            f"{idx} | {node.value} | {node.group_end} | {node.terminal} | {node.child}"
+            for idx, node in enumerate(self.nodes)
+        ]
+
+        return "\n".join(buf)
 
     def __hash__(self) -> int:
         """
