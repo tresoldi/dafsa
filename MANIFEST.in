@@ -4,3 +4,4 @@ include CONTRIBUTING.md
 include LICENSE
 include requirements.txt
 include resources/*
+include src/dafsa/template.dot
