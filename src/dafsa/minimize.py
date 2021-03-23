@@ -123,7 +123,7 @@ class DafsaArray:
                     ptr += 1
 
         # load template and build .dot source
-        template = RESOURCE_DIR / "template.dot"
+        template = Path(__file__).parent / "template.dot"
         with open(template.as_posix()) as handler:
             source = handler.read()
 
