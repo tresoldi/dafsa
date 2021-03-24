@@ -9,12 +9,14 @@ import tempfile
 from typing import Hashable, Optional, Sequence, Tuple
 
 # Import from other modules
-from .dafsaarray import extract_sequences
+from .dafsaarray import ArrayEntry, DafsaArray, extract_sequences
 from .minimize import minimize_trie
 from .node import Node
 
 
-def build_dafsa(sequences: Sequence[Sequence[Hashable]], check: bool = False):
+def build_dafsa(
+    sequences: Sequence[Sequence[Hashable]], weights: bool = True, check: bool = False
+):
     """
     Build a DAFSA object from a collection of sequences.
 
@@ -23,6 +25,9 @@ def build_dafsa(sequences: Sequence[Sequence[Hashable]], check: bool = False):
 
     :param sequences: The collection of sequences to be used
         to build the DAFSA object.
+    :param weights: Whether to collect transition weights; if weights are not
+        collected, all transitions in the returned DAFSA will have a
+        weight of 1 (default: True).
     :param check: Whether to run a check to verify whether the set of
         sequences returned by the DAFSA matches the input.
     :return: The DAFSA object minimizing the sequences.
@@ -36,6 +41,39 @@ def build_dafsa(sequences: Sequence[Sequence[Hashable]], check: bool = False):
     if check:
         if set(extract_sequences(array)) != set(sequences):
             raise ValueError("DAFSA is expressing a different set of sequences.")
+
+    # Add weights: as array entries are named tuples (thus immutable), we start with a
+    # list of zero weights and iterate over each sequence and each element, adding a visit
+    # each time. As we can trust the DAFSA to respect the sequence at this point, no
+    # group checking is performed.
+    # Note that weights could be collected during DAFSA construction/minimization, which
+    # would be faster. Nonetheless, this approach is easier to understand and should not
+    # impact much the performance (it is always possible to rewrite it if necessary)
+    if weights:
+        _weights = [0] * len(array.nodes)
+        for sequence in sequences:
+            # Update the weight of the first (root) node, and collect where it points to
+            _weights[-1] += 1
+            pointer = array.nodes[-1].child
+
+            for element in sequence:
+                while True:
+                    if array.nodes[pointer].value == element:
+                        _weights[pointer] += 1
+                        pointer = array.nodes[pointer].child
+                        break
+
+                    pointer += 1
+
+        # Build new array
+        array = DafsaArray(
+            [
+                ArrayEntry(
+                    node.value, node.group_end, node.terminal, node.child, weight
+                )
+                for node, weight in zip(array.nodes, _weights)
+            ]
+        )
 
     #    import matplotlib.pyplot as plt
     #    import networkx as nx
