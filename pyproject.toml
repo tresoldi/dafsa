@@ -1,4 +1,52 @@
 [build-system]
-requires = ["setuptools>=42.2"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "dafsa"
+version = "2.0"
+authors = [{name = "Tiago Tresoldi", email = "tiago.tresoldi@lingfil.uu.se"}]
+license = {text = "MIT"}
+description = "Library for computing Deterministic Acyclic Finite State Automata (DAFSA)"
+readme = "README.md"
+keywords = [
+    "dafsa",
+    "dawg",
+    "finite state automata",
+    "deterministic acyclic finite state automaton",
+    "directed acyclic word graph",
+]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing :: Indexing",
+    "Topic :: Text Processing :: Linguistic",
+]
+requires-python = ">=3.6"
+dependencies = ["networkx"]
+
+[project.optional-dependencies]
+dev = ["black", "flake8", "twine", "wheel"]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/tresoldi/dafsa"
+Documentation = "https://dafsa.readthedocs.io"
+
+[project.scripts]
+dafsa = "dafsa.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+zip-safe = false
+include-package-data = true
+test-suite = "tests"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
