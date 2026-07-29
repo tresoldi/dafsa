@@ -1,0 +1,517 @@
+# `dafsa` 2.0 — Design Document and Migration Plan
+
+Status: accepted, not yet implemented
+Target: a single `2.0.0` release (clean break from `1.0`)
+Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
+patched, the concrete API, and the ordered plan to get there.
+
+---
+
+## 1. Purpose
+
+`dafsa` 1.0 computes a minimal deterministic acyclic finite-state automaton from a list of
+sequences, and draws it. It is cited (JOSS 2020, Zenodo DOI 10.5281/zenodo.3668870) and is,
+as one bug reporter put it, "the one people will most likely find when looking for a DAFSA
+implementation in Python."
+
+2.0 keeps that role — a readable reference implementation for linguists and researchers —
+and widens it in three directions:
+
+1. **A family of structures**, not one class: trie, DAFSA, path-compacted DAFSA, suffix
+   automaton / CDAWG, and acyclic weighted transducers.
+2. **Weights that mean something**: a proper weighted automaton over an explicit semiring,
+   instead of 1.0's frequency counters, whose composition is not well defined (§2.3).
+3. **A representation that scales**: flat arrays instead of a linked graph of Python
+   objects, so the library is fast, memory-frugal, serialisable, and structurally immune to
+   recursion limits.
+
+**Non-goals for 2.0.** Incremental insertion or deletion after construction (structures are
+built then frozen); cyclic automata and general regular-expression compilation; a C or Rust
+extension; loading automata from disk (export only, §8); any change to `manuscript/`.
+
+---
+
+## 2. Audit of 1.0
+
+The 1.0 implementation lives in git history at `a78c94e~1` (`dafsa/dafsa.py`, 983 lines);
+`master` currently holds only a stub under `src/dafsa/`. The findings below are what 2.0 has
+to answer for. Line numbers refer to `dafsa/dafsa.py` at that commit, and every symptom was
+reproduced by running that code, except where noted as latent.
+
+### 2.1 Open issues and their root causes
+
+| Issue | Symptom | Root cause |
+|---|---|---|
+| [#18](https://github.com/tresoldi/dafsa/issues/18), [#14](https://github.com/tresoldi/dafsa/issues/14) | `condense()` raises `IndexError: list index out of range` | `_joining_round` (L645–655) skips candidates with `targets[node_id] > 1` but never excludes nodes with **zero** in-edges. The root node qualifies whenever it emits a single edge, and `[edge for edge in edges if edge["target"] == node_id][0]` then indexes an empty list. `DAFSA(["tapas", "topos"])` hits it on the root's single `t` edge. |
+| [#17](https://github.com/tresoldi/dafsa/issues/17) | `delimiter=" "` ignored; spaces become tokens | `delimiter` is never used to split input. It is only used to *join* labels when compacting (L679). A `str` input is iterated character by character, spaces included. `__main__.py` splits on whitespace before calling the library, so the CLI appears to work while the API does not. |
+| [#16](https://github.com/tresoldi/dafsa/issues/16) | `to_graph()` returns an undirected graph, contradicting its docstring | `nx.Graph()` at L927. Two further defects in the same method: a nested loop over all nodes re-adds every edge once per node (O(n²) work), and `graph[l_id][r_id]["label"] = label` overwrites the label whenever two transitions connect the same pair of states. |
+| [#15](https://github.com/tresoldi/dafsa/issues/15) | PDF/PNG show tofu boxes with Unicode codepoints instead of glyphs | `resources/template.dot` declares neither `charset` nor `fontname`, so Graphviz renders with a default font that has no coverage for the requested glyphs — the box-with-codepoint output is that font's missing-glyph fallback. |
+| [#10](https://github.com/tresoldi/dafsa/issues/10) | Recursion limit | `copy.deepcopy(self.nodes)` (L459) walks the linked `DAFSANode` graph recursively, one frame per state along a path; the same applies to pickling or any recursive traversal of the object graph. Depth is proportional to sequence length. |
+| [#8](https://github.com/tresoldi/dafsa/issues/8) | `.lookup()` cannot return a path | It returns `(final_node, cum_weight)` only, and the weight is not interpretable (§2.3). |
+| [#7](https://github.com/tresoldi/dafsa/issues/7) | Gaps in node ids after minimization | Ids come from a global `itertools.count()`; merged nodes are abandoned and their ids are never reused. |
+
+### 2.2 Additional defects found in the audit (no issue filed)
+
+- **Latent falsy-id defect in the minimizer.** `if child_idx:` (L575) treats the node id `0` as
+  "not found", because `0` is falsy, so a child found equivalent to the root would be discarded
+  instead of merged. The test should be `if child_idx is not None`. Searching 20,000 random
+  corpora produced no input that reaches the branch — the root's out-edge set is the set of all
+  distinct initial tokens, which is hard for an interior state to match — so this is recorded as
+  a latent defect rather than an observable bug. 2.0 removes the possibility by keying the
+  register on state signatures instead of scanning for an index.
+- **Minimization is quadratic.** `_minimize` finds an equivalent state by scanning every node
+  in `self.nodes` (L570), and the whole pass is wrapped in a `while True` that restarts on any
+  change (L543). `DAFSANode.__hash__` exists but no register/dictionary is used, discarding
+  the whole point of Daciuk's algorithm. The 0.5 changelog records the consequence: 99,171
+  sequences in "under 8 minutes".
+- **`to_dot()` divides by zero.** `max_weight = max(node.weight ...)` (L861) is `0` when the
+  object was built with `weight=False`, and `node.weight / max_weight` then raises
+  `ZeroDivisionError`. `max()` on an empty node set raises `ValueError`.
+- **The compaction de-duplication guard does not work.** `edge_info` is a dict, so
+  `for node_id in edge_info` (L666) iterates the literal keys `"source"` and `"target"`, and
+  `transitions_nodes += edge_info` (L667) appends those same strings. After the first accepted
+  candidate the guard rejects everything, so `_joining_round` performs at most one join per
+  call — measured on `DAFSA(["abcde", "xbcde"])`, the successive rounds return `1, 1, 1, 0`.
+  `condense()` still converges, via O(n) rounds of O(n²) work each.
+- **Compaction assumes string tokens.** `self._delimiter.join([label_from, label_to])` (L679)
+  raises `TypeError` for tuple or integer tokens.
+- **Compaction desynchronises the object.** It mutates `self.nodes` while `lookup()` reads the
+  `copy.deepcopy` kept in `self.lookup_nodes` (L459). After `condense()`, `count_nodes()` and
+  `count_edges()` describe a different graph from the one `lookup()` queries, and peak memory
+  is doubled.
+- **`__eq__`, `__hash__`, and `__gt__` disagree.** `__eq__` compares `final` (L184) while
+  `__hash__` and `__gt__` delegate to `__str__`, which omits it (L92–97). The ordering is not
+  consistent with equality.
+- **`sorted(sequences)` (L432) is a type trap.** Daciuk's construction needs the input sorted
+  in the same order the algorithm compares tokens, so 1.0 sorts the caller's sequences
+  directly. Mixed input types raise `TypeError`, and tuples of mutually incomparable tokens —
+  the normal case for linguistic feature bundles — cannot be used at all.
+- **`count_sequences()` counts duplicates** in the input list, while the automaton represents
+  a set.
+- **`DAFSAEdge` subclasses `dict`** and stores nothing in it.
+
+### 2.3 The weight semantics are the deepest problem
+
+1.0 minimizes first and *then* re-walks every sequence over the minimized graph
+(`_collect_weights`, L702–723), incrementing a counter on each edge traversed. Because states
+are shared after minimization, an edge counter ends up being the total frequency of *all*
+sequences that traverse that edge, and `lookup()` returns the sum of those counters along the
+queried path. That number does not answer any question the user asked. Concretely:
+
+```python
+>>> DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")[1]
+7          # 3 (root—t, shared by tip/tips/top) + 2 (t—i) + 2 (i—p)
+```
+
+`"tip"` was inserted once. There is no reading of `7` as a weight of `"tip"`.
+
+This is not a bug to patch; it is the absence of an algebra. A weighted automaton needs one
+operation to combine weights *along* a path and another to combine weights *across*
+alternative paths, with the identities and distributivity that make the combination
+associative and order-independent. That is a semiring, and it is the reason §5 exists. Once
+weights live in a semiring and minimization is weight-aware, the weight of a path is by
+construction the weight that was assigned to that sequence.
+
+---
+
+## 3. Design principles
+
+1. **Readable first.** This is a reference implementation. Where a clear algorithm and a
+   clever one differ measurably, take the clear one and record the benchmark.
+2. **Build, then freeze.** Construction happens in a builder; the result is an immutable,
+   canonically numbered, flat-array automaton. No post-construction mutation.
+3. **No recursion, ever, on data-dependent depth.** Every traversal is iterative with an
+   explicit stack or a topological order.
+4. **Tokens are opaque.** The core never assumes tokens are strings, comparable, or
+   single-character.
+5. **Separate structure from rendering.** Nothing in the core knows about Graphviz, DOT,
+   fonts, or networkx.
+6. **Correctness is checked independently.** Minimality, determinism, and weight preservation
+   are verified by code that does not share an implementation with the builder (§11).
+
+---
+
+## 4. Core representation
+
+### 4.1 Alphabet
+
+Tokens are mapped to dense integer symbol ids by an `Alphabet`:
+
+```python
+class Alphabet:
+    tokens: tuple[Hashable, ...]        # symbol id -> token
+    def id(self, token: Hashable) -> int
+    def __len__(self) -> int
+```
+
+Ids are assigned in sorted token order when the tokens are mutually comparable, and in
+first-encountered order otherwise. Either way, **the automaton is built by sorting tuples of
+integer ids, never the caller's sequences** — which removes the entire `TypeError` class of
+§2.2 and makes "sorted input" an internal invariant rather than a caller obligation. Iteration
+order is documented as the alphabet's order, which coincides with lexicographic order in the
+comparable case.
+
+### 4.2 Frozen automaton (CSR arrays)
+
+A frozen automaton is compressed-sparse-row adjacency over `array.array` — no per-state or
+per-transition Python objects:
+
+```
+alphabet      Alphabet
+s_first       array[int32], length num_states + 1     # transitions of q are [s_first[q] : s_first[q+1]]
+t_symbol      array[int32], length num_transitions    # sorted by (source, symbol)
+t_target      array[int32], length num_transitions
+s_flags       array[uint8]                            # bit 0: final
+t_weight      list[W] | None                          # semiring elements, weighted case only
+s_final       list[W] | None                          # final weights, weighted case only
+s_count       array[int64]                            # accepted suffixes from q (§6.3)
+```
+
+Consequences, each of which answers something in §2:
+
+- Transition lookup is a `bisect` over one state's sorted symbol slice: O(log k).
+- Memory is ~12 bytes per transition plus the weight list, against several hundred bytes for a
+  `DAFSANode` + `DAFSAEdge` pair.
+- State ids are dense, `0` is the root, and numbering is canonical (BFS from the root,
+  transitions in symbol order) — **issue #7 disappears by construction**, no flag needed.
+- There is no object graph to deep-copy and no recursive structure to traverse — **issue #10
+  becomes structurally unreachable**.
+- The arrays are the serialisation format (§8).
+
+### 4.3 Builder
+
+During construction only the states on the path just inserted are mutable. The builder holds
+growable parallel lists (`list[list[int]]` for symbols and targets per state) rather than node
+objects, and `freeze()` flattens them into the CSR arrays with canonical renumbering. This is
+the "array-based from the start" decision: at no point does a node become a first-class
+object that user code can hold a reference to.
+
+---
+
+## 5. Semiring layer
+
+```python
+class Semiring(Protocol[W]):
+    zero: W                                  # additive identity, multiplicative annihilator
+    one: W                                   # multiplicative identity
+    def plus(self, a: W, b: W) -> W: ...     # combine across alternative paths
+    def times(self, a: W, b: W) -> W: ...    # combine along a path
+    def key(self, a: W) -> Hashable: ...     # canonical form, for the minimization register
+
+    idempotent: bool
+    commutative: bool
+    divisible: bool                          # supports divide(), enabling weight pushing
+    def divide(self, a: W, b: W) -> W: ...   # optional
+```
+
+Built-ins, as module-level singletons:
+
+| Semiring | ⊕ | ⊗ | 0̄ | 1̄ | Use |
+|---|---|---|---|---|---|
+| `BOOLEAN` | ∨ | ∧ | `False` | `True` | plain acceptors (**default**) |
+| `COUNTING` | `+` | `×` | `0` | `1` | frequencies, integer-exact |
+| `TROPICAL` | `min` | `+` | `inf` | `0` | costs, shortest path |
+| `LOG` | `-log(e⁻ᵃ+e⁻ᵇ)` | `+` | `inf` | `0` | probabilities in negative-log space |
+| `PROBABILITY` | `+` | `×` | `0.0` | `1.0` | direct probabilities |
+| `VITERBI` | `max` | `×` | `0.0` | `1.0` | best-path probability |
+
+`star` is deliberately absent: every structure in 2.0 is acyclic, so no closure is needed. It
+can be added to the protocol as optional if cyclic support ever lands.
+
+Users supply their own by satisfying the protocol; nothing in the algorithms inspects the
+concrete type.
+
+**Weight-aware minimization.** Two states are equivalent only if their final weights and their
+outgoing `(symbol, target, weight)` triples agree, compared through `Semiring.key`. This is
+what makes `weight(seq)` equal to the weight assigned to `seq` (§2.3), at the cost of less
+state sharing than an unweighted DAFSA. Weight pushing (Mohri) recovers some of that sharing
+for divisible semirings and is offered as an explicit optional pass, not a default.
+
+---
+
+## 6. Structures
+
+All structures share the frozen core of §4.2 and differ only in construction and label type.
+
+### 6.1 `Trie`
+
+Prefix tree, no suffix sharing. Same incremental insertion, no register. Kept because it is
+the honest baseline for the trie-vs-DAFSA comparison the README is built around, and because
+1.0's `minimize=False` produced a trie by disabling the minimizer's effect while still paying
+its cost.
+
+### 6.2 `Dafsa`
+
+Daciuk's incremental construction from sorted symbol-id tuples, with a **register**:
+`dict[StateKey, int]`, where `StateKey` is `(is_final, final_weight_key, symbol₀, target₀,
+weight₀_key, …)`. Children are registered before their parents, so the key is well defined and
+equivalence testing is a single dict lookup on a hash of the state's out-degree — replacing
+1.0's linear scan and its restart loop. Expected effect on the 0.5 changelog benchmark: the
+99k-sequence corpus goes from minutes to roughly a second.
+
+### 6.3 Counting, ranking, and enumeration
+
+At freeze time, one reverse-topological pass fills `s_count[q]` = number of accepted sequences
+reachable from `q`. In O(|transitions|) this buys:
+
+- `len(automaton)` in O(1) — the number of *distinct* accepted sequences, fixing §2.2's
+  duplicate-counting confusion.
+- `rank(seq) -> int` and `unrank(i) -> tuple` — the automaton as a minimal perfect hash over
+  its language, in lexicographic order. This is a standard and genuinely useful property of
+  minimal acyclic DFAs that 1.0 did not expose.
+- `total_weight()` — ⊕ over all accepted paths, by the same topological pass.
+- Lazy lexicographic iteration and k-best extraction.
+
+### 6.4 `CompactDafsa`
+
+Path compression of a frozen `Dafsa`: a maximal chain of states each having exactly one
+in-edge and one out-edge, non-final, whose predecessor has exactly one out-edge, collapses
+into a single transition labelled with a **tuple of tokens**. Differences from 1.0's
+`condense()`:
+
+- Candidate selection uses in-degrees computed once over the CSR arrays. The predicate is
+  `indeg(q) == 1`, not `indeg(q) <= 1`, so the root — and every other source — is excluded.
+  **This is the fix for #18 and #14.**
+- All candidate chains are collapsed in one pass, not one per round.
+- Labels are token tuples, so nothing is `str.join`-ed and non-string tokens work.
+- It returns a **new frozen automaton** rather than mutating in place, so there is no
+  `lookup_nodes` shadow copy and no way for the reported counts to describe a different graph
+  from the one being queried.
+- Joining tokens into a display string is a rendering concern, handled by the DOT emitter's
+  `label_sep` parameter.
+
+### 6.5 `SuffixAutomaton` and `Cdawg`
+
+Worth stating plainly, because the two were run together in earlier scoping: a *compact
+DAFSA* (§6.4) and a *CDAWG* in the literature are different structures. §6.4 is a
+path-compressed dictionary automaton. A suffix automaton (DAWG) is the minimal DFA accepting
+every **substring** of a single sequence; the CDAWG is its path-compressed form. 2.0 provides
+both, because the substring index is what makes longest-common-substring, substring search,
+and repeat detection possible — capabilities the dictionary structures cannot offer.
+
+- `SuffixAutomaton.from_sequence(seq)` — online construction (Blumer et al.), linear time.
+- `Cdawg` — path-compressed suffix automaton, edges labelled by `(start, length)` spans into
+  the source sequence.
+
+### 6.6 `Fst`
+
+Acyclic weighted transducer. Transitions carry `(input_symbol, output_symbol, weight)` with
+`EPSILON = -1` permitted on either side. Built from aligned sequence pairs; minimized by the
+same register discipline over `(final, final_weight, sorted (in, out, target, weight))`.
+`compose(f, g)` is the standard product construction with epsilon filtering; `project(side)`
+yields an acceptor. This is the piece the morphology use case needs, and it is why the
+semiring layer is generic rather than hard-coded to counts.
+
+---
+
+## 7. Public API
+
+```python
+import dafsa
+from dafsa import Trie, Dafsa, CompactDafsa, SuffixAutomaton, Cdawg, Fst
+from dafsa.semirings import BOOLEAN, COUNTING, TROPICAL, LOG, PROBABILITY, VITERBI
+```
+
+### Construction
+
+```python
+Dafsa.from_sequences(seqs: Iterable[Sequence[Hashable]], *, semiring=BOOLEAN) -> Dafsa
+Dafsa.from_weighted(pairs: Iterable[tuple[Sequence[Hashable], W]], *, semiring) -> Dafsa
+Dafsa.from_sorted_symbols(...)          # low-level, streaming, pre-sorted ids
+dafsa.tokenize(text: str, sep: str | None = None) -> tuple[str, ...]
+```
+
+`Sequence[Hashable]` is the input contract. A `str` is accepted and documented as one token
+per character; `dafsa.tokenize` is the explicit way to get multi-character tokens. **This is
+the resolution of #17**: the constructor has no `delimiter` parameter to be misunderstood.
+
+### Query
+
+```python
+seq in automaton                        -> bool
+automaton.weight(seq)                   -> W                    # semiring.zero if rejected
+automaton.match(seq)                    -> Match | None         # states, transitions, weight
+automaton.paths(seq)                    -> Iterator[Path]       # all paths (ambiguous FSTs)
+automaton.longest_prefix_of(seq)        -> tuple[Hashable, ...]
+automaton.starts_with(prefix)           -> Iterator[tuple]
+len(automaton)                          -> int                  # distinct accepted sequences
+iter(automaton)                         -> Iterator[tuple]      # lexicographic
+automaton.rank(seq) / automaton.unrank(i)
+automaton.k_best(k)                     -> list[tuple[tuple, W]]
+automaton.total_weight()                -> W
+```
+
+`Match` carries the state path, the transition path, and the semiring weight — **the
+resolution of #8**, without needing networkx for the common case.
+
+### Transform and inspect
+
+```python
+automaton.compact()                     -> CompactDafsa
+automaton.push()                        -> Self                 # weight pushing, divisible semirings
+dafsa.intersect(a, b) / union / concat
+dafsa.compose(f: Fst, g: Fst)           -> Fst
+automaton.num_states / num_transitions / input_count / semiring / alphabet
+automaton.transitions(q)                -> Iterator[Transition]  # read-only view
+```
+
+---
+
+## 8. Export
+
+Export only, by decision: sequences are the source of truth and construction is fast enough to
+rebuild. The CSR arrays make a compact binary format straightforward if loading is ever wanted,
+so nothing here forecloses it.
+
+```python
+dafsa.export.to_dict(a) / to_json(a, path=None)
+dafsa.export.to_dot(a, *, label_nodes=False, fontname="DejaVu Sans", charset="UTF-8",
+                    weight_scale=1.5, label_sep=" ") -> str
+dafsa.export.write_figure(a, path, *, dpi=300, **dot_kwargs)
+dafsa.export.to_networkx(a) -> nx.MultiDiGraph
+dafsa.export.write_gml(a, path) / write_graphml(a, path)
+```
+
+- The DOT emitter declares `charset="UTF-8"` and a configurable `fontname` defaulting to a
+  wide-coverage font, and escapes labels properly — **the fix for #15**, together with a
+  documented note that Graphviz must be able to find a font covering the tokens in use.
+- Node sizing guards against `max_weight == 0` and against an empty automaton, fixing the
+  `ZeroDivisionError` and `ValueError` of §2.2.
+- `to_networkx` returns a **`MultiDiGraph`**, built in a single pass over the CSR arrays, one
+  edge per transition, each carrying its own `label` and `weight` — **the fix for #16**,
+  including the parallel-edge label loss and the O(n²) nested loop that the issue did not
+  mention.
+
+**On networkx.** It stays a core dependency, used for the graph exports, GML/GraphML writing,
+and networkx-backed extras such as full path enumeration. Construction, minimization, lookup,
+counting, and k-best are implemented directly on the CSR arrays: they are the algorithms this
+library exists to show, and delegating them would defeat the point as well as being slower.
+This split is worth revisiting once §5 is implemented — networkx's data model does not carry
+semiring weights naturally, and if the export surface turns out to be all it earns, it belongs
+in an optional extra.
+
+---
+
+## 9. Command-line interface
+
+```
+dafsa [-f trie|dafsa|compact|suffix|cdawg] [-s boolean|counting|tropical|log|probability|viterbi]
+      [-o OUTPUT] [-t stdout|json|dot|png|pdf|svg|gml|graphml] [--dpi N]
+      [--sep SEP] [--label-nodes] [--font NAME] SOURCE
+```
+
+`--condense` becomes `--compact`; `--sep` makes the tokenization that 1.0 did implicitly (and
+undocumentedly, in `__main__.py`) explicit and optional.
+
+---
+
+## 10. Repository and infrastructure changes
+
+| Area | Change |
+|---|---|
+| Python | `requires-python = ">=3.10"`; CI matrix 3.10–3.13 |
+| Packaging | Delete `setup.py`; single version source via `importlib.metadata` (today `pyproject.toml` and `src/dafsa/__init__.py` both hard-code `"2.0"`); ship `py.typed` |
+| Typing | `mypy --strict` on `src/`, enforced in CI |
+| Lint | `ruff` replaces `flake8`; drop `.codacy.yml` |
+| Docs | **MkDocs Material + mkdocstrings**. Delete `.readthedocs.yml` (it pins Python 3.5 and cannot build), `docs/conf.py`, `docs/Makefile`, and the `.rst` sources; author Markdown; publish to GitHub Pages from CI |
+| `daciuk/` | **Removed** (896 KB of GPL-2 tarballs inside an MIT repository — an inconsistency, even though `MANIFEST.in` keeps them out of the sdist). Replaced by `docs/references.md` citing Daciuk's algorithms, his personal page, and the archive.org snapshot. Git history retains the files |
+| CI | Upgrade `actions/checkout` and `actions/setup-python` v2 → v4; add coverage; add the benchmark job below; update branch triggers |
+| Benchmarks | `benchmarks/` over `resources/*.txt` and a large word list, with a wall-clock budget asserted in CI so the O(n²) minimizer cannot come back unnoticed |
+| README | Rewritten for the structure family; dead Travis badge removed; Zenodo DOI and citation kept; explicit 1.0 → 2.0 note |
+| `manuscript/`, `paper.json` | **Untouched.** They remain the record of the 1.0 JOSS paper. 2.0 is documented in the changelog and docs, and gets a new Zenodo version DOI on release |
+
+---
+
+## 11. Testing strategy
+
+Tests that check the implementation against something *other than itself*:
+
+- **Language equivalence.** For random and corpus-derived inputs, the automaton's accepted set
+  equals a reference Python `set`, checked in both directions (membership of every inserted
+  sequence, rejection of sampled non-members).
+- **Independent minimality verifier.** After `freeze()`, no two states share a signature —
+  computed by a checker that does not use the builder's register.
+- **Determinism and canonical form.** Per state, symbols are unique and sorted; state ids are
+  dense; numbering is BFS-canonical.
+- **Semiring laws.** Property-based (`hypothesis`) checks of associativity, commutativity where
+  claimed, distributivity, and the identity/annihilator axioms for every built-in.
+- **Weight preservation.** For every inserted `(sequence, weight)`, `weight(seq)` equals the
+  assigned weight, and `total_weight()` equals the ⊕-fold of all assigned weights. This is the
+  test 1.0 could not have passed (§2.3).
+- **Rank round-trip.** `unrank(rank(seq)) == seq` for all accepted sequences; `len()` matches
+  the reference set.
+- **FST composition.** `compose(f, g)` agrees with brute-force relation composition on small
+  random transducers.
+- **Regression tests** reproducing #14, #15, #16, #17, and #18 from their reported inputs.
+- **Depth test.** A single sequence of 50,000 tokens builds, freezes, exports, and is queried
+  with no `RecursionError` (#10).
+
+---
+
+## 12. Work plan
+
+One release. Ordered so that each milestone is independently testable and nothing is built on
+an unverified layer.
+
+| # | Milestone | Contents |
+|---|---|---|
+| 0 | Infrastructure | `pyproject.toml` (3.10+, ruff, mypy, `py.typed`), CI refresh, MkDocs skeleton, remove `daciuk/` and the Sphinx/RTD files |
+| 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` |
+| 2 | Semiring layer | protocol, six built-ins, law tests |
+| 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier |
+| 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` |
+| 5 | Compaction | `CompactDafsa` — closes #18, #14 |
+| 6 | Substring index | `SuffixAutomaton`, `Cdawg` |
+| 7 | Transducers | `Fst`, `compose`, `project` |
+| 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 |
+| 9 | Weight pushing | `push()` for divisible semirings |
+| 10 | CLI | rewrite against the new API — closes the remainder of #17 |
+| 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI |
+| 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here |
+
+---
+
+## 13. Migration: 1.0 → 2.0
+
+A clean break. There is no compatibility shim; 1.0 code will not run unchanged.
+
+| 1.0 | 2.0 |
+|---|---|
+| `DAFSA(seqs)` | `Dafsa.from_sequences(seqs)` |
+| `DAFSA(seqs, minimize=False)` | `Trie.from_sequences(seqs)` |
+| `DAFSA(seqs, weight=True)` | `Dafsa.from_sequences(seqs, semiring=COUNTING)`, or `from_weighted` for explicit weights |
+| `DAFSA(seqs, condense=True)` | `Dafsa.from_sequences(seqs).compact()` |
+| `DAFSA(seqs, delimiter=" ")` | `Dafsa.from_sequences(dafsa.tokenize(line, " ") for line in lines)` |
+| `d.lookup(seq)` → `(node, cum_weight) \| None` | `seq in d` / `d.weight(seq)` / `d.match(seq)`. Note that 1.0's `cum_weight` has no 2.0 equivalent, because it was not a well-defined quantity (§2.3) |
+| `d.count_nodes()` / `count_edges()` | `d.num_states` / `d.num_transitions` |
+| `d.count_sequences()` | `len(d)` for distinct accepted sequences, `d.input_count` for the 1.0 behaviour (input length, duplicates included) |
+| `d.nodes`, `d.lookup_nodes` | removed. Use `d.transitions(q)` read-only views |
+| `DAFSANode`, `DAFSAEdge` | removed. States are integers; there are no per-state objects to hold |
+| `d.to_graph()` (undirected) | `dafsa.export.to_networkx(d)` → `MultiDiGraph` |
+| `d.to_dot()` | `dafsa.export.to_dot(d, ...)` |
+| `d.write_figure(path, dpi)` | `dafsa.export.write_figure(d, path, dpi=...)` |
+| `d.write_gml(path)` | `dafsa.export.write_gml(d, path)` |
+| `d.condense()` (in place) | `d.compact()` (returns a new automaton) |
+| `dafsa.utils.common_prefix_length`, `pairwise` | internal, not public |
+| `print(d)` node dump format | changed; not a stable interface. Use `to_json` or `to_dot` for machine-readable output |
+
+Users who need the old `print()` dump or `cum_weight` should pin `dafsa==1.0`, which remains
+on PyPI and is the version the JOSS paper describes.
+
+---
+
+## 14. Risks and things to watch
+
+1. **Weight-aware minimization shares fewer states** than 1.0's minimize-then-count approach,
+   so weighted automata will be larger. This is the price of correct weights; `push()` and the
+   benchmark suite should quantify it before release.
+2. **Export-only persistence** will generate requests for loading, from anyone building a
+   large dictionary once and querying it repeatedly. The CSR layout is deliberately chosen so
+   that a binary format is additive when that day comes.
+3. **networkx as a core dependency** may end up earning its place only in the export layer
+   (§8). Decide at milestone 8 whether it moves to an optional extra.
+4. **Suffix automata and transducers widen the maintenance surface** considerably relative to
+   1.0's single class. Each needs its own independent verifier (§11), not just round-trip tests.
+5. **Scale target.** The design aims at ~10⁶ sequences in pure Python with the CSR core. If
+   real corpora push past that, the escape hatch is `from_sorted_symbols` streaming plus,
+   eventually, an optional native backend — not a change to the public API.
