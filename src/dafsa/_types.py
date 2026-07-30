@@ -21,4 +21,9 @@ Symbol: TypeAlias = int
 #: The dense integer identifying a state of an automaton.
 State: TypeAlias = int
 
-__all__ = ["State", "Symbol", "Token"]
+#: The state every traversal starts from. Canonical renumbering guarantees that
+#: the root is state zero, so this is a fact about frozen automata rather than a
+#: convention they happen to follow.
+ROOT: State = 0
+
+__all__ = ["ROOT", "State", "Symbol", "Token"]

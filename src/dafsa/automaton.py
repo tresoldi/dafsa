@@ -24,6 +24,8 @@ from bisect import bisect_left
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from dafsa import _algorithms
+from dafsa._types import ROOT
 from dafsa.semirings import BOOLEAN
 
 if TYPE_CHECKING:
@@ -32,9 +34,6 @@ if TYPE_CHECKING:
     from dafsa._types import State, Symbol, Token
     from dafsa.alphabet import Alphabet
     from dafsa.semirings import Semiring
-
-#: The state every traversal starts from. Canonical renumbering guarantees it.
-ROOT: State = 0
 
 #: Bit set in the state flags when a state is accepting.
 _FINAL = 1
@@ -94,6 +93,21 @@ class Transition(NamedTuple):
     weight: Any
 
 
+class Match(NamedTuple):
+    """Everything known about one accepted sequence.
+
+    Returned by :meth:`Automaton.match`. This is the resolution of issue #8: 1.0's
+    ``lookup()`` returned only the final node and an uninterpretable cumulative
+    weight, so the path a sequence took was not recoverable without dropping to a
+    graph library.
+    """
+
+    sequence: tuple[Token, ...]
+    states: tuple[State, ...]
+    transitions: tuple[Transition, ...]
+    weight: Any
+
+
 class Automaton:
     """An immutable, deterministic, acyclic automaton in CSR form.
 
@@ -139,6 +153,7 @@ class Automaton:
 
     __slots__ = (
         "_alphabet",
+        "_counts",
         "_final_weights",
         "_first",
         "_flags",
@@ -167,6 +182,19 @@ class Automaton:
         self._semiring = semiring
         self._transition_weights = transition_weights
         self._final_weights = final_weights
+
+        # Suffix counts are derived from the transitions, so they cannot be passed
+        # in and be wrong. They are computed on first use rather than at
+        # construction because membership testing does not need them, and an
+        # O(transitions) pass is real work to charge a caller who never asks.
+        self._counts: array[int] | None = None
+
+    def _suffix_counts(self) -> array[int]:
+        """Return suffix counts, computing them once on first use."""
+        if self._counts is None:
+            self._counts = _algorithms.suffix_counts(self)
+
+        return self._counts
 
     # -- structure ---------------------------------------------------------
 
@@ -464,6 +492,332 @@ class Automaton:
 
         return self.accepts(sequence)
 
+    def match(self, sequence: Sequence[Token]) -> Match | None:
+        """Return the full path ``sequence`` takes, or ``None`` if it is rejected.
+
+        Parameters
+        ----------
+        sequence
+            The tokens to match.
+
+        Returns
+        -------
+        Match or None
+            The states visited, the transitions taken, and the weight.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> found = Dafsa.from_sequences(["tap"]).match("tap")
+        >>> found.states
+        (0, 1, 2, 3)
+        >>> len(found.transitions)
+        3
+        """
+        symbols = self._alphabet.try_encode(sequence)
+        if symbols is None:
+            return None
+
+        semiring = self._semiring
+        state = ROOT
+        states = [state]
+        transitions: list[Transition] = []
+        weight = semiring.one
+
+        for symbol in symbols:
+            index = self.transition_index(state, symbol)
+            if index is None:
+                return None
+            target = self._target[index]
+            transitions.append(
+                Transition(state, symbol, target, self.transition_weight(index))
+            )
+            weight = semiring.times(weight, self.transition_weight(index))
+            state = target
+            states.append(state)
+
+        if not self.is_final(state):
+            return None
+
+        return Match(
+            tuple(sequence),
+            tuple(states),
+            tuple(transitions),
+            semiring.times(weight, self.final_weight(state)),
+        )
+
+    def paths(self, sequence: Sequence[Token]) -> Iterator[Match]:
+        """Yield every accepting path for ``sequence``.
+
+        A deterministic acceptor has at most one, so this yields nothing or one
+        :class:`Match` and :meth:`match` is the direct way to ask. It exists so
+        that code written against the transducers — where a single input can have
+        several analyses — reads the same against an acceptor.
+
+        Parameters
+        ----------
+        sequence
+            The tokens to match.
+
+        Yields
+        ------
+        Match
+            Each accepting path.
+        """
+        found = self.match(sequence)
+        if found is not None:
+            yield found
+
+    def longest_prefix_of(self, sequence: Sequence[Token]) -> tuple[Token, ...] | None:
+        """Return the longest accepted prefix of ``sequence``.
+
+        Useful for segmentation: repeatedly taking the longest accepted prefix of
+        what remains is greedy longest-match tokenisation against a lexicon.
+
+        Parameters
+        ----------
+        sequence
+            The tokens to search within.
+
+        Returns
+        -------
+        tuple of Token or None
+            The longest prefix of ``sequence`` that the automaton accepts, or
+            ``None`` if no prefix is accepted. The empty tuple is a valid answer
+            when the root is accepting.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> lexicon = Dafsa.from_sequences(["can", "candle"])
+        >>> lexicon.longest_prefix_of("candles")
+        ('c', 'a', 'n', 'd', 'l', 'e')
+        >>> lexicon.longest_prefix_of("cane")
+        ('c', 'a', 'n')
+        >>> lexicon.longest_prefix_of("dog") is None
+        True
+        """
+        longest: tuple[Token, ...] | None = () if self.is_final(ROOT) else None
+        state = ROOT
+
+        for length, token in enumerate(sequence, start=1):
+            symbol = self._alphabet.try_encode((token,))
+            if symbol is None:
+                break
+            following = self.step(state, symbol[0])
+            if following is None:
+                break
+            state = following
+            if self.is_final(state):
+                longest = tuple(sequence[:length])
+
+        return longest
+
+    def starts_with(self, prefix: Sequence[Token]) -> Iterator[tuple[Token, ...]]:
+        """Yield the accepted sequences beginning with ``prefix``, in order.
+
+        Costs the size of the answer, not the size of the language: the prefix is
+        followed once to reach a state, and only that state's subtree is walked.
+        This is the query an autocomplete is made of.
+
+        Parameters
+        ----------
+        prefix
+            The tokens every yielded sequence must start with.
+
+        Yields
+        ------
+        tuple of Token
+            Each accepted sequence extending ``prefix``, in the alphabet's order.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
+        >>> list(automaton.starts_with("ta"))
+        [('t', 'a', 'p'), ('t', 'a', 'p', 's')]
+        """
+        symbols = self._alphabet.try_encode(prefix)
+        if symbols is None:
+            return
+
+        state = self.walk(symbols)
+        if state is None:
+            return
+
+        yield from _algorithms.iterate(self, state, tuple(prefix))
+
+    # -- counting ----------------------------------------------------------
+
+    def __len__(self) -> int:
+        """Return how many distinct sequences are accepted.
+
+        This is the size of the *language*, not of the input it was built from.
+        1.0's ``count_sequences()`` returned the length of the input list,
+        duplicates included, while describing a structure that is a set.
+
+        Note that an automaton accepting nothing is therefore falsy.
+        """
+        return self._suffix_counts()[ROOT]
+
+    def __iter__(self) -> Iterator[tuple[Token, ...]]:
+        """Iterate over the accepted sequences in the alphabet's order.
+
+        Lazy: memory is proportional to the longest sequence, not to the size of
+        the language, so stopping early costs nothing for the rest.
+        """
+        return _algorithms.iterate(self)
+
+    def rank(self, sequence: Sequence[Token]) -> int:
+        """Return the position of ``sequence`` in iteration order.
+
+        Together with :meth:`unrank` this makes the automaton a minimal perfect
+        hash over its own language: every accepted sequence maps to a distinct
+        integer in ``range(len(automaton))``, and back.
+
+        Parameters
+        ----------
+        sequence
+            An accepted sequence.
+
+        Returns
+        -------
+        int
+            Its zero-based position in :meth:`__iter__` order.
+
+        Raises
+        ------
+        ValueError
+            If the sequence is not accepted.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
+        >>> [automaton.rank(word) for word in ("tap", "taps", "top")]
+        [0, 1, 2]
+        """
+        symbols = self._alphabet.try_encode(sequence)
+        if symbols is None:
+            message = "sequence is not accepted, so it has no rank"
+            raise ValueError(message)
+
+        return _algorithms.rank(self, symbols, self._suffix_counts())
+
+    def unrank(self, position: int) -> tuple[Token, ...]:
+        """Return the accepted sequence at ``position``.
+
+        The inverse of :meth:`rank`, and cheaper than it looks: whole subtrees are
+        skipped by their known sizes, so the cost tracks the sequence's length
+        rather than its position.
+
+        Parameters
+        ----------
+        position
+            A zero-based position in :meth:`__iter__` order.
+
+        Returns
+        -------
+        tuple of Token
+            The sequence at that position.
+
+        Raises
+        ------
+        IndexError
+            If ``position`` is outside ``range(len(automaton))``.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> Dafsa.from_sequences(["tap", "taps", "top"]).unrank(2)
+        ('t', 'o', 'p')
+        """
+        return _algorithms.unrank(self, position, self._suffix_counts())
+
+    def suffix_count(self, state: State) -> int:
+        """Return how many sequences are accepted from ``state``.
+
+        Parameters
+        ----------
+        state
+            The state to count from.
+
+        Returns
+        -------
+        int
+            The size of the state's right language.
+        """
+        return self._suffix_counts()[state]
+
+    def topological_order(self) -> list[State]:
+        """Return the states with every state before all of its successors.
+
+        Exposed because it is the order any dynamic program over the structure
+        needs, and because the canonical breadth-first numbering is *not*
+        topological — a fact easy to assume otherwise and get wrong.
+
+        Returns
+        -------
+        list of State
+            The states, sources before targets.
+        """
+        return _algorithms.topological_order(self)
+
+    def total_weight(self) -> Any:
+        """Return the semiring sum of every accepted sequence's weight.
+
+        For :data:`~dafsa.semirings.COUNTING` this is the total number of
+        insertions, as distinct from ``len()``, which is the number of distinct
+        sequences.
+
+        Returns
+        -------
+        Any
+            The total, or the semiring's ``zero`` for an empty language.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> from dafsa.semirings import COUNTING
+        >>> automaton = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
+        >>> len(automaton), automaton.total_weight()
+        (2, 3)
+        """
+        return _algorithms.total_weight(self)
+
+    def k_best(self, k: int) -> list[tuple[tuple[Token, ...], Any]]:
+        """Return the ``k`` best accepted sequences with their weights.
+
+        Only meaningful when the semiring is idempotent, so that ``plus`` selects
+        a better weight instead of accumulating.
+
+        Parameters
+        ----------
+        k
+            How many to return.
+
+        Returns
+        -------
+        list of tuple
+            Up to ``k`` ``(sequence, weight)`` pairs, best first.
+
+        Raises
+        ------
+        NotImplementedError
+            If the semiring is not idempotent.
+
+        Examples
+        --------
+        >>> from dafsa import Dafsa
+        >>> from dafsa.semirings import TROPICAL
+        >>> automaton = Dafsa.from_weighted(
+        ...     [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
+        ... )
+        >>> automaton.k_best(2)
+        [(('t', 'a', 'p', 's'), 0.5), (('t', 'o', 'p'), 1.0)]
+        """
+        return _algorithms.k_best(self, k)
+
     def __repr__(self) -> str:
         """Return a debugging representation."""
         weighted = f" {type(self._semiring).__name__}" if self.is_weighted else ""
@@ -476,4 +830,11 @@ class Automaton:
         )
 
 
-__all__ = ["ROOT", "Automaton", "Transition", "flag_array", "index_array"]
+__all__ = [
+    "ROOT",
+    "Automaton",
+    "Match",
+    "Transition",
+    "flag_array",
+    "index_array",
+]

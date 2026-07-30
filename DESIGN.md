@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–3 implemented (see §12)
+Status: accepted; milestones 0–4 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -164,7 +164,7 @@ t_target      array[int32], length num_transitions
 s_flags       array[uint8]                            # bit 0: final
 t_weight      list[W] | None                          # semiring elements, weighted case only   [M3]
 s_final       list[W] | None                          # final weights, weighted case only       [M3]
-s_count       array[int64]                            # accepted suffixes from q (§6.3)         [M4]
+s_count       array[int64] | None                     # accepted suffixes from q (§6.3), lazy   [M4]
 ```
 
 The fields marked `[M3]` and `[M4]` are added by the milestone noted, not carried as `None`
@@ -564,7 +564,7 @@ an unverified layer.
 | 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` | **done** |
 | 2 | Semiring layer | protocol, six built-ins, law tests | **done** |
 | 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | **done** |
-| 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` | |
+| 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best`, plus the §7 query methods `match`/`paths`/`longest_prefix_of`/`starts_with` — closes #8 | **done** |
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | |
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
 | 7 | Transducers | `Fst`, `compose`, `project` | |
@@ -594,6 +594,35 @@ the trie: minimization means fewer states are ever allocated, so sharing pays fo
 construction rather than costing extra. Lookups run at ~290,000/s. Minimality at that scale was
 confirmed by checking that all 109,160 state signatures are distinct, computed from the frozen
 arrays with no involvement from the register that built them.
+
+Milestone 4 folded in the four §7 query methods that no milestone had owned — `match`,
+`paths`, `longest_prefix_of` and `starts_with`. That gap mattered: milestone 12 listed **#8**
+as closed on release, but #8 asks `lookup()` to return a path and nothing in the plan built
+`match()`. It is built now.
+
+Three notes from that milestone:
+
+- **`s_count` is computed lazily, not at freeze.** It is derived from the transitions, so it
+  can never be passed in and be wrong, and a caller who only tests membership should not pay an
+  O(transitions) pass. Measured on the 96k corpus: 0.57s on first use, then free.
+- **Canonical breadth-first numbering is *not* a topological order.** A state can be discovered
+  early through one predecessor and have another predecessor discovered later, so the dynamic
+  programs cannot simply walk `reversed(range(num_states))`. `Dafsa.from_sequences(["a", "bc"])`
+  is a two-transition counterexample, and a test pins it so the shortcut is never taken by
+  someone who assumes otherwise.
+- **`k_best` cannot prune yet, and says so.** With every transition weight `one` and the whole
+  weight on the final state, no prefix carries information about how good its extensions might
+  be, so the implementation examines every accepted sequence while holding only *k* — O(*n*
+  log *k*) time, O(*k*) memory. Weight pushing (milestone 9) is what moves weight towards the
+  front and makes a genuinely pruning best-first search possible. It is also refused outright
+  for non-idempotent semirings, where `plus` accumulates rather than selects and "best" has no
+  meaning.
+
+Measured on the same 96k corpus: full ordered iteration in 0.82s; `rank`/`unrank` round-trip
+over all 96,393 sequences in 3.9s; a prefix query returning 4 results in 0.11ms. `unrank` is
+position-independent as intended — 26.0ms per thousand calls at position ~48,000 against
+29.3ms at ~96,000, where enumeration would have made the latter tens of thousands of times
+slower.
 
 Two implementation decisions in milestone 3 worth recording:
 

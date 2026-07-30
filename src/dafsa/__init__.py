@@ -6,9 +6,10 @@ of the repository.
 
 Available now: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
 :class:`~dafsa.automaton.Automaton`), the semiring layer
-(:mod:`dafsa.semirings`), and the dictionary structures :class:`Trie` and
-:class:`Dafsa`. The compacted, substring and transducer structures land in later
-milestones.
+(:mod:`dafsa.semirings`), the dictionary structures :class:`Trie` and
+:class:`Dafsa`, and the counting layer that makes an automaton an index rather
+than only a set. The compacted, substring and transducer structures land in
+later milestones.
 
 Examples
 --------
@@ -22,6 +23,11 @@ True
 ... )
 >>> counted.weight("tip")
 2
+
+The automaton is also an index over its own language:
+
+>>> len(automaton), automaton.unrank(0), automaton.rank(("t", "o", "p", "s"))
+(4, ('t', 'a', 'p'), 3)
 """
 
 from __future__ import annotations
@@ -30,7 +36,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from dafsa import semirings
 from dafsa.alphabet import Alphabet, tokenize
-from dafsa.automaton import ROOT, Automaton, Transition
+from dafsa.automaton import ROOT, Automaton, Match, Transition
 from dafsa.exceptions import (
     AcyclicityError,
     DafsaError,
@@ -56,6 +62,7 @@ __all__ = [
     "Dafsa",
     "DafsaError",
     "DeterminismError",
+    "Match",
     "Semiring",
     "Transition",
     "Trie",
