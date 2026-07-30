@@ -52,15 +52,11 @@ def _networkx() -> Any:
     making it required would charge every user for three functions most of them
     will not call.
 
-    Returns
-    -------
-    module
+    Returns:
         The ``networkx`` module.
 
-    Raises
-    ------
-    ExportError
-        If it is not installed.
+    Raises:
+        ExportError: If it is not installed.
     """
     try:
         import networkx as nx  # noqa: PLC0415 - deliberately deferred
@@ -91,28 +87,23 @@ def to_dict(automaton: Automaton) -> dict[str, Any]:
     """Return a plain-data description of ``automaton``.
 
     Tokens and weights are included as they are, not stringified, so the result
-    is faithful for any caller willing to handle Python objects. :func:`to_json`
+    is faithful for any caller willing to handle Python objects. ``to_json``
     is the lossy step.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to describe.
+    Args:
+        automaton: The automaton to describe.
 
-    Returns
-    -------
-    dict
+    Returns:
         Keys: ``format``, ``version``, ``type``, ``semiring``, ``weighted``,
         ``compact``, ``alphabet``, ``states`` and ``transitions``. Per-item
         weights appear only when the automaton is weighted, since a uniform
         ``one`` everywhere carries no information.
 
-    Examples
-    --------
-    >>> from dafsa import Dafsa
-    >>> described = to_dict(Dafsa.from_sequences(["ab"]))
-    >>> described["type"], described["alphabet"], len(described["transitions"])
-    ('Dafsa', ['a', 'b'], 2)
+    Examples:
+        >>> from dafsa import Dafsa
+        >>> described = to_dict(Dafsa.from_sequences(["ab"]))
+        >>> described["type"], described["alphabet"], len(described["transitions"])
+        ('Dafsa', ['a', 'b'], 2)
     """
     weighted = automaton.is_weighted
 
@@ -157,22 +148,16 @@ def to_json(
 ) -> str:
     """Serialise ``automaton`` as JSON.
 
-    Tokens that JSON cannot represent are written as their :func:`repr`. That is
+    Tokens that JSON cannot represent are written as their ``repr``. That is
     lossy, and acceptable, because there is no reader: the export exists to be
     inspected and to feed other tools, not to round-trip.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to serialise.
-    path
-        Where to write. ``None`` returns the text without writing.
-    indent
-        Indentation passed to :func:`json.dumps`. ``None`` gives compact output.
+    Args:
+        automaton: The automaton to serialise.
+        path: Where to write. ``None`` returns the text without writing.
+        indent: Indentation passed to ``json.dumps``. ``None`` gives compact output.
 
-    Returns
-    -------
-    str
+    Returns:
         The JSON text.
     """
     text = json.dumps(to_dict(automaton), indent=indent, default=repr)
@@ -187,36 +172,24 @@ def to_json(
 
 def _escape(text: str) -> str:
     """Escape a string for use inside a quoted DOT attribute."""
-    return (
-        text.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "")
-    )
+    return text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "")
 
 
 def _join(tokens: tuple[Token, ...], separator: str | None) -> str:
     """Render a transition's tokens as a display label.
 
-    Parameters
-    ----------
-    tokens
-        The tokens the transition consumes.
-    separator
-        What to put between them. ``None`` chooses: nothing between
-        single-character strings, which reads as a word, and a space otherwise,
-        which keeps multi-character tokens apart.
+    Args:
+        tokens: The tokens the transition consumes.
+        separator: What to put between them. ``None`` chooses: nothing between
+            single-character strings, which reads as a word, and a space otherwise,
+            which keeps multi-character tokens apart.
 
-    Returns
-    -------
-    str
+    Returns:
         The joined label.
     """
     if separator is None:
         separator = (
-            ""
-            if all(isinstance(token, str) and len(token) == 1 for token in tokens)
-            else " "
+            "" if all(isinstance(token, str) and len(token) == 1 for token in tokens) else " "
         )
 
     return separator.join(str(token) for token in tokens)
@@ -229,16 +202,11 @@ def _pen_widths(automaton: Automaton, scale: float) -> dict[int, float]:
     makes a drawing readable at a glance. Both degenerate cases are handled: an
     automaton accepting nothing, and one where every subtree is the same size.
 
-    Parameters
-    ----------
-    automaton
-        The automaton being drawn.
-    scale
-        How much thicker the busiest edge should be than the thinnest.
+    Args:
+        automaton: The automaton being drawn.
+        scale: How much thicker the busiest edge should be than the thinnest.
 
-    Returns
-    -------
-    dict
+    Returns:
         Transition index to pen width.
     """
     counts = {
@@ -254,8 +222,7 @@ def _pen_widths(automaton: Automaton, scale: float) -> dict[int, float]:
         return dict.fromkeys(counts, _MIN_PEN_WIDTH)
 
     return {
-        index: _MIN_PEN_WIDTH + scale * (count / largest) ** 0.5
-        for index, count in counts.items()
+        index: _MIN_PEN_WIDTH + scale * (count / largest) ** 0.5 for index, count in counts.items()
     }
 
 
@@ -272,42 +239,30 @@ def to_dot(  # noqa: PLR0913 - rendering options, each independent
 ) -> str:
     """Return Graphviz DOT source for ``automaton``.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to draw.
-    label_nodes
-        Whether to print state ids inside the nodes.
-    fontname
-        The font Graphviz should use. The default has broad Unicode coverage;
-        naming a font without the glyphs in use is what produces boxes.
-    charset
-        The input encoding declared to Graphviz.
-    label_sep
-        What to put between the tokens of a compacted transition. ``None``
-        chooses per label: nothing between single characters, a space otherwise.
-    scale_edges
-        Whether to vary edge thickness with the number of sequences running
-        through each transition.
-    weight_scale
-        How much thicker the busiest edge is than the thinnest, when
-        ``scale_edges`` is set.
-    rankdir
-        Graphviz layout direction.
+    Args:
+        automaton: The automaton to draw.
+        label_nodes: Whether to print state ids inside the nodes.
+        fontname: The font Graphviz should use. The default has broad Unicode coverage;
+            naming a font without the glyphs in use is what produces boxes.
+        charset: The input encoding declared to Graphviz.
+        label_sep: What to put between the tokens of a compacted transition. ``None``
+            chooses per label: nothing between single characters, a space otherwise.
+        scale_edges: Whether to vary edge thickness with the number of sequences running
+            through each transition.
+        weight_scale: How much thicker the busiest edge is than the thinnest, when
+            ``scale_edges`` is set.
+        rankdir: Graphviz layout direction.
 
-    Returns
-    -------
-    str
+    Returns:
         DOT source.
 
-    Examples
-    --------
-    >>> from dafsa import Dafsa
-    >>> source = to_dot(Dafsa.from_sequences(["ab"]))
-    >>> 'charset="UTF-8"' in source
-    True
-    >>> '"0" -> "1" [label="a"' in source
-    True
+    Examples:
+        >>> from dafsa import Dafsa
+        >>> source = to_dot(Dafsa.from_sequences(["ab"]))
+        >>> 'charset="UTF-8"' in source
+        True
+        >>> '"0" -> "1" [label="a"' in source
+        True
     """
     widths = _pen_widths(automaton, weight_scale) if scale_edges else {}
 
@@ -354,24 +309,16 @@ def write_figure(
 
     The output format is taken from the file extension.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to draw.
-    path
-        Where to write. The suffix selects the format — ``.png``, ``.pdf``,
-        ``.svg``, ``.dot`` and anything else Graphviz supports.
-    dpi
-        Output resolution, where the format has one.
-    **dot_options
-        Passed through to :func:`to_dot`.
+    Args:
+        automaton: The automaton to draw.
+        path: Where to write. The suffix selects the format — ``.png``, ``.pdf``,
+            ``.svg``, ``.dot`` and anything else Graphviz supports.
+        dpi: Output resolution, where the format has one.
+        **dot_options: Passed through to ``to_dot``.
 
-    Raises
-    ------
-    ExportError
-        If Graphviz is not installed, or if it fails.
-    ValueError
-        If ``path`` has no extension to take a format from.
+    Raises:
+        ExportError: If Graphviz is not installed, or if it fails.
+        ValueError: If ``path`` has no extension to take a format from.
     """
     destination = Path(path)
     suffix = destination.suffix.lstrip(".")
@@ -381,9 +328,7 @@ def write_figure(
 
     source = to_dot(automaton, **dot_options)
 
-    with tempfile.NamedTemporaryFile(
-        "w", suffix=".dot", encoding="utf-8", delete=False
-    ) as handle:
+    with tempfile.NamedTemporaryFile("w", suffix=".dot", encoding="utf-8", delete=False) as handle:
         handle.write(source)
         temporary = Path(handle.name)
 
@@ -421,31 +366,26 @@ def write_figure(
 def to_networkx(automaton: Automaton) -> nx.MultiDiGraph:
     """Return ``automaton`` as a ``networkx`` graph.
 
-    A :class:`~networkx.MultiDiGraph`, for two reasons that 1.0 got wrong. It is
+    A ``MultiDiGraph``, for two reasons that 1.0 got wrong. It is
     **directed**, because an automaton is; ``nx.Graph`` discards the direction
     that makes it an automaton at all. And it is a **multigraph**, because two
     transitions may join the same pair of states, and a simple graph gives them
     one attribute slot to share, so one label silently overwrites the other.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to convert.
+    Args:
+        automaton: The automaton to convert.
 
-    Returns
-    -------
-    networkx.MultiDiGraph
+    Returns:
         Nodes carry ``final``, ``root`` and, when weighted, ``final_weight``.
         Edges carry ``label``, ``symbol``, ``tokens`` and ``weight``.
 
-    Examples
-    --------
-    >>> from dafsa import Dafsa
-    >>> graph = to_networkx(Dafsa.from_sequences(["ab", "ac"]))
-    >>> graph.is_directed(), graph.is_multigraph()
-    (True, True)
-    >>> graph.number_of_edges() == Dafsa.from_sequences(["ab", "ac"]).num_transitions
-    True
+    Examples:
+        >>> from dafsa import Dafsa
+        >>> graph = to_networkx(Dafsa.from_sequences(["ab", "ac"]))
+        >>> graph.is_directed(), graph.is_multigraph()
+        (True, True)
+        >>> graph.number_of_edges() == Dafsa.from_sequences(["ab", "ac"]).num_transitions
+        True
     """
     graph = _networkx().MultiDiGraph()
     weighted = automaton.is_weighted
@@ -498,13 +438,10 @@ def _flattened(automaton: Automaton) -> nx.MultiDiGraph:
 def write_gml(automaton: Automaton, path: str | Path) -> None:
     """Write ``automaton`` to ``path`` in GML.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to write.
-    path
-        Destination. Names ending in ``.gz`` or ``.bz2`` are compressed by
-        ``networkx``.
+    Args:
+        automaton: The automaton to write.
+        path: Destination. Names ending in ``.gz`` or ``.bz2`` are compressed by
+            ``networkx``.
     """
     _networkx().write_gml(_flattened(automaton), str(path))
 
@@ -512,12 +449,9 @@ def write_gml(automaton: Automaton, path: str | Path) -> None:
 def write_graphml(automaton: Automaton, path: str | Path) -> None:
     """Write ``automaton`` to ``path`` in GraphML.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to write.
-    path
-        Destination.
+    Args:
+        automaton: The automaton to write.
+        path: Destination.
     """
     _networkx().write_graphml(_flattened(automaton), str(path))
 

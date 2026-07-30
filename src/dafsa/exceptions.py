@@ -1,6 +1,6 @@
 """Exceptions raised by the library.
 
-Every exception derives from :class:`DafsaError`, so callers can catch the whole
+Every exception derives from ``DafsaError``, so callers can catch the whole
 family, and additionally from the built-in exception a caller would reasonably
 expect, so ``except KeyError`` and ``except ValueError`` keep working.
 """

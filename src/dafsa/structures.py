@@ -64,9 +64,9 @@ _Unchecked = tuple[State, Symbol, State]
 class _Structure(Automaton):
     """Shared behaviour for the dictionary structures.
 
-    Exists so that :meth:`compact` has one home. It lives here rather than on
-    :class:`~dafsa.automaton.Automaton` because the result is a
-    :class:`CompactDafsa`, and the core must not depend on the structures built
+    Exists so that ``compact`` has one home. It lives here rather than on
+    ``Automaton`` because the result is a
+    ``CompactDafsa``, and the core must not depend on the structures built
     on top of it.
     """
 
@@ -79,18 +79,15 @@ class _Structure(Automaton):
         transitions labelled with several tokens. The language, the weights and
         the accepted order are all unchanged; only the number of states falls.
 
-        Returns
-        -------
-        CompactDafsa
+        Returns:
             A new frozen automaton. This one is untouched.
 
-        Examples
-        --------
-        >>> automaton = Dafsa.from_sequences(["tapas", "topos"])
-        >>> automaton.num_states, automaton.compact().num_states
-        (8, 4)
-        >>> "tapas" in automaton.compact()
-        True
+        Examples:
+            >>> automaton = Dafsa.from_sequences(["tapas", "topos"])
+            >>> automaton.num_states, automaton.compact().num_states
+            (8, 4)
+            >>> "tapas" in automaton.compact()
+            True
         """
         return _algorithms.compact(self, CompactDafsa)
 
@@ -103,21 +100,20 @@ class Trie(_Structure):
     distinguishable by the prefix that reaches them — which minimization
     destroys, since a shared suffix state is reached by many prefixes.
 
-    Construction costs the same as :class:`Dafsa` minus the register lookups, so
+    Construction costs the same as ``Dafsa`` minus the register lookups, so
     a trie is never the cheaper choice; it is the choice that keeps prefixes
     distinct.
 
-    Examples
-    --------
-    >>> trie = Trie.from_sequences(["tap", "taps", "top"])
-    >>> "taps" in trie, "ta" in trie
-    (True, False)
+    Examples:
+        >>> trie = Trie.from_sequences(["tap", "taps", "top"])
+        >>> "taps" in trie, "ta" in trie
+        (True, False)
 
-    One state per distinct prefix — ``t``, ``ta``, ``tap``, ``taps``, ``to``,
-    ``top`` — plus the root:
+        One state per distinct prefix — ``t``, ``ta``, ``tap``, ``taps``, ``to``,
+        ``top`` — plus the root:
 
-    >>> trie.num_states
-    7
+        >>> trie.num_states
+        7
     """
 
     __slots__ = ()
@@ -131,19 +127,14 @@ class Trie(_Structure):
     ) -> Trie:
         """Build a trie accepting exactly ``sequences``.
 
-        Parameters
-        ----------
-        sequences
-            The sequences to accept. Each is a sequence of hashable tokens; a
-            ``str`` is one token per character.
-        semiring
-            The semiring weights belong to. With the default, the result is a
-            plain acceptor. With :data:`~dafsa.semirings.COUNTING`, each sequence
-            contributes ``1``, so a repeated sequence gets its multiplicity.
+        Args:
+            sequences: The sequences to accept. Each is a sequence of hashable tokens; a
+                ``str`` is one token per character.
+            semiring: The semiring weights belong to. With the default, the result is a
+                plain acceptor. With ``COUNTING``, each sequence
+                contributes ``1``, so a repeated sequence gets its multiplicity.
 
-        Returns
-        -------
-        Trie
+        Returns:
             The frozen trie.
         """
         return _build(
@@ -162,17 +153,12 @@ class Trie(_Structure):
     ) -> Trie:
         """Build a trie from ``(sequence, weight)`` pairs.
 
-        Parameters
-        ----------
-        pairs
-            The sequences and their weights. Repeated sequences have their
-            weights combined with the semiring's ``plus``.
-        semiring
-            The semiring the weights belong to.
+        Args:
+            pairs: The sequences and their weights. Repeated sequences have their
+                weights combined with the semiring's ``plus``.
+            semiring: The semiring the weights belong to.
 
-        Returns
-        -------
-        Trie
+        Returns:
             The frozen trie.
         """
         return _build(pairs, semiring, minimize=False, factory=cls)
@@ -187,24 +173,23 @@ class Dafsa(_Structure):
     leads to it — and it is why the counting layer, rather than the states
     themselves, is what answers questions about individual sequences.
 
-    Examples
-    --------
-    >>> dafsa = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
-    >>> "tops" in dafsa, "to" in dafsa
-    (True, False)
+    Examples:
+        >>> dafsa = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
+        >>> "tops" in dafsa, "to" in dafsa
+        (True, False)
 
-    The shared ``ps`` suffix is stored once, where a trie would store it twice:
+        The shared ``ps`` suffix is stored once, where a trie would store it twice:
 
-    >>> words = ["tap", "taps", "top", "tops"]
-    >>> dafsa.num_states < Trie.from_sequences(words).num_states
-    True
+        >>> words = ["tap", "taps", "top", "tops"]
+        >>> dafsa.num_states < Trie.from_sequences(words).num_states
+        True
 
-    Weights mean what they say, which is the thing 1.0 could not do:
+        Weights mean what they say, which is the thing 1.0 could not do:
 
-    >>> from dafsa.semirings import COUNTING
-    >>> counted = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
-    >>> counted.weight("tip"), counted.weight("tap"), counted.weight("nope")
-    (2, 1, 0)
+        >>> from dafsa.semirings import COUNTING
+        >>> counted = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
+        >>> counted.weight("tip"), counted.weight("tap"), counted.weight("nope")
+        (2, 1, 0)
     """
 
     __slots__ = ()
@@ -218,21 +203,16 @@ class Dafsa(_Structure):
     ) -> Dafsa:
         """Build the minimal automaton accepting exactly ``sequences``.
 
-        Parameters
-        ----------
-        sequences
-            The sequences to accept. Each is a sequence of hashable tokens; a
-            ``str`` is one token per character. Order does not matter — the
-            sorting the algorithm needs is done internally, over encoded symbols
-            rather than over the caller's tokens.
-        semiring
-            The semiring weights belong to. With the default, the result is a
-            plain acceptor. With :data:`~dafsa.semirings.COUNTING`, each sequence
-            contributes ``1``, so a repeated sequence gets its multiplicity.
+        Args:
+            sequences: The sequences to accept. Each is a sequence of hashable tokens; a
+                ``str`` is one token per character. Order does not matter — the
+                sorting the algorithm needs is done internally, over encoded symbols
+                rather than over the caller's tokens.
+            semiring: The semiring weights belong to. With the default, the result is a
+                plain acceptor. With ``COUNTING``, each sequence
+                contributes ``1``, so a repeated sequence gets its multiplicity.
 
-        Returns
-        -------
-        Dafsa
+        Returns:
             The frozen, minimal automaton.
         """
         return _build(
@@ -251,17 +231,12 @@ class Dafsa(_Structure):
     ) -> Dafsa:
         """Build the minimal automaton from ``(sequence, weight)`` pairs.
 
-        Parameters
-        ----------
-        pairs
-            The sequences and their weights. Repeated sequences have their
-            weights combined with the semiring's ``plus``.
-        semiring
-            The semiring the weights belong to.
+        Args:
+            pairs: The sequences and their weights. Repeated sequences have their
+                weights combined with the semiring's ``plus``.
+            semiring: The semiring the weights belong to.
 
-        Returns
-        -------
-        Dafsa
+        Returns:
             The frozen, minimal automaton. Minimization is weight-aware: two
             states are shared only if their weights agree as well as their
             transitions, so ``weight(seq)`` returns what ``seq`` was inserted
@@ -274,31 +249,29 @@ class Dafsa(_Structure):
 class CompactDafsa(_Structure):
     """A path-compacted automaton: transitions may consume several tokens.
 
-    Produced by :meth:`_Structure.compact`. Where an ordinary automaton spends a
+    Produced by ``_Structure.compact``. Where an ordinary automaton spends a
     state on each token of a forced chain, this spends one transition on the
     whole chain, which is what makes a drawn automaton readable at any size.
 
     The token contract is unchanged. Membership, weights, ranking and iteration
     all still take and return sequences of the original tokens; the compound
     labels are an internal matter, visible through
-    :meth:`~dafsa.automaton.Automaton.transition_tokens` when a renderer needs
-    them.
+    ``transition_tokens`` when a renderer needs them.
 
-    Examples
-    --------
-    >>> compacted = Dafsa.from_sequences(["tapas", "topos"]).compact()
-    >>> "tapas" in compacted, "tapa" in compacted
-    (True, False)
-    >>> sorted("".join(str(t) for t in s) for s in compacted)
-    ['tapas', 'topos']
+    Examples:
+        >>> compacted = Dafsa.from_sequences(["tapas", "topos"]).compact()
+        >>> "tapas" in compacted, "tapa" in compacted
+        (True, False)
+        >>> sorted("".join(str(t) for t in s) for s in compacted)
+        ['tapas', 'topos']
 
-    The single ``t`` transition out of the root now carries the whole forced
-    prefix, and 1.0 raised ``IndexError`` on exactly this input:
+        The single ``t`` transition out of the root now carries the whole forced
+        prefix, and 1.0 raised ``IndexError`` on exactly this input:
 
-    >>> compacted.transition_tokens(0)
-    ('t',)
-    >>> compacted.num_states
-    4
+        >>> compacted.transition_tokens(0)
+        ('t',)
+        >>> compacted.num_states
+        4
     """
 
     __slots__ = ()
@@ -310,16 +283,11 @@ def _unit_weighted(
 ) -> list[tuple[Sequence[Token], Any]]:
     """Pair each sequence with the semiring's ``one``.
 
-    Parameters
-    ----------
-    sequences
-        The sequences to weight.
-    semiring
-        The semiring supplying the unit weight.
+    Args:
+        sequences: The sequences to weight.
+        semiring: The semiring supplying the unit weight.
 
-    Returns
-    -------
-    list of tuple
+    Returns:
         ``(sequence, one)`` pairs.
     """
     return [(sequence, semiring.one) for sequence in sequences]
@@ -334,22 +302,15 @@ def _build(
 ) -> A:
     """Build a structure from weighted sequences.
 
-    The single construction loop behind both :class:`Trie` and :class:`Dafsa`.
+    The single construction loop behind both ``Trie`` and ``Dafsa``.
 
-    Parameters
-    ----------
-    pairs
-        ``(sequence, weight)`` pairs.
-    semiring
-        The semiring the weights belong to.
-    minimize
-        Whether to share equivalent states through a register.
-    factory
-        The class to freeze into.
+    Args:
+        pairs: ``(sequence, weight)`` pairs.
+        semiring: The semiring the weights belong to.
+        minimize: Whether to share equivalent states through a register.
+        factory: The class to freeze into.
 
-    Returns
-    -------
-    Automaton
+    Returns:
         The frozen structure.
     """
     materialised = [(tuple(sequence), weight) for sequence, weight in pairs]
@@ -358,9 +319,7 @@ def _build(
     # Sorting encoded symbol tuples rather than the caller's sequences is what
     # makes the sorted-input requirement internal. Tuples of ints always compare;
     # tuples of arbitrary tokens may not, which is the crash 1.0 shipped with.
-    encoded = sorted(
-        (alphabet.encode(sequence), weight) for sequence, weight in materialised
-    )
+    encoded = sorted((alphabet.encode(sequence), weight) for sequence, weight in materialised)
 
     builder = Builder(alphabet, semiring)
     register: dict[_Signature, State] | None = {} if minimize else None
@@ -393,14 +352,11 @@ def _build(
 def _common_prefix_length(left: tuple[Symbol, ...], right: tuple[Symbol, ...]) -> int:
     """Return how many leading symbols two encoded sequences share.
 
-    Parameters
-    ----------
-    left, right
-        The encoded sequences to compare.
+    Args:
+        left: The first encoded sequence.
+        right: The second encoded sequence.
 
-    Returns
-    -------
-    int
+    Returns:
         The length of the common prefix.
     """
     shared = 0
@@ -426,17 +382,12 @@ def _settle(
     is complete. That ordering is the whole correctness argument for using a
     register at all.
 
-    Parameters
-    ----------
-    builder
-        The builder being driven.
-    unchecked
-        The chain of ``(parent, symbol, child)`` links that may still change.
-        Truncated in place.
-    register
-        Signature-to-state map, or ``None`` to skip sharing and build a trie.
-    down_to
-        How many links to leave in place.
+    Args:
+        builder: The builder being driven.
+        unchecked: The chain of ``(parent, symbol, child)`` links that may still change.
+            Truncated in place.
+        register: Signature-to-state map, or ``None`` to skip sharing and build a trie.
+        down_to: How many links to leave in place.
     """
     while len(unchecked) > down_to:
         parent, symbol, child = unchecked.pop()
@@ -460,19 +411,14 @@ def _signature(builder: Builder, state: State) -> _Signature:
     Two states may be shared exactly when their signatures match: same finality,
     same final weight, and the same outgoing transitions to the same *canonical*
     targets with the same weights. Weights go through
-    :meth:`~dafsa.semirings.Semiring.key` so that a semiring whose values are
+    ``key`` so that a semiring whose values are
     unhashable, or which spells one value several ways, still minimizes.
 
-    Parameters
-    ----------
-    builder
-        The builder holding the state.
-    state
-        The state to describe. Its children must already be canonical.
+    Args:
+        builder: The builder holding the state.
+        state: The state to describe. Its children must already be canonical.
 
-    Returns
-    -------
-    tuple
+    Returns:
         A hashable signature.
     """
     semiring = builder.semiring

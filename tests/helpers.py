@@ -137,9 +137,7 @@ def weighted_right_languages(
         tables[state] = table
 
     return {
-        state: frozenset(
-            (suffix, semiring.key(weight)) for suffix, weight in table.items()
-        )
+        state: frozenset((suffix, semiring.key(weight)) for suffix, weight in table.items())
         for state, table in tables.items()
     }
 

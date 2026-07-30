@@ -54,14 +54,10 @@ def topological_order(automaton: Automaton) -> list[State]:
     can be discovered early through one predecessor while another predecessor is
     discovered later — so ``range(num_states)`` will not do.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to order. Must be acyclic, which ``freeze()`` guarantees.
+    Args:
+        automaton: The automaton to order. Must be acyclic, which ``freeze()`` guarantees.
 
-    Returns
-    -------
-    list of State
+    Returns:
         The states, sources before targets.
     """
     colour = bytearray(automaton.num_states)
@@ -100,14 +96,10 @@ def suffix_counts(automaton: Automaton) -> array[int]:
     reachable by two paths from the same state, so the sum needs no
     deduplication.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to count over.
+    Args:
+        automaton: The automaton to count over.
 
-    Returns
-    -------
-    array of int
+    Returns:
         ``counts[q]`` is the number of sequences accepted from ``q``.
         ``counts[ROOT]`` is the size of the whole language.
     """
@@ -125,18 +117,14 @@ def suffix_counts(automaton: Automaton) -> array[int]:
 def total_weight(automaton: Automaton) -> Any:
     """Return the semiring sum of the weights of every accepted sequence.
 
-    The weighted generalisation of :func:`suffix_counts`: where counting adds
+    The weighted generalisation of ``suffix_counts``: where counting adds
     one per accepted sequence, this combines each sequence's weight with the
     semiring's ``plus``.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to total.
+    Args:
+        automaton: The automaton to total.
 
-    Returns
-    -------
-    Any
+    Returns:
         The total, or the semiring's ``zero`` for an empty language.
     """
     semiring = automaton.semiring
@@ -164,22 +152,16 @@ def iterate(
     proportional to the longest sequence rather than to the size of the language,
     and a caller can stop early without having paid for the rest.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to enumerate.
-    start
-        The state to enumerate from. Defaults to the root, giving the whole
-        language.
-    prefix
-        Tokens to prepend to each result — the path already taken to reach
-        ``start``. Enumerating a subtree and prepending its prefix is what makes
-        a prefix query cost the size of its answer rather than the size of the
-        language.
+    Args:
+        automaton: The automaton to enumerate.
+        start: The state to enumerate from. Defaults to the root, giving the whole
+            language.
+        prefix: Tokens to prepend to each result — the path already taken to reach
+            ``start``. Enumerating a subtree and prepending its prefix is what makes
+            a prefix query cost the size of its answer rather than the size of the
+            language.
 
-    Yields
-    ------
-    tuple of Token
+    Yields:
         Each accepted sequence, in ascending order.
     """
     buffer: list[Token] = list(prefix)
@@ -216,24 +198,16 @@ def rank(automaton: Automaton, symbols: tuple[Symbol, ...], counts: array[int]) 
     earlier: the prefix itself if it is accepted (a prefix sorts before anything
     extending it), and the whole subtree under every smaller symbol.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to rank within.
-    symbols
-        The encoded sequence, which must be accepted.
-    counts
-        Suffix counts, as returned by :func:`suffix_counts`.
+    Args:
+        automaton: The automaton to rank within.
+        symbols: The encoded sequence, which must be accepted.
+        counts: Suffix counts, as returned by ``suffix_counts``.
 
-    Returns
-    -------
-    int
-        The sequence's zero-based position in :func:`iterate` order.
+    Returns:
+        The sequence's zero-based position in ``iterate`` order.
 
-    Raises
-    ------
-    ValueError
-        If the sequence is not accepted, and therefore has no position.
+    Raises:
+        ValueError: If the sequence is not accepted, and therefore has no position.
     """
     position = 0
     state = ROOT
@@ -266,33 +240,23 @@ def rank(automaton: Automaton, symbols: tuple[Symbol, ...], counts: array[int]) 
     return position
 
 
-def unrank(
-    automaton: Automaton, position: int, counts: array[int]
-) -> tuple[Token, ...]:
+def unrank(automaton: Automaton, position: int, counts: array[int]) -> tuple[Token, ...]:
     """Return the accepted sequence at ``position``, without enumerating.
 
-    The inverse of :func:`rank`. Descends the automaton, at each state skipping
+    The inverse of ``rank``. Descends the automaton, at each state skipping
     whole subtrees whose sizes are already known, so the cost depends on the
     sequence's length rather than on its position.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to index into.
-    position
-        A zero-based position in :func:`iterate` order.
-    counts
-        Suffix counts, as returned by :func:`suffix_counts`.
+    Args:
+        automaton: The automaton to index into.
+        position: A zero-based position in ``iterate`` order.
+        counts: Suffix counts, as returned by ``suffix_counts``.
 
-    Returns
-    -------
-    tuple of Token
+    Returns:
         The sequence at that position.
 
-    Raises
-    ------
-    IndexError
-        If ``position`` is outside the language.
+    Raises:
+        IndexError: If ``position`` is outside the language.
     """
     if not 0 <= position < counts[ROOT]:
         message = f"position out of range: {position}"
@@ -327,35 +291,27 @@ def k_best(automaton: Automaton, k: int) -> list[tuple[tuple[Token, ...], Any]]:
     "Best" is defined by the semiring: for an idempotent semiring, ``plus``
     selects a winner rather than accumulating, and the winner is the better
     weight. Non-idempotent semirings have no such notion — under
-    :data:`~dafsa.semirings.COUNTING`, ``plus(2, 3)`` is ``5``, not a preference —
+    ``COUNTING``, ``plus(2, 3)`` is ``5``, not a preference —
     so they are refused rather than given an arbitrary ordering.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to search.
-    k
-        How many sequences to return. Non-positive values return nothing.
+    Args:
+        automaton: The automaton to search.
+        k: How many sequences to return. Non-positive values return nothing.
 
-    Returns
-    -------
-    list of tuple
+    Returns:
         Up to ``k`` ``(sequence, weight)`` pairs, best first.
 
-    Raises
-    ------
-    NotImplementedError
-        If the semiring is not idempotent.
+    Raises:
+        NotImplementedError: If the semiring is not idempotent.
 
-    Notes
-    -----
-    This examines every accepted sequence, keeping only ``k`` at a time, so it is
-    O(*n* log *k*) in time and O(*k*) in memory. It does not prune, and with the
-    weight placement the dictionary structures use it *cannot*: every transition
-    weight is the semiring's ``one`` and a sequence's whole weight sits on its
-    final state, so no prefix carries information about how good its extensions
-    might be. Weight pushing redistributes weight towards the front and is what
-    would make a genuinely pruning best-first search possible.
+    Notes:
+        This examines every accepted sequence, keeping only ``k`` at a time, so it is
+        O(*n* log *k*) in time and O(*k*) in memory. It does not prune, and with the
+        weight placement the dictionary structures use it *cannot*: every transition
+        weight is the semiring's ``one`` and a sequence's whole weight sits on its
+        final state, so no prefix carries information about how good its extensions
+        might be. Weight pushing redistributes weight towards the front and is what
+        would make a genuinely pruning best-first search possible.
     """
     semiring = automaton.semiring
     if not semiring.idempotent:
@@ -396,23 +352,18 @@ def absorbable(automaton: Automaton) -> list[bool]:
     raised ``IndexError`` the moment it had a single outgoing edge. That is
     issues #18 and #14, and the fix is this one comparison.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to analyse.
+    Args:
+        automaton: The automaton to analyse.
 
-    Returns
-    -------
-    list of bool
+    Returns:
         Indexed by state.
 
-    Notes
-    -----
-    1.0 also required the *predecessor* to have exactly one outgoing edge, and
-    this does not. The condition is unnecessary: a compacted label keeps the
-    first symbol of the edge it replaces, so the predecessor's other transitions
-    remain distinguishable and determinism is preserved. Dropping it compacts
-    strictly more.
+    Notes:
+        1.0 also required the *predecessor* to have exactly one outgoing edge, and
+        this does not. The condition is unnecessary: a compacted label keeps the
+        first symbol of the edge it replaces, so the predecessor's other transitions
+        remain distinguishable and determinism is preserved. Dropping it compacts
+        strictly more.
     """
     in_degree = [0] * automaton.num_states
     for state in automaton.states():
@@ -420,9 +371,7 @@ def absorbable(automaton: Automaton) -> list[bool]:
             in_degree[automaton.transition_target(index)] += 1
 
     return [
-        in_degree[state] == 1
-        and automaton.out_degree(state) == 1
-        and not automaton.is_final(state)
+        in_degree[state] == 1 and automaton.out_degree(state) == 1 and not automaton.is_final(state)
         for state in automaton.states()
     ]
 
@@ -435,16 +384,11 @@ def compact(automaton: Automaton, factory: type[A]) -> A:
     ``"source"`` and ``"target"``, which meant at most one join happened per
     round; the whole thing converged only through O(n) rounds of O(n²) work.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to compact.
-    factory
-        The class to freeze the result into.
+    Args:
+        automaton: The automaton to compact.
+        factory: The class to freeze the result into.
 
-    Returns
-    -------
-    Automaton
+    Returns:
         A new frozen automaton. The input is untouched, so there is no way for
         reported counts to describe a different graph from the one being
         queried — which is what 1.0's in-place ``condense()`` plus its
@@ -497,14 +441,10 @@ def potentials(automaton: Automaton) -> list[Any]:
     weight pushing divides by, and what makes the pushed automaton locally
     normalised.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to measure.
+    Args:
+        automaton: The automaton to measure.
 
-    Returns
-    -------
-    list
+    Returns:
         One potential per state.
     """
     semiring = automaton.semiring
@@ -541,28 +481,20 @@ def push(automaton: Automaton, factory: type[A]) -> A:
     search would need, since with weight concentrated at the accepting states a
     prefix says nothing at all.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to push.
-    factory
-        The class to freeze the result into.
+    Args:
+        automaton: The automaton to push.
+        factory: The class to freeze the result into.
 
-    Returns
-    -------
-    Automaton
+    Returns:
         The pushed automaton.
 
-    Raises
-    ------
-    NotImplementedError
-        If the semiring is not divisible, or its multiplication does not commute.
-        Both are needed: dividing is the operation, and the telescoping assumes
-        the order of multiplication does not matter.
-    ZeroDivisionError
-        If a state cannot reach an accepting state. Its potential is then ``zero``
-        and there is nothing to divide by. Construction never produces such a
-        state; a hand-built automaton can.
+    Raises:
+        NotImplementedError: If the semiring is not divisible, or its multiplication
+            does not commute. Both are needed: dividing is the operation, and the
+            telescoping assumes the order of multiplication does not matter.
+        ZeroDivisionError: If a state cannot reach an accepting state. Its potential
+            is then ``zero`` and there is nothing to divide by. Construction never
+            produces such a state; a hand-built automaton can.
     """
     from dafsa._builder import Builder  # noqa: PLC0415 - avoids an import cycle
 
@@ -631,16 +563,11 @@ def minimize(automaton: Automaton, factory: type[A]) -> A:
     it goes. It exists for automata that arrive already built, which is what
     subset construction produces when a transducer is projected onto one side.
 
-    Parameters
-    ----------
-    automaton
-        The automaton to minimize. Must be deterministic and acyclic.
-    factory
-        The class to freeze the result into.
+    Args:
+        automaton: The automaton to minimize. Must be deterministic and acyclic.
+        factory: The class to freeze the result into.
 
-    Returns
-    -------
-    Automaton
+    Returns:
         The minimal equivalent automaton.
     """
     # Imported here rather than at module scope: the builder imports the

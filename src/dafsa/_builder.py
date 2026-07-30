@@ -1,8 +1,8 @@
 """The mutable side of build-then-freeze.
 
-A :class:`Builder` accumulates states and transitions in growable parallel lists
+A ``Builder`` accumulates states and transitions in growable parallel lists
 — still no object per state — and ``freeze()`` turns them into the flat arrays of
-:class:`~dafsa.automaton.Automaton`.
+``Automaton``.
 
 ``freeze()`` is where the invariants the frozen core relies on are established
 rather than assumed:
@@ -53,27 +53,23 @@ class Builder:
     """Accumulates states and transitions, then freezes them.
 
     The root state is created automatically and is always state
-    :data:`~dafsa.automaton.ROOT`.
+    ``ROOT``.
 
-    Parameters
-    ----------
-    alphabet
-        The alphabet whose symbols the transitions will use.
-    semiring
-        The semiring weights belong to. Defaults to
-        :data:`~dafsa.semirings.BOOLEAN`, which is the unweighted case.
+    Args:
+        alphabet: The alphabet whose symbols the transitions will use.
+        semiring: The semiring weights belong to. Defaults to
+            ``BOOLEAN``, which is the unweighted case.
 
-    Examples
-    --------
-    >>> from dafsa.alphabet import Alphabet
-    >>> alphabet = Alphabet("ab")
-    >>> builder = Builder(alphabet)
-    >>> state = builder.new_state()
-    >>> builder.add_transition(0, alphabet.id("a"), state)
-    >>> builder.set_final(state)
-    >>> automaton = builder.freeze()
-    >>> "a" in automaton, "b" in automaton
-    (True, False)
+    Examples:
+        >>> from dafsa.alphabet import Alphabet
+        >>> alphabet = Alphabet("ab")
+        >>> builder = Builder(alphabet)
+        >>> state = builder.new_state()
+        >>> builder.add_transition(0, alphabet.id("a"), state)
+        >>> builder.set_final(state)
+        >>> automaton = builder.freeze()
+        >>> "a" in automaton, "b" in automaton
+        (True, False)
     """
 
     __slots__ = (
@@ -117,9 +113,7 @@ class Builder:
     def new_state(self) -> State:
         """Allocate a state with no transitions.
 
-        Returns
-        -------
-        State
+        Returns:
             The new state's id, valid only within this builder: ``freeze()``
             renumbers.
         """
@@ -142,33 +136,23 @@ class Builder:
     ) -> None:
         """Add a transition.
 
-        Parameters
-        ----------
-        source
-            The state the transition leaves.
-        symbol
-            The symbol consumed.
-        target
-            The state the transition enters.
-        weight
-            The transition's weight. ``None`` means the semiring's ``one``, which
-            is the identity for combining along a path and so contributes
-            nothing.
-        label
-            Every symbol the transition consumes, for a compacted transition.
-            ``None`` means the transition consumes ``symbol`` alone. The first
-            element must be ``symbol``, because determinism and ordering are keyed
-            on it.
+        Args:
+            source: The state the transition leaves.
+            symbol: The symbol consumed.
+            target: The state the transition enters.
+            weight: The transition's weight. ``None`` means the semiring's ``one``, which
+                is the identity for combining along a path and so contributes
+                nothing.
+            label: Every symbol the transition consumes, for a compacted transition.
+                ``None`` means the transition consumes ``symbol`` alone. The first
+                element must be ``symbol``, because determinism and ordering are keyed
+                on it.
 
-        Raises
-        ------
-        IndexError
-            If ``source`` or ``target`` is not an allocated state.
-        ValueError
-            If ``symbol`` is not a symbol of the alphabet, or if ``label`` does
-            not begin with it.
-        DeterminismError
-            If ``source`` already has a transition on ``symbol``.
+        Raises:
+            IndexError: If ``source`` or ``target`` is not an allocated state.
+            ValueError: If ``symbol`` is not a symbol of the alphabet, or if ``label`` does
+                not begin with it.
+            DeterminismError: If ``source`` already has a transition on ``symbol``.
         """
         self._check_state(source)
         self._check_state(target)
@@ -180,10 +164,7 @@ class Builder:
         symbols = self._symbols[source]
         if symbol in symbols:
             token = self._alphabet.token(symbol)
-            message = (
-                f"state {source} already has a transition on {token!r} "
-                f"(symbol {symbol})"
-            )
+            message = f"state {source} already has a transition on {token!r} (symbol {symbol})"
             raise DeterminismError(message)
 
         if label is None:
@@ -206,52 +187,38 @@ class Builder:
     ) -> None:
         """Mark ``state`` as accepting, or not.
 
-        Parameters
-        ----------
-        state
-            The state to mark.
-        final
-            Whether the state accepts. Keyword-only, so call sites read as
-            ``set_final(q)`` or ``set_final(q, final=False)``.
-        weight
-            The state's final weight. ``None`` means the semiring's ``one``.
-            Ignored when ``final`` is false, which resets the weight to ``zero``.
+        Args:
+            state: The state to mark.
+            final: Whether the state accepts. Keyword-only, so call sites read as
+                ``set_final(q)`` or ``set_final(q, final=False)``.
+            weight: The state's final weight. ``None`` means the semiring's ``one``.
+                Ignored when ``final`` is false, which resets the weight to ``zero``.
 
-        Raises
-        ------
-        IndexError
-            If ``state`` is not an allocated state.
+        Raises:
+            IndexError: If ``state`` is not an allocated state.
         """
         self._check_state(state)
         self._final[state] = final
         if final:
-            self._final_weights[state] = (
-                self._semiring.one if weight is None else weight
-            )
+            self._final_weights[state] = self._semiring.one if weight is None else weight
         else:
             self._final_weights[state] = self._semiring.zero
 
     def set_initial_weight(self, weight: Any) -> None:
         """Set the weight every accepted sequence carries before its path.
 
-        Parameters
-        ----------
-        weight
-            The initial weight.
+        Args:
+            weight: The initial weight.
         """
         self._initial_weight = weight
 
     def final_weight(self, state: State) -> Any:
         """Return ``state``'s final weight.
 
-        Parameters
-        ----------
-        state
-            The state to inspect.
+        Args:
+            state: The state to inspect.
 
-        Returns
-        -------
-        Any
+        Returns:
             The final weight, or the semiring's ``zero`` if the state does not
             accept. Returning ``zero`` rather than raising is what lets a caller
             accumulate with ``plus`` without a special case for the first time a
@@ -264,14 +231,10 @@ class Builder:
     def is_final(self, state: State) -> bool:
         """Return whether ``state`` is currently marked accepting.
 
-        Parameters
-        ----------
-        state
-            The state to inspect.
+        Args:
+            state: The state to inspect.
 
-        Returns
-        -------
-        bool
+        Returns:
             Whether the state accepts.
         """
         self._check_state(state)
@@ -281,14 +244,10 @@ class Builder:
     def transitions(self, state: State) -> Iterator[Transition]:
         """Iterate over the transitions leaving ``state``, in symbol order.
 
-        Parameters
-        ----------
-        state
-            The state whose transitions to yield.
+        Args:
+            state: The state whose transitions to yield.
 
-        Yields
-        ------
-        Transition
+        Yields:
             Each outgoing transition.
         """
         self._check_state(state)
@@ -304,23 +263,17 @@ class Builder:
     def freeze(self, factory: type[Automaton] = Automaton) -> Automaton:
         """Validate, renumber, and flatten into a frozen automaton.
 
-        Parameters
-        ----------
-        factory
-            The class to instantiate. Defaults to :class:`~dafsa.automaton.Automaton`;
-            the structures pass themselves so that a frozen ``Dafsa`` is a
-            ``Dafsa`` and not merely an automaton that happens to be minimal.
+        Args:
+            factory: The class to instantiate. Defaults to ``Automaton``;
+                the structures pass themselves so that a frozen ``Dafsa`` is a
+                ``Dafsa`` and not merely an automaton that happens to be minimal.
 
-        Returns
-        -------
-        Automaton
+        Returns:
             The frozen automaton. The builder is left usable, so it can be
             frozen again after further additions.
 
-        Raises
-        ------
-        AcyclicityError
-            If the reachable transitions contain a cycle.
+        Raises:
+            AcyclicityError: If the reachable transitions contain a cycle.
         """
         # Sorted once and reused by all three passes below; sorting per pass
         # would triple the cost of the hot path for no benefit.
@@ -370,16 +323,11 @@ class Builder:
         treat as trivial — ``zero`` for final weights, since a non-accepting state
         holds ``zero`` and says nothing about weighting.
 
-        Parameters
-        ----------
-        weights
-            The weights to inspect.
-        skip
-            An extra value to treat as carrying no information, or ``None``.
+        Args:
+            weights: The weights to inspect.
+            skip: An extra value to treat as carrying no information, or ``None``.
 
-        Returns
-        -------
-        list or None
+        Returns:
             ``None`` if every weight is trivial, otherwise the list unchanged.
         """
         semiring = self._semiring
@@ -397,16 +345,12 @@ class Builder:
     def _check_state(self, state: State) -> None:
         """Raise if ``state`` was never allocated.
 
-        Parameters
-        ----------
-        state
-            The state to validate.
+        Args:
+            state: The state to validate.
 
-        Raises
-        ------
-        IndexError
-            If ``state`` is out of range. Negative indices are rejected too,
-            since they would silently address a state from the other end.
+        Raises:
+            IndexError: If ``state`` is out of range. Negative indices are rejected too,
+                since they would silently address a state from the other end.
         """
         if not 0 <= state < len(self._final):
             message = f"no such state: {state}"
@@ -415,14 +359,10 @@ class Builder:
     def _ordered(self, state: State) -> list[tuple[Symbol, State, Any, Any]]:
         """Return ``state``'s transitions as tuples, symbol-ascending.
 
-        Parameters
-        ----------
-        state
-            The state whose transitions to order.
+        Args:
+            state: The state whose transitions to order.
 
-        Returns
-        -------
-        list of tuple
+        Returns:
             ``(symbol, target, weight, label)`` tuples, sorted by symbol. Symbols
             are unique per state, so sorting on the first element alone is a total
             order and never has to compare weights — which may not be orderable.
@@ -447,14 +387,10 @@ class Builder:
         the result depends only on the shape of the automaton and not on the
         order in which the builder happened to be driven.
 
-        Parameters
-        ----------
-        outgoing
-            Per-state transitions as ``(symbol, target)``, symbol-ascending.
+        Args:
+            outgoing: Per-state transitions as ``(symbol, target)``, symbol-ascending.
 
-        Returns
-        -------
-        list of State
+        Returns:
             The reachable states, root first.
         """
         order: list[State] = [ROOT]
@@ -486,17 +422,12 @@ class Builder:
         a minimized automaton, and a check that flagged them would reject every
         interesting structure this library builds.
 
-        Parameters
-        ----------
-        order
-            The states to check, which must be closed under transitions.
-        outgoing
-            Per-state transitions as ``(symbol, target)``, symbol-ascending.
+        Args:
+            order: The states to check, which must be closed under transitions.
+            outgoing: Per-state transitions as ``(symbol, target)``, symbol-ascending.
 
-        Raises
-        ------
-        AcyclicityError
-            If a cycle is reachable from any state in ``order``.
+        Raises:
+            AcyclicityError: If a cycle is reachable from any state in ``order``.
         """
         colour = dict.fromkeys(order, _WHITE)
 
@@ -520,10 +451,7 @@ class Builder:
 
                 if colour[target] == _GREY:
                     token = self._alphabet.token(symbol)
-                    message = (
-                        f"transition on {token!r} closes a cycle "
-                        f"back into state {target}"
-                    )
+                    message = f"transition on {token!r} closes a cycle back into state {target}"
                     raise AcyclicityError(message)
 
                 if colour[target] == _WHITE:
@@ -534,11 +462,7 @@ class Builder:
         """Return a debugging representation."""
         transitions = sum(len(symbols) for symbols in self._symbols)
 
-        return (
-            f"<{type(self).__name__} "
-            f"states={self.num_states} "
-            f"transitions={transitions}>"
-        )
+        return f"<{type(self).__name__} states={self.num_states} transitions={transitions}>"
 
 
 __all__ = ["Builder"]

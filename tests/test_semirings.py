@@ -229,9 +229,7 @@ def test_commutativity_flag_is_accurate(case: Case, data: st.DataObject) -> None
 @ALL
 @settings(deadline=None, max_examples=200)
 @given(data=st.data())
-def test_division_inverts_multiplication_where_claimed(
-    case: Case, data: st.DataObject
-) -> None:
+def test_division_inverts_multiplication_where_claimed(case: Case, data: st.DataObject) -> None:
     a, b = (data.draw(case.values) for _ in range(2))
     semiring = case.semiring
 
@@ -277,9 +275,7 @@ def test_divisibility_flag_matches_the_semiring(case: Case, *, expected: bool) -
 @ALL
 @settings(deadline=None, max_examples=100)
 @given(data=st.data())
-def test_key_is_hashable_and_agrees_with_equality(
-    case: Case, data: st.DataObject
-) -> None:
+def test_key_is_hashable_and_agrees_with_equality(case: Case, data: st.DataObject) -> None:
     a = data.draw(case.values)
     key = case.semiring.key(a)
 

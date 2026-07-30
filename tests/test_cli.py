@@ -15,9 +15,7 @@ from dafsa.__main__ import build_parser, main
 if TYPE_CHECKING:
     from pathlib import Path
 
-needs_graphviz = pytest.mark.skipif(
-    shutil.which("dot") is None, reason="Graphviz is not installed"
-)
+needs_graphviz = pytest.mark.skipif(shutil.which("dot") is None, reason="Graphviz is not installed")
 
 WORDS = ["tap", "taps", "top", "tops", "dibs"]
 
@@ -48,9 +46,7 @@ def run(*argv: str) -> int:
 # -- structures ------------------------------------------------------------
 
 
-def test_default_builds_a_dafsa(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_default_builds_a_dafsa(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert run(str(corpus)) == 0
 
     printed = capsys.readouterr().out
@@ -72,9 +68,7 @@ def test_each_structure_can_be_selected(
     assert expected in capsys.readouterr().out
 
 
-def test_a_trie_is_larger_than_a_dafsa(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_a_trie_is_larger_than_a_dafsa(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run("-f", "trie", str(corpus))
     trie = capsys.readouterr().out
     run("-f", "dafsa", str(corpus))
@@ -92,9 +86,7 @@ def _states(printed: str) -> int:
     raise AssertionError(printed)
 
 
-def test_compact_shrinks_the_structure(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_compact_shrinks_the_structure(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run(str(corpus))
     plain = capsys.readouterr().out
     run("--compact", str(corpus))
@@ -104,9 +96,7 @@ def test_compact_shrinks_the_structure(
     assert "compacted    yes" in compacted
 
 
-def test_suffix_indexes_the_whole_input(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_suffix_indexes_the_whole_input(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     source = tmp_path / "text.txt"
     source.write_text("banana\n", encoding="utf-8")
 
@@ -118,18 +108,14 @@ def test_suffix_indexes_the_whole_input(
 # -- tokenization, which is issue #17 --------------------------------------
 
 
-def test_characters_are_the_default(
-    phrases: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_characters_are_the_default(phrases: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Without a flag, a line is a sequence of characters — spaces included."""
     run(str(phrases))
 
     assert "over 4 tokens" in capsys.readouterr().out
 
 
-def test_words_splits_on_whitespace(
-    phrases: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_words_splits_on_whitespace(phrases: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Issue #17's expectation: a, ab, ac, b, c — and no space token."""
     run("--words", str(phrases))
     printed = capsys.readouterr().out
@@ -160,9 +146,7 @@ def test_an_empty_separator_is_rejected(corpus: Path) -> None:
         run("--sep", "", str(corpus))
 
 
-def test_a_filename_is_not_eaten_by_sep(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_a_filename_is_not_eaten_by_sep(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """The reason ``--sep`` takes a required value rather than an optional one."""
     assert run("--words", str(corpus)) == 0
     assert "Dafsa" in capsys.readouterr().out
@@ -171,9 +155,7 @@ def test_a_filename_is_not_eaten_by_sep(
 # -- semirings -------------------------------------------------------------
 
 
-def test_counting_reports_a_total(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_counting_reports_a_total(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     source = tmp_path / "repeats.txt"
     source.write_text("tip\ntip\ntap\n", encoding="utf-8")
 
@@ -205,9 +187,7 @@ def test_json_output_is_valid(corpus: Path, capsys: pytest.CaptureFixture[str]) 
     assert json.loads(capsys.readouterr().out)["format"] == "dafsa"
 
 
-def test_dot_output_declares_a_font(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_dot_output_declares_a_font(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run("-t", "dot", str(corpus))
     printed = capsys.readouterr().out
 
@@ -215,9 +195,7 @@ def test_dot_output_declares_a_font(
     assert "DejaVu Sans" in printed
 
 
-def test_the_font_can_be_chosen(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_the_font_can_be_chosen(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run("-t", "dot", "--font", "Noto Sans", str(corpus))
 
     assert 'fontname="Noto Sans"' in capsys.readouterr().out
@@ -261,17 +239,13 @@ def test_label_nodes_reaches_the_drawing(corpus: Path, tmp_path: Path) -> None:
     assert ">1<" in destination.read_text(encoding="utf-8")
 
 
-def test_scale_edges_reaches_the_drawing(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_scale_edges_reaches_the_drawing(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run("-t", "dot", "--scale-edges", str(corpus))
 
     assert "penwidth=" in capsys.readouterr().out
 
 
-def test_label_sep_reaches_the_drawing(
-    corpus: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_label_sep_reaches_the_drawing(corpus: Path, capsys: pytest.CaptureFixture[str]) -> None:
     run("-t", "dot", "--compact", "--label-sep", "-", str(corpus))
 
     assert "-" in capsys.readouterr().out
@@ -291,9 +265,7 @@ def test_reads_standard_input(
     assert "Dafsa" in capsys.readouterr().out
 
 
-def test_blank_lines_are_ignored(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_blank_lines_are_ignored(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     source = tmp_path / "gappy.txt"
     source.write_text("tap\n\n\ntop\n", encoding="utf-8")
 

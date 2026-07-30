@@ -75,9 +75,7 @@ def test_trie_and_dafsa_accept_the_same_language(words: list[str]) -> None:
 @given(words=WORD_LISTS)
 def test_trie_agrees_with_the_naive_reference_trie(words: list[str]) -> None:
     """``build_trie`` scans linearly and shares nothing with the sorted-input loop."""
-    assert accepted_sequences(Trie.from_sequences(words)) == accepted_sequences(
-        build_trie(words)
-    )
+    assert accepted_sequences(Trie.from_sequences(words)) == accepted_sequences(build_trie(words))
 
 
 @STRUCTURES
@@ -131,9 +129,7 @@ def test_dafsa_is_minimal_on_longer_words(words: list[str]) -> None:
 @settings(deadline=None, max_examples=100)
 @given(words=WORD_LISTS)
 def test_dafsa_never_has_more_states_than_the_trie(words: list[str]) -> None:
-    assert (
-        Dafsa.from_sequences(words).num_states <= Trie.from_sequences(words).num_states
-    )
+    assert Dafsa.from_sequences(words).num_states <= Trie.from_sequences(words).num_states
 
 
 def test_suffix_sharing_is_what_shrinks_the_automaton() -> None:
@@ -166,9 +162,7 @@ def test_input_order_does_not_affect_the_result(
     """Sorting happens internally, so the caller's order cannot matter."""
     shuffled = sorted(words, key=lambda word: hash((word, seed)))
 
-    assert csr(structure.from_sequences(words)) == csr(
-        structure.from_sequences(shuffled)
-    )
+    assert csr(structure.from_sequences(words)) == csr(structure.from_sequences(shuffled))
 
 
 @STRUCTURES
@@ -297,9 +291,7 @@ def test_the_one_point_zero_weight_bug_is_gone() -> None:
     ],
     ids=["counting", "tropical", "probability", "log"],
 )
-def test_weights_survive_construction(
-    semiring: Semiring[Any], weights: list[Any]
-) -> None:
+def test_weights_survive_construction(semiring: Semiring[Any], weights: list[Any]) -> None:
     """The core promise: what goes in comes back out."""
     words = ["tap", "taps", "top"]
     automaton = Dafsa.from_weighted(zip(words, weights, strict=True), semiring=semiring)
@@ -374,9 +366,7 @@ def test_boolean_weights_collapse_duplicates() -> None:
 
 
 def test_probability_weights_of_a_shared_suffix() -> None:
-    automaton = Dafsa.from_weighted(
-        [("walk", 0.5), ("talk", 0.25)], semiring=PROBABILITY
-    )
+    automaton = Dafsa.from_weighted([("walk", 0.5), ("talk", 0.25)], semiring=PROBABILITY)
 
     assert math.isclose(automaton.weight("walk"), 0.5)
     assert math.isclose(automaton.weight("talk"), 0.25)
@@ -429,9 +419,7 @@ def test_semiring_is_carried_on_the_automaton() -> None:
 
 
 def test_tropical_weights_pick_the_cheapest_analysis() -> None:
-    automaton = Dafsa.from_weighted(
-        [("ab", 2.0), ("ab", 5.0), ("cd", 1.0)], semiring=TROPICAL
-    )
+    automaton = Dafsa.from_weighted([("ab", 2.0), ("ab", 5.0), ("cd", 1.0)], semiring=TROPICAL)
 
     # `plus` is `min`, so the repeated sequence keeps its cheaper weight.
     assert automaton.weight("ab") == 2.0

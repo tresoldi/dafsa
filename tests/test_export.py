@@ -44,9 +44,7 @@ WORDS = ["tap", "taps", "top", "tops", "dibs"]
 
 WORD_LISTS = st.lists(st.text(alphabet="abc", max_size=4), max_size=8)
 
-needs_graphviz = pytest.mark.skipif(
-    shutil.which("dot") is None, reason="Graphviz is not installed"
-)
+needs_graphviz = pytest.mark.skipif(shutil.which("dot") is None, reason="Graphviz is not installed")
 
 
 # -- dictionaries and JSON -------------------------------------------------
@@ -235,9 +233,7 @@ def test_edge_scaling_makes_busier_edges_thicker() -> None:
     source = to_dot(automaton, scale_edges=True, label_nodes=True)
 
     widths = {
-        line.split('label="')[1].split('"')[0]: float(
-            line.split("penwidth=")[1].rstrip("];\n")
-        )
+        line.split('label="')[1].split('"')[0]: float(line.split("penwidth=")[1].rstrip("];\n"))
         for line in source.splitlines()
         if "->" in line and "penwidth=" in line
     }
@@ -384,9 +380,7 @@ def test_to_networkx_marks_root_and_final_states() -> None:
 
 def test_to_networkx_carries_weights() -> None:
     graph = to_networkx(Dafsa.from_weighted([("ab", 4)], semiring=COUNTING))
-    finals = [
-        data["final_weight"] for _, data in graph.nodes(data=True) if data["final"]
-    ]
+    finals = [data["final_weight"] for _, data in graph.nodes(data=True) if data["final"]]
 
     assert finals == [4]
 

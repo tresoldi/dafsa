@@ -1,7 +1,7 @@
 """The frozen core every structure in this library is built on.
 
-An :class:`Automaton` is immutable compressed-sparse-row adjacency over
-:mod:`array`. There is no object per state and no object per transition: a state
+An ``Automaton`` is immutable compressed-sparse-row adjacency over
+``array``. There is no object per state and no object per transition: a state
 is an integer, and its outgoing transitions occupy a contiguous slice of three
 parallel arrays.
 
@@ -49,14 +49,10 @@ _FLAG_TYPECODE = "B"
 def index_array(values: Iterable[int] = ()) -> array[int]:
     """Return an array suitable for holding state indices or symbols.
 
-    Parameters
-    ----------
-    values
-        Initial contents.
+    Args:
+        values: Initial contents.
 
-    Returns
-    -------
-    array of int
+    Returns:
         An integer array of at least 32 bits per item.
     """
     return array(_INDEX_TYPECODE, values)
@@ -65,14 +61,10 @@ def index_array(values: Iterable[int] = ()) -> array[int]:
 def flag_array(values: Iterable[int] = ()) -> array[int]:
     """Return an array suitable for holding per-state flag bits.
 
-    Parameters
-    ----------
-    values
-        Initial contents.
+    Args:
+        values: Initial contents.
 
-    Returns
-    -------
-    array of int
+    Returns:
         An unsigned byte array.
     """
     return array(_FLAG_TYPECODE, values)
@@ -81,10 +73,10 @@ def flag_array(values: Iterable[int] = ()) -> array[int]:
 class Transition(NamedTuple):
     """One outgoing transition of a state.
 
-    ``weight`` is typed :obj:`~typing.Any` because it belongs to whichever
+    ``weight`` is typed ``Any`` because it belongs to whichever
     semiring the automaton was built over, and the automaton does not carry that
     type as a parameter. For an unweighted automaton it is the semiring's
-    :attr:`~dafsa.semirings.Semiring.one`.
+    ``one``.
     """
 
     source: State
@@ -96,7 +88,7 @@ class Transition(NamedTuple):
 class Match(NamedTuple):
     """Everything known about one accepted sequence.
 
-    Returned by :meth:`Automaton.match`. This is the resolution of issue #8: 1.0's
+    Returned by ``Automaton.match``. This is the resolution of issue #8: 1.0's
     ``lookup()`` returned only the final node and an uninterpretable cumulative
     weight, so the path a sequence took was not recoverable without dropping to a
     graph library.
@@ -115,54 +107,42 @@ class Automaton:
     constructed directly: the constructor trusts its arguments, because the
     builder is what establishes the invariants they have to satisfy.
 
-    Parameters
-    ----------
-    alphabet
-        The alphabet the symbols refer to.
-    first
-        Offsets into the transition arrays, of length ``num_states + 1``. The
-        transitions of state ``q`` are ``first[q]:first[q + 1]``.
-    symbol
-        Transition symbols, ascending within each state's slice.
-    target
-        Transition targets, parallel to ``symbol``.
-    flags
-        Per-state flag bits, one entry per state.
-    semiring
-        The semiring the weights belong to.
-    transition_weights
-        One weight per transition, or ``None`` when every transition weight is
-        the semiring's ``one``.
-    final_weights
-        One weight per state, or ``None`` when every accepting state's weight is
-        the semiring's ``one``.
-    labels
-        One compound label per transition, or ``None`` when every transition
-        consumes exactly one token. A label is a tuple of symbols whose first
-        element equals the transition's entry in ``symbol``.
-    initial_weight
-        A weight applied to every accepted sequence. ``None`` means the
-        semiring's ``one``. Weight pushing is what makes it non-trivial: moving
-        weight towards the front has to leave it somewhere.
+    Args:
+        alphabet: The alphabet the symbols refer to.
+        first: Offsets into the transition arrays, of length ``num_states + 1``. The
+            transitions of state ``q`` are ``first[q]:first[q + 1]``.
+        symbol: Transition symbols, ascending within each state's slice.
+        target: Transition targets, parallel to ``symbol``.
+        flags: Per-state flag bits, one entry per state.
+        semiring: The semiring the weights belong to.
+        transition_weights: One weight per transition, or ``None`` when every transition weight is
+            the semiring's ``one``.
+        final_weights: One weight per state, or ``None`` when every accepting state's weight is
+            the semiring's ``one``.
+        labels: One compound label per transition, or ``None`` when every transition
+            consumes exactly one token. A label is a tuple of symbols whose first
+            element equals the transition's entry in ``symbol``.
+        initial_weight: A weight applied to every accepted sequence. ``None`` means the
+            semiring's ``one``. Weight pushing is what makes it non-trivial: moving
+            weight towards the front has to leave it somewhere.
 
-    Notes
-    -----
-    The invariants the constructor assumes, all established by ``freeze()``:
-    ``first`` is non-decreasing and starts at zero; ``symbol`` is strictly
-    ascending within each state's slice, which is what makes the binary search
-    in :meth:`step` correct and encodes determinism; every state is reachable
-    from :data:`ROOT`; and the transitions contain no cycle.
+    Notes:
+        The invariants the constructor assumes, all established by ``freeze()``:
+        ``first`` is non-decreasing and starts at zero; ``symbol`` is strictly
+        ascending within each state's slice, which is what makes the binary search
+        in ``step`` correct and encodes determinism; every state is reachable
+        from ``ROOT``; and the transitions contain no cycle.
 
-    The two weight arrays are ``None`` in the common unweighted case rather than
-    filled with copies of ``one``. A plain acceptor therefore costs nothing for
-    weights it does not use, which matters because memory frugality is much of
-    the point of this representation. ``labels`` follows the same rule.
+        The two weight arrays are ``None`` in the common unweighted case rather than
+        filled with copies of ``one``. A plain acceptor therefore costs nothing for
+        weights it does not use, which matters because memory frugality is much of
+        the point of this representation. ``labels`` follows the same rule.
 
-    Compound labels do not change the CSR layout. ``symbol`` continues to hold
-    one symbol per transition — the *first* of its label — so determinism,
-    ascending order within a state, and the binary search in :meth:`step` all
-    work exactly as before. What changes is only how many tokens a transition
-    consumes.
+        Compound labels do not change the CSR layout. ``symbol`` continues to hold
+        one symbol per transition — the *first* of its label — so determinism,
+        ascending order within a state, and the binary search in ``step`` all
+        work exactly as before. What changes is only how many tokens a transition
+        consumes.
     """
 
     __slots__ = (
@@ -201,9 +181,7 @@ class Automaton:
         self._transition_weights = transition_weights
         self._final_weights = final_weights
         self._labels = labels
-        self._initial_weight = (
-            semiring.one if initial_weight is None else initial_weight
-        )
+        self._initial_weight = semiring.one if initial_weight is None else initial_weight
 
         # Suffix counts are derived from the transitions, so they cannot be passed
         # in and be wrong. They are computed on first use rather than at
@@ -240,14 +218,13 @@ class Automaton:
         """Whether any weight differs from the semiring's ``one``.
 
         ``False`` means the automaton is a plain acceptor and stores no weight
-        arrays; :meth:`weight` still answers, with ``one`` for accepted
+        arrays; ``weight`` still answers, with ``one`` for accepted
         sequences.
         """
         return (
             self._transition_weights is not None
             or self._final_weights is not None
-            or self._semiring.key(self._initial_weight)
-            != self._semiring.key(self._semiring.one)
+            or self._semiring.key(self._initial_weight) != self._semiring.key(self._semiring.one)
         )
 
     @property
@@ -268,9 +245,7 @@ class Automaton:
     def states(self) -> range:
         """Return the states, as a range over their dense ids.
 
-        Returns
-        -------
-        range
+        Returns:
             ``range(num_states)``, in canonical order.
         """
         return range(len(self._flags))
@@ -278,14 +253,10 @@ class Automaton:
     def is_final(self, state: State) -> bool:
         """Return whether ``state`` is accepting.
 
-        Parameters
-        ----------
-        state
-            The state to inspect.
+        Args:
+            state: The state to inspect.
 
-        Returns
-        -------
-        bool
+        Returns:
             Whether a sequence ending at ``state`` is accepted.
         """
         return bool(self._flags[state] & _FINAL)
@@ -293,14 +264,10 @@ class Automaton:
     def out_degree(self, state: State) -> int:
         """Return the number of transitions leaving ``state``.
 
-        Parameters
-        ----------
-        state
-            The state to inspect.
+        Args:
+            state: The state to inspect.
 
-        Returns
-        -------
-        int
+        Returns:
             The number of outgoing transitions.
         """
         return self._first[state + 1] - self._first[state]
@@ -308,14 +275,10 @@ class Automaton:
     def final_weight(self, state: State) -> Any:
         """Return the weight contributed by accepting at ``state``.
 
-        Parameters
-        ----------
-        state
-            The state to inspect.
+        Args:
+            state: The state to inspect.
 
-        Returns
-        -------
-        Any
+        Returns:
             The state's final weight, or the semiring's ``zero`` if the state is
             not accepting.
         """
@@ -329,14 +292,10 @@ class Automaton:
     def transition_weight(self, index: int) -> Any:
         """Return the weight of the transition at ``index``.
 
-        Parameters
-        ----------
-        index
-            A transition index, as produced by :meth:`transition_index`.
+        Args:
+            index: A transition index, as produced by ``transition_index``.
 
-        Returns
-        -------
-        Any
+        Returns:
             The transition's weight, or the semiring's ``one`` if the automaton
             stores no transition weights.
         """
@@ -349,16 +308,12 @@ class Automaton:
         """Return the indices of ``state``'s transitions, in symbol order.
 
         The index-based accessors below exist so that the dynamic programs can
-        walk the arrays without allocating a :class:`Transition` per step.
+        walk the arrays without allocating a ``Transition`` per step.
 
-        Parameters
-        ----------
-        state
-            The state whose transitions to index.
+        Args:
+            state: The state whose transitions to index.
 
-        Returns
-        -------
-        range
+        Returns:
             Indices into the transition arrays.
         """
         return range(self._first[state], self._first[state + 1])
@@ -376,14 +331,10 @@ class Automaton:
 
         One symbol for an ordinary transition, several for a compacted one.
 
-        Parameters
-        ----------
-        index
-            A transition index.
+        Args:
+            index: A transition index.
 
-        Returns
-        -------
-        tuple of Symbol
+        Returns:
             The transition's label.
         """
         if self._labels is None:
@@ -394,14 +345,10 @@ class Automaton:
     def transition_tokens(self, index: int) -> tuple[Token, ...]:
         """Return the transition's label as caller-facing tokens.
 
-        Parameters
-        ----------
-        index
-            A transition index.
+        Args:
+            index: A transition index.
 
-        Returns
-        -------
-        tuple of Token
+        Returns:
             The tokens the transition consumes.
         """
         return self._alphabet.decode(self.transition_label(index))
@@ -409,29 +356,21 @@ class Automaton:
     def transitions(self, state: State) -> Iterator[Transition]:
         """Iterate over the transitions leaving ``state``, in symbol order.
 
-        Parameters
-        ----------
-        state
-            The state whose transitions to yield.
+        Args:
+            state: The state whose transitions to yield.
 
-        Yields
-        ------
-        Transition
+        Yields:
             Each outgoing transition, carrying its weight.
         """
         symbols = self._symbol
         targets = self._target
         for index in range(self._first[state], self._first[state + 1]):
-            yield Transition(
-                state, symbols[index], targets[index], self.transition_weight(index)
-            )
+            yield Transition(state, symbols[index], targets[index], self.transition_weight(index))
 
     def all_transitions(self) -> Iterator[Transition]:
         """Iterate over every transition, ordered by source then symbol.
 
-        Yields
-        ------
-        Transition
+        Yields:
             Each transition in the automaton.
         """
         for state in self.states():
@@ -446,16 +385,11 @@ class Automaton:
         ascending — the invariant that makes this correct is established by
         ``freeze()``.
 
-        Parameters
-        ----------
-        state
-            The state to leave.
-        symbol
-            The symbol to consume.
+        Args:
+            state: The state to leave.
+            symbol: The symbol to consume.
 
-        Returns
-        -------
-        int or None
+        Returns:
             The transition's index into the transition arrays, or ``None`` if
             there is no such transition.
         """
@@ -469,16 +403,11 @@ class Automaton:
     def step(self, state: State, symbol: Symbol) -> State | None:
         """Follow one transition.
 
-        Parameters
-        ----------
-        state
-            The state to leave.
-        symbol
-            The symbol to consume.
+        Args:
+            state: The state to leave.
+            symbol: The symbol to consume.
 
-        Returns
-        -------
-        State or None
+        Returns:
             The state reached, or ``None`` if ``state`` has no transition on
             ``symbol``.
         """
@@ -492,16 +421,11 @@ class Automaton:
         The traversal is a loop, not a recursion, so sequence length is bounded
         by memory rather than by the interpreter's stack.
 
-        Parameters
-        ----------
-        symbols
-            The symbols to consume in order.
-        start
-            The state to start from. Defaults to :data:`ROOT`.
+        Args:
+            symbols: The symbols to consume in order.
+            start: The state to start from. Defaults to ``ROOT``.
 
-        Returns
-        -------
-        State or None
+        Returns:
             The state reached after consuming every symbol, or ``None`` if the
             path leaves the automaton partway through.
         """
@@ -539,14 +463,10 @@ class Automaton:
         A sequence containing a token outside the alphabet is not accepted; that
         is an answer, not an error.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to test.
+        Args:
+            sequence: The tokens to test.
 
-        Returns
-        -------
-        bool
+        Returns:
             Whether the automaton accepts ``sequence``.
         """
         symbols = self._alphabet.try_encode(sequence)
@@ -571,14 +491,10 @@ class Automaton:
         edge. ``DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")`` gave ``7``
         for a sequence inserted once.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to weigh.
+        Args:
+            sequence: The tokens to weigh.
 
-        Returns
-        -------
-        Any
+        Returns:
             The sequence's weight, or the semiring's ``zero`` if it is not
             accepted. ``zero`` is the weight of a path that does not exist, so a
             rejection needs no special case at the call site.
@@ -617,24 +533,19 @@ class Automaton:
     def match(self, sequence: Sequence[Token]) -> Match | None:
         """Return the full path ``sequence`` takes, or ``None`` if it is rejected.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to match.
+        Args:
+            sequence: The tokens to match.
 
-        Returns
-        -------
-        Match or None
+        Returns:
             The states visited, the transitions taken, and the weight.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> found = Dafsa.from_sequences(["tap"]).match("tap")
-        >>> found.states
-        (0, 1, 2, 3)
-        >>> len(found.transitions)
-        3
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> found = Dafsa.from_sequences(["tap"]).match("tap")
+            >>> found.states
+            (0, 1, 2, 3)
+            >>> len(found.transitions)
+            3
         """
         symbols = self._alphabet.try_encode(sequence)
         if symbols is None:
@@ -656,9 +567,7 @@ class Automaton:
                 return None
             target = self._target[index]
             transitions.append(
-                Transition(
-                    state, symbols[position], target, self.transition_weight(index)
-                )
+                Transition(state, symbols[position], target, self.transition_weight(index))
             )
             weight = semiring.times(weight, self.transition_weight(index))
             position += len(label)
@@ -679,18 +588,14 @@ class Automaton:
         """Yield every accepting path for ``sequence``.
 
         A deterministic acceptor has at most one, so this yields nothing or one
-        :class:`Match` and :meth:`match` is the direct way to ask. It exists so
+        ``Match`` and ``match`` is the direct way to ask. It exists so
         that code written against the transducers — where a single input can have
         several analyses — reads the same against an acceptor.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to match.
+        Args:
+            sequence: The tokens to match.
 
-        Yields
-        ------
-        Match
+        Yields:
             Each accepting path.
         """
         found = self.match(sequence)
@@ -703,28 +608,23 @@ class Automaton:
         Useful for segmentation: repeatedly taking the longest accepted prefix of
         what remains is greedy longest-match tokenisation against a lexicon.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to search within.
+        Args:
+            sequence: The tokens to search within.
 
-        Returns
-        -------
-        tuple of Token or None
+        Returns:
             The longest prefix of ``sequence`` that the automaton accepts, or
             ``None`` if no prefix is accepted. The empty tuple is a valid answer
             when the root is accepting.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> lexicon = Dafsa.from_sequences(["can", "candle"])
-        >>> lexicon.longest_prefix_of("candles")
-        ('c', 'a', 'n', 'd', 'l', 'e')
-        >>> lexicon.longest_prefix_of("cane")
-        ('c', 'a', 'n')
-        >>> lexicon.longest_prefix_of("dog") is None
-        True
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> lexicon = Dafsa.from_sequences(["can", "candle"])
+            >>> lexicon.longest_prefix_of("candles")
+            ('c', 'a', 'n', 'd', 'l', 'e')
+            >>> lexicon.longest_prefix_of("cane")
+            ('c', 'a', 'n')
+            >>> lexicon.longest_prefix_of("dog") is None
+            True
         """
         longest: tuple[Token, ...] | None = () if self.is_final(ROOT) else None
         symbols = self._alphabet.try_encode(sequence)
@@ -762,22 +662,17 @@ class Automaton:
         followed once to reach a state, and only that state's subtree is walked.
         This is the query an autocomplete is made of.
 
-        Parameters
-        ----------
-        prefix
-            The tokens every yielded sequence must start with.
+        Args:
+            prefix: The tokens every yielded sequence must start with.
 
-        Yields
-        ------
-        tuple of Token
+        Yields:
             Each accepted sequence extending ``prefix``, in the alphabet's order.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
-        >>> list(automaton.starts_with("ta"))
-        [('t', 'a', 'p'), ('t', 'a', 'p', 's')]
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
+            >>> list(automaton.starts_with("ta"))
+            [('t', 'a', 'p'), ('t', 'a', 'p', 's')]
         """
         symbols = self._alphabet.try_encode(prefix)
         if symbols is None:
@@ -839,31 +734,24 @@ class Automaton:
     def rank(self, sequence: Sequence[Token]) -> int:
         """Return the position of ``sequence`` in iteration order.
 
-        Together with :meth:`unrank` this makes the automaton a minimal perfect
+        Together with ``unrank`` this makes the automaton a minimal perfect
         hash over its own language: every accepted sequence maps to a distinct
         integer in ``range(len(automaton))``, and back.
 
-        Parameters
-        ----------
-        sequence
-            An accepted sequence.
+        Args:
+            sequence: An accepted sequence.
 
-        Returns
-        -------
-        int
-            Its zero-based position in :meth:`__iter__` order.
+        Returns:
+            Its zero-based position in ``__iter__`` order.
 
-        Raises
-        ------
-        ValueError
-            If the sequence is not accepted.
+        Raises:
+            ValueError: If the sequence is not accepted.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
-        >>> [automaton.rank(word) for word in ("tap", "taps", "top")]
-        [0, 1, 2]
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> automaton = Dafsa.from_sequences(["tap", "taps", "top"])
+            >>> [automaton.rank(word) for word in ("tap", "taps", "top")]
+            [0, 1, 2]
         """
         symbols = self._alphabet.try_encode(sequence)
         if symbols is None:
@@ -875,44 +763,33 @@ class Automaton:
     def unrank(self, position: int) -> tuple[Token, ...]:
         """Return the accepted sequence at ``position``.
 
-        The inverse of :meth:`rank`, and cheaper than it looks: whole subtrees are
+        The inverse of ``rank``, and cheaper than it looks: whole subtrees are
         skipped by their known sizes, so the cost tracks the sequence's length
         rather than its position.
 
-        Parameters
-        ----------
-        position
-            A zero-based position in :meth:`__iter__` order.
+        Args:
+            position: A zero-based position in ``__iter__`` order.
 
-        Returns
-        -------
-        tuple of Token
+        Returns:
             The sequence at that position.
 
-        Raises
-        ------
-        IndexError
-            If ``position`` is outside ``range(len(automaton))``.
+        Raises:
+            IndexError: If ``position`` is outside ``range(len(automaton))``.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> Dafsa.from_sequences(["tap", "taps", "top"]).unrank(2)
-        ('t', 'o', 'p')
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> Dafsa.from_sequences(["tap", "taps", "top"]).unrank(2)
+            ('t', 'o', 'p')
         """
         return _algorithms.unrank(self, position, self._suffix_counts())
 
     def suffix_count(self, state: State) -> int:
         """Return how many sequences are accepted from ``state``.
 
-        Parameters
-        ----------
-        state
-            The state to count from.
+        Args:
+            state: The state to count from.
 
-        Returns
-        -------
-        int
+        Returns:
             The size of the state's right language.
         """
         return self._suffix_counts()[state]
@@ -924,9 +801,7 @@ class Automaton:
         needs, and because the canonical breadth-first numbering is *not*
         topological — a fact easy to assume otherwise and get wrong.
 
-        Returns
-        -------
-        list of State
+        Returns:
             The states, sources before targets.
         """
         return _algorithms.topological_order(self)
@@ -934,22 +809,19 @@ class Automaton:
     def total_weight(self) -> Any:
         """Return the semiring sum of every accepted sequence's weight.
 
-        For :data:`~dafsa.semirings.COUNTING` this is the total number of
+        For ``COUNTING`` this is the total number of
         insertions, as distinct from ``len()``, which is the number of distinct
         sequences.
 
-        Returns
-        -------
-        Any
+        Returns:
             The total, or the semiring's ``zero`` for an empty language.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> from dafsa.semirings import COUNTING
-        >>> automaton = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
-        >>> len(automaton), automaton.total_weight()
-        (2, 3)
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> from dafsa.semirings import COUNTING
+            >>> automaton = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
+            >>> len(automaton), automaton.total_weight()
+            (2, 3)
         """
         return _algorithms.total_weight(self)
 
@@ -961,19 +833,14 @@ class Automaton:
         state combine with its final weight to the semiring's ``one``, so a
         prefix's weight already tells you as much as it can about what follows.
 
-        Returns
-        -------
-        Automaton
+        Returns:
             A new automaton of the same class.
 
-        Raises
-        ------
-        NotImplementedError
-            If the semiring is not divisible, or if its multiplication does not
-            commute.
-        ZeroDivisionError
-            If some state cannot reach an accepting state, since its potential is
-            then the semiring's ``zero``.
+        Raises:
+            NotImplementedError: If the semiring is not divisible, or if its multiplication does not
+                commute.
+            ZeroDivisionError: If some state cannot reach an accepting state, since its potential is
+                then the semiring's ``zero``.
         """
         return _algorithms.push(self, type(self))
 
@@ -983,30 +850,23 @@ class Automaton:
         Only meaningful when the semiring is idempotent, so that ``plus`` selects
         a better weight instead of accumulating.
 
-        Parameters
-        ----------
-        k
-            How many to return.
+        Args:
+            k: How many to return.
 
-        Returns
-        -------
-        list of tuple
+        Returns:
             Up to ``k`` ``(sequence, weight)`` pairs, best first.
 
-        Raises
-        ------
-        NotImplementedError
-            If the semiring is not idempotent.
+        Raises:
+            NotImplementedError: If the semiring is not idempotent.
 
-        Examples
-        --------
-        >>> from dafsa import Dafsa
-        >>> from dafsa.semirings import TROPICAL
-        >>> automaton = Dafsa.from_weighted(
-        ...     [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
-        ... )
-        >>> automaton.k_best(2)
-        [(('t', 'a', 'p', 's'), 0.5), (('t', 'o', 'p'), 1.0)]
+        Examples:
+            >>> from dafsa import Dafsa
+            >>> from dafsa.semirings import TROPICAL
+            >>> automaton = Dafsa.from_weighted(
+            ...     [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
+            ... )
+            >>> automaton.k_best(2)
+            [(('t', 'a', 'p', 's'), 0.5), (('t', 'o', 'p'), 1.0)]
         """
         return _algorithms.k_best(self, k)
 

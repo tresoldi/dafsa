@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/dafsa.svg)](https://pypi.org/project/dafsa)
 [![CI](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml)
-[![Docs](https://github.com/tresoldi/dafsa/actions/workflows/docs.yml/badge.svg)](https://tresoldi.github.io/dafsa)
+[![Docs](https://github.com/tresoldi/dafsa/actions/workflows/docs.yml/badge.svg)](https://dafsa.tresoldi.org)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)](https://doi.org/10.5281/zenodo.3668870)
 [![Joss](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725/status.svg)](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725)
 
@@ -106,15 +106,15 @@ dafsa --compact -t svg -o words.svg words.txt
 
 ## Documentation
 
-- [User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/) — the library in one page,
+- [User Guide](https://dafsa.tresoldi.org/USER_GUIDE/) — the library in one page,
   including migration from 1.0 and the references
-- [API Reference](https://tresoldi.github.io/dafsa/reference/)
+- [API Reference](https://dafsa.tresoldi.org/reference/)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the library is put together, and why
 
 ## Upgrading from 1.0
 
 2.0 is a deliberate break; 1.0 code will not run unchanged, and `dafsa==1.0` stays on PyPI. The
-[migration section of the User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/#migrating-from-10)
+[migration section of the User Guide](https://dafsa.tresoldi.org/USER_GUIDE/#migrating-from-10)
 maps the old API onto the new one.
 
 The reason for breaking is worth stating plainly. 1.0 collected weights by re-walking sequences
@@ -155,7 +155,7 @@ Contributing guidelines, including a code of conduct, are in
 
 ## Author and citation
 
-The library is developed by Tiago Tresoldi (tiago.tresoldi@lingfil.uu.se).
+The library is developed by Tiago Tresoldi (dafsa@tresoldi.org).
 
 The author has received funding from the European Research Council (ERC) under the European
 Union's Horizon 2020 research and innovation programme (grant agreement

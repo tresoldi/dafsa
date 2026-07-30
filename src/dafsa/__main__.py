@@ -9,8 +9,7 @@ anything â€” the library iterated a ``str`` character by character regardless â€
 while *this* program quietly called ``line.split()`` whenever it saw a space. So
 the command line appeared to handle word tokens and the API did not, and the
 difference was invisible from either side. Here the split is one flag, it does
-nothing unless asked, and it is the same :func:`~dafsa.alphabet.tokenize` the API
-exposes.
+nothing unless asked, and it is the same ``tokenize`` the API exposes.
 """
 
 from __future__ import annotations
@@ -62,9 +61,7 @@ _RENDERED = ("png", "pdf", "svg")
 def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser.
 
-    Returns
-    -------
-    argparse.ArgumentParser
+    Returns:
         The parser, split out so that the options can be tested without running
         anything.
     """
@@ -132,9 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-o", "--output", metavar="PATH", help="where to write (default: standard out)"
     )
     output.add_argument("--dpi", type=int, default=300, help="resolution for images")
-    output.add_argument(
-        "--label-nodes", action="store_true", help="print state ids in the drawing"
-    )
+    output.add_argument("--label-nodes", action="store_true", help="print state ids in the drawing")
     output.add_argument(
         "--font",
         default=export.DEFAULT_FONT,
@@ -155,25 +150,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def read_sequences(
-    source: str, separator: Any, *, single: bool
-) -> list[Sequence[Token]]:
+def read_sequences(source: str, separator: Any, *, single: bool) -> list[Sequence[Token]]:
     """Read sequences from a file or standard input.
 
-    Parameters
-    ----------
-    source
-        A path, or ``-`` for standard input.
-    separator
-        :data:`CHARACTERS` to treat each character as a token, otherwise the
-        separator handed to :func:`~dafsa.alphabet.tokenize`.
-    single
-        Whether to return the whole input as one sequence, which is what the
-        substring index needs.
+    Args:
+        source: A path, or ``-`` for standard input.
+        separator: ``CHARACTERS`` to treat each character as a token, otherwise the
+            separator handed to ``tokenize``.
+        single: Whether to return the whole input as one sequence, which is what the
+            substring index needs.
 
-    Returns
-    -------
-    list
+    Returns:
         The sequences.
     """
     text = sys.stdin.read() if source == "-" else Path(source).read_text("utf-8")
@@ -192,16 +179,11 @@ def read_sequences(
 def build(sequences: list[Sequence[Token]], options: argparse.Namespace) -> Automaton:
     """Build the requested structure.
 
-    Parameters
-    ----------
-    sequences
-        The sequences to build from.
-    options
-        Parsed arguments.
+    Args:
+        sequences: The sequences to build from.
+        options: Parsed arguments.
 
-    Returns
-    -------
-    Automaton
+    Returns:
         The structure, compacted and pushed if asked.
     """
     semiring = SEMIRINGS[options.semiring]
@@ -227,14 +209,10 @@ def build(sequences: list[Sequence[Token]], options: argparse.Namespace) -> Auto
 def describe(automaton: Automaton) -> str:
     """Return a readable summary of a structure.
 
-    Parameters
-    ----------
-    automaton
-        The structure to describe.
+    Args:
+        automaton: The structure to describe.
 
-    Returns
-    -------
-    str
+    Returns:
         A few lines of counts.
     """
     lines = [
@@ -255,17 +233,12 @@ def describe(automaton: Automaton) -> str:
 def write(automaton: Automaton, options: argparse.Namespace) -> None:
     """Write the structure in the requested format.
 
-    Parameters
-    ----------
-    automaton
-        The structure to write.
-    options
-        Parsed arguments.
+    Args:
+        automaton: The structure to write.
+        options: Parsed arguments.
 
-    Raises
-    ------
-    SystemExit
-        If a format that must be written to a file was given none.
+    Raises:
+        SystemExit: If a format that must be written to a file was given none.
     """
     drawing = {
         "label_nodes": options.label_nodes,
@@ -303,14 +276,10 @@ def write(automaton: Automaton, options: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> int:
     """Run the command-line interface.
 
-    Parameters
-    ----------
-    argv
-        Argument vector to parse. Defaults to ``sys.argv[1:]``.
+    Args:
+        argv: Argument vector to parse. Defaults to ``sys.argv[1:]``.
 
-    Returns
-    -------
-    int
+    Returns:
         Process exit status.
     """
     options = build_parser().parse_args(argv)
@@ -325,9 +294,7 @@ def main(argv: list[str] | None = None) -> int:
     elif options.sep is not None:
         separator = options.sep
 
-    sequences = read_sequences(
-        options.source, separator, single=options.structure == "suffix"
-    )
+    sequences = read_sequences(options.source, separator, single=options.structure == "suffix")
     write(build(sequences, options), options)
 
     return 0

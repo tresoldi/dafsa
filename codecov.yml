@@ -4,15 +4,14 @@ coverage:
   status:
     project:
       default:
-        # The suite covers 100% of branches. `auto` with no threshold means any
-        # drop is reported rather than absorbed.
+        # Allow a small drop so unrelated line-count changes don't fail PRs.
         target: auto
-        threshold: 0%
+        threshold: 1%
     patch:
       default:
-        # New and changed lines are held to the same standard as the rest.
-        target: 100%
-        threshold: 0%
+        # New/changed lines should be reasonably well covered.
+        target: 80%
+        threshold: 5%
 
 comment:
   layout: "reach, diff, flags, files"

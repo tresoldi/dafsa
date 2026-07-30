@@ -192,9 +192,7 @@ Supply weights with `from_weighted`, which takes `(sequence, weight)` pairs:
 from dafsa import Dafsa
 from dafsa.semirings import TROPICAL
 
-costs = Dafsa.from_weighted(
-    [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
-)
+costs = Dafsa.from_weighted([("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL)
 
 assert costs.weight("taps") == 0.5
 assert costs.k_best(2) == [

@@ -36,9 +36,7 @@ def corpus(size: int = CORPUS_SIZE) -> list[str]:
 
     return sorted(
         {
-            "".join(
-                generator.choices(string.ascii_lowercase, k=generator.randint(3, 10))
-            )
+            "".join(generator.choices(string.ascii_lowercase, k=generator.randint(3, 10)))
             for _ in range(size)
         }
     )
@@ -74,8 +72,7 @@ def main() -> None:
         ("  CompactDafsa", compacted),
     ):
         print(
-            f"{name:<34}{automaton.num_states:>9} states"
-            f"{automaton.num_transitions:>10} transitions"
+            f"{name:<34}{automaton.num_states:>9} states{automaton.num_transitions:>10} transitions"
         )
 
     print("\nqueries")

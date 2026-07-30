@@ -45,9 +45,7 @@ def corpus(size: int) -> list[str]:
 
     return sorted(
         {
-            "".join(
-                generator.choices(string.ascii_lowercase, k=generator.randint(4, 12))
-            )
+            "".join(generator.choices(string.ascii_lowercase, k=generator.randint(4, 12)))
             for _ in range(size)
         }
     )

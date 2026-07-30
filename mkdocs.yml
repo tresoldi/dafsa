@@ -1,6 +1,6 @@
 site_name: dafsa
-site_description: Finite-state structures for sequence data
-site_url: https://tresoldi.github.io/dafsa/
+site_description: Finite-state structures for sequence data.
+site_url: https://dafsa.tresoldi.org/
 repo_url: https://github.com/tresoldi/dafsa
 repo_name: tresoldi/dafsa
 edit_uri: edit/master/docs/
@@ -8,24 +8,27 @@ edit_uri: edit/master/docs/
 theme:
   name: material
   custom_dir: overrides
-  features:
-    - content.code.copy
-    - navigation.sections
-    - navigation.top
-    - search.highlight
-    - search.suggest
-    - toc.follow
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - toc.follow
 
 nav:
   - Home: index.md
@@ -39,23 +42,23 @@ plugins:
         python:
           paths: [src]
           options:
-            docstring_style: numpy
+            docstring_style: google
             show_root_heading: true
-            show_source: true
+            show_source: false
             members_order: source
             separate_signature: true
+            show_signature_annotations: true
+            merge_init_into_class: true
             filters: ["!^_"]
 
 markdown_extensions:
   - admonition
-  - attr_list
-  - footnotes
-  - tables
-  - toc:
-      permalink: true
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
 
 watch:
   - src

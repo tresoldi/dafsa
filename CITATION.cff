@@ -11,13 +11,13 @@ type: software
 authors:
   - family-names: Tresoldi
     given-names: Tiago
-    email: tiago.tresoldi@lingfil.uu.se
+    email: dafsa@tresoldi.org
     orcid: "https://orcid.org/0000-0002-2863-1467"
 version: 2.0.0
 license: MIT
 doi: 10.5281/zenodo.3668870
 repository-code: "https://github.com/tresoldi/dafsa"
-url: "https://tresoldi.github.io/dafsa"
+url: "https://dafsa.tresoldi.org"
 keywords:
   - dafsa
   - dawg

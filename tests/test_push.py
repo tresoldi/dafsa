@@ -207,9 +207,7 @@ def test_pushing_then_minimizing_never_grows_an_automaton(
 def test_the_recovered_automaton_is_still_minimal(
     pairs: list[tuple[str, float]],
 ) -> None:
-    assert_minimal(
-        minimize(Dafsa.from_weighted(pairs, semiring=PROBABILITY).push(), Dafsa)
-    )
+    assert_minimal(minimize(Dafsa.from_weighted(pairs, semiring=PROBABILITY).push(), Dafsa))
 
 
 @settings(deadline=None, max_examples=100)
@@ -314,9 +312,7 @@ def test_pushing_a_trie() -> None:
 
 
 def test_pushing_keeps_the_class() -> None:
-    compacted = Dafsa.from_weighted(
-        [("tapas", 2.0), ("topos", 3.0)], semiring=TROPICAL
-    ).compact()
+    compacted = Dafsa.from_weighted([("tapas", 2.0), ("topos", 3.0)], semiring=TROPICAL).compact()
     pushed = compacted.push()
 
     assert type(pushed) is type(compacted)

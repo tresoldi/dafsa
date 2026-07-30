@@ -4,7 +4,7 @@ Tokens are the units a caller works with — characters, phonemes, words, featur
 bundles, anything hashable. Symbols are the dense integers a token maps to
 inside an automaton, and states are the dense integers identifying its states.
 Keeping the three distinct in signatures makes it obvious which side of the
-:class:`~dafsa.alphabet.Alphabet` boundary a value belongs to.
+``Alphabet`` boundary a value belongs to.
 """
 
 from __future__ import annotations

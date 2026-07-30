@@ -4,13 +4,13 @@ These answer a different question from the dictionary structures, and the
 distinction is worth stating plainly because the two are easy to conflate — this
 project's own design document did so at first.
 
-A :class:`~dafsa.structures.Dafsa` stores a *set of sequences* and answers "is
-this one of them". A :class:`SuffixAutomaton` is built from a *single* sequence
+A ``Dafsa`` stores a *set of sequences* and answers "is
+this one of them". A ``SuffixAutomaton`` is built from a *single* sequence
 and answers "does this occur anywhere inside it". The first is a dictionary; the
 second is an index, and it is what makes substring search, repeat detection and
 longest-common-substring possible at all.
 
-Likewise :class:`~dafsa.structures.CompactDafsa` and :class:`Cdawg` are not the
+Likewise ``CompactDafsa`` and ``Cdawg`` are not the
 same thing under two names. The first is a path-compacted dictionary; the second
 is a path-compacted *suffix* automaton, and the acronym in the literature —
 compact directed acyclic word graph — refers only to the latter.
@@ -61,14 +61,10 @@ class _Cursor:
     def advance(self, symbol: Symbol) -> bool:
         """Consume one symbol, reporting whether it could be.
 
-        Parameters
-        ----------
-        symbol
-            The symbol to consume.
+        Args:
+            symbol: The symbol to consume.
 
-        Returns
-        -------
-        bool
+        Returns:
             Whether the walk continued. On ``False`` the cursor is left where it
             was and must be discarded.
         """
@@ -107,14 +103,10 @@ class _SubstringIndex(Automaton):
         present exactly when it can be walked from the root; acceptance is what
         distinguishes a *suffix*, which is a stricter question.
 
-        Parameters
-        ----------
-        subsequence
-            The tokens to look for.
+        Args:
+            subsequence: The tokens to look for.
 
-        Returns
-        -------
-        bool
+        Returns:
             Whether they occur contiguously somewhere in the source.
         """
         symbols = self._alphabet.try_encode(subsequence)
@@ -131,15 +123,12 @@ class _SubstringIndex(Automaton):
         Counted structurally rather than by enumeration, so a sequence with
         quadratically many distinct substrings still costs one pass.
 
-        Returns
-        -------
-        int
+        Returns:
             The number of distinct non-empty substrings.
 
-        Examples
-        --------
-        >>> SuffixAutomaton.from_sequence("banana").num_substrings()
-        15
+        Examples:
+            >>> SuffixAutomaton.from_sequence("banana").num_substrings()
+            15
         """
         # walks[q] counts the distinct strings spellable from q, the empty one
         # included. A compacted transition also passes through its label's proper
@@ -155,39 +144,31 @@ class _SubstringIndex(Automaton):
 
         return walks[ROOT] - 1
 
-    def longest_common_subsequence_with(
-        self, other: Sequence[Token]
-    ) -> tuple[Token, ...]:
+    def longest_common_subsequence_with(self, other: Sequence[Token]) -> tuple[Token, ...]:
         """Return the longest contiguous block ``other`` shares with the source.
 
         Contiguous, so this is longest *common substring*, not the edit-distance
         sense of the phrase.
 
-        Parameters
-        ----------
-        other
-            The sequence to compare against.
+        Args:
+            other: The sequence to compare against.
 
-        Returns
-        -------
-        tuple of Token
+        Returns:
             The longest block occurring in both, or ``()`` if they share nothing.
             The first such block is returned when several tie.
 
-        Notes
-        -----
-        Restarts the walk at each position of ``other``, so the cost is
-        O(len(other) x longest match). Linear time needs the suffix links the
-        construction builds, and those are discarded when the automaton is
-        frozen: they are scaffolding for building, not part of the structure.
+        Notes:
+            Restarts the walk at each position of ``other``, so the cost is
+            O(len(other) x longest match). Linear time needs the suffix links the
+            construction builds, and those are discarded when the automaton is
+            frozen: they are scaffolding for building, not part of the structure.
 
-        Examples
-        --------
-        >>> index = SuffixAutomaton.from_sequence("banana")
-        >>> "".join(index.longest_common_subsequence_with("bananas"))
-        'banana'
-        >>> "".join(index.longest_common_subsequence_with("ananas"))
-        'anana'
+        Examples:
+            >>> index = SuffixAutomaton.from_sequence("banana")
+            >>> "".join(index.longest_common_subsequence_with("bananas"))
+            'banana'
+            >>> "".join(index.longest_common_subsequence_with("ananas"))
+            'anana'
         """
         tokens = tuple(other)
         best_start = 0
@@ -216,24 +197,22 @@ class SuffixAutomaton(_SubstringIndex):
 
     Accepting states mark the suffixes. Every *substring* is walkable from the
     root whether or not it ends at an accepting state, which is why
-    :meth:`~_SubstringIndex.contains_substring` ignores acceptance and ``in``
-    does not.
+    ``contains_substring`` ignores acceptance and ``in`` does not.
 
-    Examples
-    --------
-    >>> index = SuffixAutomaton.from_sequence("banana")
-    >>> sorted("".join(s) for s in index)
-    ['', 'a', 'ana', 'anana', 'banana', 'na', 'nana']
+    Examples:
+        >>> index = SuffixAutomaton.from_sequence("banana")
+        >>> sorted("".join(s) for s in index)
+        ['', 'a', 'ana', 'anana', 'banana', 'na', 'nana']
 
-    Every suffix is accepted; a substring merely occurs. ``nan`` occurs inside
-    ``banana`` but is not a suffix of it, and the two queries differ:
+        Every suffix is accepted; a substring merely occurs. ``nan`` occurs inside
+        ``banana`` but is not a suffix of it, and the two queries differ:
 
-    >>> "nan" in index, index.contains_substring("nan")
-    (False, True)
-    >>> "nana" in index, index.contains_substring("nana")
-    (True, True)
-    >>> index.contains_substring("bana"), index.contains_substring("nab")
-    (True, False)
+        >>> "nan" in index, index.contains_substring("nan")
+        (False, True)
+        >>> "nana" in index, index.contains_substring("nana")
+        (True, True)
+        >>> index.contains_substring("bana"), index.contains_substring("nab")
+        (True, False)
     """
 
     __slots__ = ()
@@ -247,17 +226,12 @@ class SuffixAutomaton(_SubstringIndex):
     ) -> SuffixAutomaton:
         """Build the suffix automaton of ``sequence``.
 
-        Parameters
-        ----------
-        sequence
-            The sequence to index. A ``str`` is one token per character.
-        semiring
-            The semiring weights belong to. Every weight is ``one``; the
-            parameter exists so an index composes with the rest of the library.
+        Args:
+            sequence: The sequence to index. A ``str`` is one token per character.
+            semiring: The semiring weights belong to. Every weight is ``one``; the
+                parameter exists so an index composes with the rest of the library.
 
-        Returns
-        -------
-        SuffixAutomaton
+        Returns:
             The frozen index.
         """
         return _build_suffix_automaton(sequence, semiring, cls)
@@ -265,9 +239,7 @@ class SuffixAutomaton(_SubstringIndex):
     def compact(self) -> Cdawg:
         """Return the compacted form of this index.
 
-        Returns
-        -------
-        Cdawg
+        Returns:
             The compact directed acyclic word graph for the same sequence.
         """
         from dafsa import _algorithms  # noqa: PLC0415 - avoids an import cycle
@@ -278,7 +250,7 @@ class SuffixAutomaton(_SubstringIndex):
 class Cdawg(_SubstringIndex):
     """A compact directed acyclic word graph: a path-compacted suffix automaton.
 
-    Produced by :meth:`SuffixAutomaton.compact`. Chains of states that every
+    Produced by ``SuffixAutomaton.compact``. Chains of states that every
     occurrence is forced through collapse into single transitions labelled with
     several tokens, which is what makes the structure small enough to draw and
     cheap enough to store for a long text.
@@ -287,16 +259,15 @@ class Cdawg(_SubstringIndex):
     now end part-way along a label, at a position with no state of its own; the
     queries account for that.
 
-    Examples
-    --------
-    >>> index = SuffixAutomaton.from_sequence("banana")
-    >>> compacted = index.compact()
-    >>> compacted.num_states < index.num_states
-    True
-    >>> compacted.contains_substring("nan"), compacted.contains_substring("nab")
-    (True, False)
-    >>> compacted.num_substrings() == index.num_substrings()
-    True
+    Examples:
+        >>> index = SuffixAutomaton.from_sequence("banana")
+        >>> compacted = index.compact()
+        >>> compacted.num_states < index.num_states
+        True
+        >>> compacted.contains_substring("nan"), compacted.contains_substring("nab")
+        (True, False)
+        >>> compacted.num_substrings() == index.num_substrings()
+        True
     """
 
     __slots__ = ()
@@ -315,18 +286,12 @@ def _build_suffix_automaton(
     subtlety of the construction, and the reason a suffix automaton has at most
     ``2n - 1`` states rather than the ``n + 1`` a naive reading suggests.
 
-    Parameters
-    ----------
-    sequence
-        The sequence to index.
-    semiring
-        The semiring for the frozen result.
-    factory
-        The class to freeze into.
+    Args:
+        sequence: The sequence to index.
+        semiring: The semiring for the frozen result.
+        factory: The class to freeze into.
 
-    Returns
-    -------
-    SuffixAutomaton
+    Returns:
         The frozen index.
     """
     tokens = tuple(sequence)
@@ -368,9 +333,7 @@ def _build_suffix_automaton(
                     links[existing],
                     dict(transitions[existing]),
                 )
-                while (
-                    walker != _NO_LINK and transitions[walker].get(symbol) == existing
-                ):
+                while walker != _NO_LINK and transitions[walker].get(symbol) == existing:
                     transitions[walker][symbol] = clone
                     walker = links[walker]
                 links[existing] = clone

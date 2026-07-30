@@ -1,6 +1,6 @@
 """Mapping between caller tokens and the dense symbols used internally.
 
-An automaton never stores tokens. It stores the integers an :class:`Alphabet`
+An automaton never stores tokens. It stores the integers an ``Alphabet``
 assigns to them, which is what makes the flat-array representation possible and
 what lets construction sort sequences without ever comparing two tokens.
 
@@ -37,31 +37,25 @@ def tokenize(text: str, sep: str | None = None) -> tuple[str, ...]:
     spaces as tokens. The command-line tool split on whitespace before calling
     the library, which is why the CLI appeared to work while the API did not.
 
-    Parameters
-    ----------
-    text
-        The text to split.
-    sep
-        The separator. ``None`` splits on runs of whitespace and discards empty
-        fields, matching :meth:`str.split`.
+    Args:
+        text: The text to split.
+        sep: The separator. ``None`` splits on runs of whitespace and discards empty
+            fields, matching ``str.split``.
 
-    Returns
-    -------
-    tuple of str
+    Returns:
         The tokens.
 
-    Examples
-    --------
-    >>> tokenize("a b c")
-    ('a', 'b', 'c')
-    >>> tokenize("a-b-c", "-")
-    ('a', 'b', 'c')
+    Examples:
+        >>> tokenize("a b c")
+        ('a', 'b', 'c')
+        >>> tokenize("a-b-c", "-")
+        ('a', 'b', 'c')
 
-    Without it, a string is characters — which is a reasonable default, and now a
-    visible choice rather than a surprise:
+        Without it, a string is characters — which is a reasonable default, and now a
+        visible choice rather than a surprise:
 
-    >>> tuple("a b")
-    ('a', ' ', 'b')
+        >>> tuple("a b")
+        ('a', ' ', 'b')
     """
     return tuple(text.split(sep))
 
@@ -75,14 +69,10 @@ def _canonical_order(tokens: Iterable[Token]) -> list[Token]:
     mixed types, or feature bundles with no natural order — first-encountered
     order is used instead.
 
-    Parameters
-    ----------
-    tokens
-        The distinct tokens to order.
+    Args:
+        tokens: The distinct tokens to order.
 
-    Returns
-    -------
-    list of Token
+    Returns:
         The tokens, sorted if that is possible and in the given order if not.
     """
     ordered = list(tokens)
@@ -96,25 +86,22 @@ class Alphabet:
     """An ordered, immutable vocabulary of tokens.
 
     Symbols are assigned by position: the token at index ``i`` of
-    :attr:`tokens` has symbol ``i``. The constructor preserves the order it is
-    given; use :meth:`from_sequences` to derive a canonically ordered alphabet
+    ``tokens`` has symbol ``i``. The constructor preserves the order it is
+    given; use ``from_sequences`` to derive a canonically ordered alphabet
     from data.
 
-    Parameters
-    ----------
-    tokens
-        The tokens, in the order symbols should be assigned. Repeats are
-        ignored, keeping the first occurrence.
+    Args:
+        tokens: The tokens, in the order symbols should be assigned. Repeats are
+            ignored, keeping the first occurrence.
 
-    Examples
-    --------
-    >>> alphabet = Alphabet("abc")
-    >>> alphabet.id("b")
-    1
-    >>> alphabet.encode("cab")
-    (2, 0, 1)
-    >>> alphabet.decode((2, 0, 1))
-    ('c', 'a', 'b')
+    Examples:
+        >>> alphabet = Alphabet("abc")
+        >>> alphabet.id("b")
+        1
+        >>> alphabet.encode("cab")
+        (2, 0, 1)
+        >>> alphabet.decode((2, 0, 1))
+        ('c', 'a', 'b')
     """
 
     __slots__ = ("_ids", "_tokens")
@@ -132,22 +119,17 @@ class Alphabet:
     def from_sequences(cls, sequences: Iterable[Sequence[Token]]) -> Alphabet:
         """Build an alphabet from the tokens appearing in ``sequences``.
 
-        Parameters
-        ----------
-        sequences
-            The sequences whose tokens make up the vocabulary.
+        Args:
+            sequences: The sequences whose tokens make up the vocabulary.
 
-        Returns
-        -------
-        Alphabet
+        Returns:
             An alphabet over every distinct token seen, in sorted order where
             the tokens are mutually comparable and in first-encountered order
             otherwise.
 
-        Examples
-        --------
-        >>> Alphabet.from_sequences(["tip", "tap"]).tokens
-        ('a', 'i', 'p', 't')
+        Examples:
+            >>> Alphabet.from_sequences(["tip", "tap"]).tokens
+            ('a', 'i', 'p', 't')
         """
         seen: dict[Token, None] = {}
         for sequence in sequences:
@@ -164,20 +146,14 @@ class Alphabet:
     def id(self, token: Token) -> Symbol:
         """Return the symbol for ``token``.
 
-        Parameters
-        ----------
-        token
-            The token to look up.
+        Args:
+            token: The token to look up.
 
-        Returns
-        -------
-        Symbol
+        Returns:
             The symbol assigned to ``token``.
 
-        Raises
-        ------
-        UnknownTokenError
-            If ``token`` is not in the alphabet.
+        Raises:
+            UnknownTokenError: If ``token`` is not in the alphabet.
         """
         try:
             return self._ids[token]
@@ -188,20 +164,14 @@ class Alphabet:
     def token(self, symbol: Symbol) -> Token:
         """Return the token for ``symbol``.
 
-        Parameters
-        ----------
-        symbol
-            The symbol to look up.
+        Args:
+            symbol: The symbol to look up.
 
-        Returns
-        -------
-        Token
+        Returns:
             The token assigned to ``symbol``.
 
-        Raises
-        ------
-        IndexError
-            If ``symbol`` is out of range.
+        Raises:
+            IndexError: If ``symbol`` is out of range.
         """
         if not 0 <= symbol < len(self._tokens):
             message = f"symbol out of range: {symbol}"
@@ -212,21 +182,15 @@ class Alphabet:
     def encode(self, sequence: Sequence[Token]) -> tuple[Symbol, ...]:
         """Encode a sequence of tokens as symbols.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to encode.
+        Args:
+            sequence: The tokens to encode.
 
-        Returns
-        -------
-        tuple of Symbol
+        Returns:
             The encoded sequence.
 
-        Raises
-        ------
-        UnknownTokenError
-            If any token is not in the alphabet. Use :meth:`try_encode` when an
-            unknown token is an expected outcome rather than an error.
+        Raises:
+            UnknownTokenError: If any token is not in the alphabet. Use ``try_encode`` when an
+                unknown token is an expected outcome rather than an error.
         """
         return tuple(self.id(token) for token in sequence)
 
@@ -237,14 +201,10 @@ class Alphabet:
         automaton has never seen is simply not accepted, which is an answer
         rather than an error.
 
-        Parameters
-        ----------
-        sequence
-            The tokens to encode.
+        Args:
+            sequence: The tokens to encode.
 
-        Returns
-        -------
-        tuple of Symbol or None
+        Returns:
             The encoded sequence, or ``None`` if any token is unknown.
         """
         ids = self._ids
@@ -260,20 +220,14 @@ class Alphabet:
     def decode(self, symbols: Iterable[Symbol]) -> tuple[Token, ...]:
         """Decode symbols back into tokens.
 
-        Parameters
-        ----------
-        symbols
-            The symbols to decode.
+        Args:
+            symbols: The symbols to decode.
 
-        Returns
-        -------
-        tuple of Token
+        Returns:
             The decoded tokens.
 
-        Raises
-        ------
-        IndexError
-            If any symbol is out of range.
+        Raises:
+            IndexError: If any symbol is out of range.
         """
         return tuple(self.token(symbol) for symbol in symbols)
 
@@ -297,7 +251,7 @@ class Alphabet:
         return self._tokens == other._tokens
 
     def __hash__(self) -> int:
-        """Return a hash consistent with :meth:`__eq__`."""
+        """Return a hash consistent with ``__eq__``."""
         return hash(self._tokens)
 
     def __repr__(self) -> str:

@@ -58,9 +58,7 @@ def test_compaction_preserves_the_language_generally(
 @STRUCTURES
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS, probe=st.text(alphabet="abc", max_size=6))
-def test_membership_survives_compaction(
-    structure: type[Any], words: list[str], probe: str
-) -> None:
+def test_membership_survives_compaction(structure: type[Any], words: list[str], probe: str) -> None:
     """A compound label must match in full, not just on its first token."""
     compacted = structure.from_sequences(words).compact()
 
@@ -105,9 +103,7 @@ def test_a_single_sequence_collapses_to_one_transition() -> None:
 @STRUCTURES
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS)
-def test_compaction_never_grows_a_structure(
-    structure: type[Any], words: list[str]
-) -> None:
+def test_compaction_never_grows_a_structure(structure: type[Any], words: list[str]) -> None:
     automaton = structure.from_sequences(words)
     compacted = automaton.compact()
 
@@ -131,9 +127,7 @@ def test_compaction_reaches_a_fixed_point(words: list[str]) -> None:
 @STRUCTURES
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS)
-def test_structural_invariants_survive_compaction(
-    structure: type[Any], words: list[str]
-) -> None:
+def test_structural_invariants_survive_compaction(structure: type[Any], words: list[str]) -> None:
     assert_deterministic_and_dense(structure.from_sequences(words).compact())
 
 
@@ -268,9 +262,7 @@ def test_prefix_queries_survive_compaction(words: list[str], prefix: str) -> Non
     """A prefix may now end in the middle of a compound label."""
     automaton = Dafsa.from_sequences(words)
 
-    assert list(automaton.compact().starts_with(prefix)) == list(
-        automaton.starts_with(prefix)
-    )
+    assert list(automaton.compact().starts_with(prefix)) == list(automaton.starts_with(prefix))
 
 
 def test_starts_with_a_prefix_inside_a_label() -> None:
@@ -287,9 +279,7 @@ def test_starts_with_a_prefix_inside_a_label() -> None:
 def test_longest_prefix_survives_compaction(words: list[str], probe: str) -> None:
     automaton = Dafsa.from_sequences(words)
 
-    assert automaton.compact().longest_prefix_of(probe) == automaton.longest_prefix_of(
-        probe
-    )
+    assert automaton.compact().longest_prefix_of(probe) == automaton.longest_prefix_of(probe)
 
 
 def test_longest_prefix_stops_inside_a_label() -> None:
@@ -379,9 +369,7 @@ def test_absorbed_transition_weights_multiply() -> None:
 
 
 def test_probability_weights_survive_compaction() -> None:
-    automaton = Dafsa.from_weighted(
-        [("walking", 0.5), ("talking", 0.25)], semiring=PROBABILITY
-    )
+    automaton = Dafsa.from_weighted([("walking", 0.5), ("talking", 0.25)], semiring=PROBABILITY)
     compacted = automaton.compact()
 
     assert math.isclose(compacted.weight("walking"), 0.5)

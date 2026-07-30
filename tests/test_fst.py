@@ -214,10 +214,7 @@ def test_project_returns_a_minimal_acceptor() -> None:
     projected = fst.project("input")
 
     assert_minimal(projected)
-    assert (
-        projected.num_states
-        == Dafsa.from_sequences(["tap", "taps", "top", "tops"]).num_states
-    )
+    assert projected.num_states == Dafsa.from_sequences(["tap", "taps", "top", "tops"]).num_states
 
 
 @settings(deadline=None, max_examples=200)

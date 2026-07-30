@@ -3,8 +3,9 @@
 ## 2.0.0
 
 A rewrite. 2.0 shares no implementation with 1.0 and its API is a deliberate break; `dafsa==1.0`
-stays on PyPI, and the [migration guide](https://tresoldi.github.io/dafsa/migration/) maps the
-old surface onto the new one.
+stays on PyPI, and the
+[migration guide](https://dafsa.tresoldi.org/USER_GUIDE/#migrating-from-10) maps the old surface
+onto the new one.
 
 ### Why
 
@@ -37,7 +38,7 @@ paths is defined — and everything else followed from providing one.
   `EPSILON`.
 - **Weight pushing** (`push()`) for divisible semirings, and Revuz minimization.
 - **An export layer** (`dafsa.export`): DOT, JSON, networkx, GML and GraphML.
-- **Type annotations throughout**, checked with `mypy --strict`, with `py.typed` shipped.
+- **Type annotations throughout**, checked with mypy in CI, with `py.typed` shipped.
 
 ### Changed
 
@@ -54,7 +55,7 @@ paths is defined — and everything else followed from providing one.
 - **networkx is an optional dependency**, in the `graph` extra. It is needed only by the three
   graph exports.
 - Documentation moved from Sphinx/ReadTheDocs to MkDocs Material, published to GitHub Pages: a
-  landing page, one [User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/) covering concepts,
+  landing page, one [User Guide](https://dafsa.tresoldi.org/USER_GUIDE/) covering concepts,
   worked examples, migration and references, and an API reference generated from the docstrings.
   Every `python` block in the README and the guide is executed by the test suite.
 - `DESIGN.md` became [`ARCHITECTURE.md`](ARCHITECTURE.md), describing the delivered library rather

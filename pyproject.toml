@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dafsa"
-version = "2.0.0"
-authors = [{name = "Tiago Tresoldi", email = "tiago.tresoldi@lingfil.uu.se"}]
+dynamic = ["version"]
+authors = [{name = "Tiago Tresoldi", email = "dafsa@tresoldi.org"}]
+maintainers = [{name = "Tiago Tresoldi", email = "dafsa@tresoldi.org"}]
 license = {text = "MIT"}
 description = "Finite-state structures for sequence data: tries, DAFSAs, suffix automata, and transducers"
 readme = "README.md"
@@ -72,7 +73,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/tresoldi/dafsa"
-Documentation = "https://tresoldi.github.io/dafsa"
+Documentation = "https://dafsa.tresoldi.org"
 Repository = "https://github.com/tresoldi/dafsa"
 Issues = "https://github.com/tresoldi/dafsa/issues"
 Changelog = "https://github.com/tresoldi/dafsa/blob/master/CHANGELOG.md"
@@ -83,6 +84,9 @@ dafsa = "dafsa.__main__:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {attr = "dafsa.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -98,7 +102,23 @@ dafsa = ["py.typed"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests", "src"]
-addopts = ["--strict-markers", "--strict-config", "-ra", "--doctest-modules"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--doctest-modules",
+    "--cov=dafsa",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=88",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "regression: marks regression tests reproducing a reported issue",
+    "property: marks property-based tests with hypothesis",
+]
 filterwarnings = ["error"]
 
 [tool.coverage.run]
@@ -111,24 +131,41 @@ exclude_also = [
     "raise NotImplementedError",
     "\\.\\.\\.",
 ]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
 
 # ---------------------------------------------------------------------------
 # Typing
 # ---------------------------------------------------------------------------
 
 [tool.mypy]
+# 3.10 is the floor the package supports and what ruff targets; there are no
+# stub-bearing third-party dependencies that would need a later parse target.
 python_version = "3.10"
-files = ["src", "tests"]
-strict = true
+files = ["src", "tests", "benchmarks"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false  # Some third-party decorators are untyped
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
 warn_unreachable = true
-enable_error_code = [
-    "ignore-without-code",
-    "redundant-expr",
-    "truthy-bool",
-]
+strict_equality = true
+show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = "networkx.*"
+module = ["networkx.*", "pytest.*", "hypothesis.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
@@ -136,7 +173,7 @@ ignore_missing_imports = true
 # ---------------------------------------------------------------------------
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py310"
 src = ["src", "tests"]
 
@@ -172,6 +209,9 @@ select = [
 ignore = [
     "D203",    # incompatible with D211
     "D213",    # incompatible with D212
+    # `__init__` arguments are documented in the class docstring, which is where
+    # mkdocstrings looks for them (`merge_init_into_class`).
+    "D107",    # missing docstring in `__init__`
     # RUF001-003 flag characters that "look like" ASCII. This library is for
     # linguists: IPA, combining diacritics and non-Latin scripts are the subject
     # matter, not typos, and they appear in docs, tests and corpora throughout.
@@ -181,7 +221,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.pydocstyle]
-convention = "numpy"
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [

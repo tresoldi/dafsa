@@ -21,7 +21,7 @@ rather than opening a public issue.
 
 - Use GitHub's [private vulnerability reporting](https://github.com/tresoldi/dafsa/security/advisories/new)
   (Security → Report a vulnerability), or
-- Email the maintainer at tiago.tresoldi@lingfil.uu.se.
+- Email the maintainer at dafsa@tresoldi.org.
 
 Please include a description of the issue, the affected version(s), and, if possible, a
 minimal reproduction. You can expect an initial acknowledgement within a reasonable

@@ -49,9 +49,9 @@ test: ## Run the test suite (includes doctests and the docs examples)
 	pytest
 	@echo "OK: tests passed."
 
-test-cov: ## Run tests with coverage (HTML report in htmlcov/, fails below 100% branches)
+test-cov: ## Run tests with coverage (HTML report in htmlcov/; the gate is in pyproject.toml)
 	@echo "==> Running tests with coverage..."
-	pytest --cov --cov-report=html --cov-report=term-missing --cov-fail-under=100
+	pytest
 	@echo "OK: coverage report generated in htmlcov/"
 
 test-fast: ## Run tests in parallel, skipping the slow performance guards

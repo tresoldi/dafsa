@@ -7,18 +7,18 @@ linguistics.
 
 The representation needs no new core. A transducer transition carries an input
 symbol and an output symbol, and a *pair of tokens is itself a token*: hashable,
-and therefore something an :class:`~dafsa.alphabet.Alphabet` can number. So an
-:class:`Fst` is an ordinary :class:`~dafsa.automaton.Automaton` whose alphabet is
+and therefore something an ``Alphabet`` can number. So an
+``Fst`` is an ordinary ``Automaton`` whose alphabet is
 an alphabet of pairs, and it inherits minimization, counting, compaction and
 export unchanged.
 
 One consequence is worth stating. Determinism in the core means one transition
 per *pair* per state, not one per input symbol, so a state may well have both
 ``a:x`` and ``a:y``. That is exactly the ambiguity a transducer is allowed to
-have — one input, several analyses — and it is why :meth:`Fst.apply` returns a
+have — one input, several analyses — and it is why ``Fst.apply`` returns a
 list.
 
-:data:`EPSILON` marks a side that consumes or emits nothing, so that a transducer
+``EPSILON`` marks a side that consumes or emits nothing, so that a transducer
 can relate sequences of different lengths.
 """
 
@@ -74,21 +74,20 @@ _LEFT_ONLY = 1
 class Fst(Automaton):
     """An acyclic weighted transducer over ``(input, output)`` pairs.
 
-    Examples
-    --------
-    >>> fst = Fst.from_pairs([("cat", "chat"), ("dog", "chien")])
-    >>> fst.apply("cat")
-    [('c', 'h', 'a', 't')]
-    >>> fst.apply("cow")
-    []
+    Examples:
+        >>> fst = Fst.from_pairs([("cat", "chat"), ("dog", "chien")])
+        >>> fst.apply("cat")
+        [('c', 'h', 'a', 't')]
+        >>> fst.apply("cow")
+        []
 
-    Ambiguity is allowed, and reported as several results:
+        Ambiguity is allowed, and reported as several results:
 
-    >>> ambiguous = Fst.from_alignments(
-    ...     [[("a", "x")], [("a", "y")]]
-    ... )
-    >>> sorted(ambiguous.apply("a"))
-    [('x',), ('y',)]
+        >>> ambiguous = Fst.from_alignments(
+        ...     [[("a", "x")], [("a", "y")]]
+        ... )
+        >>> sorted(ambiguous.apply("a"))
+        [('x',), ('y',)]
     """
 
     __slots__ = ()
@@ -102,17 +101,12 @@ class Fst(Automaton):
     ) -> Fst:
         """Build a transducer from aligned pairs.
 
-        Parameters
-        ----------
-        alignments
-            Each alignment is a sequence of ``(input, output)`` pairs, read in
-            order. Either side of a pair may be :data:`EPSILON`.
-        semiring
-            The semiring weights belong to.
+        Args:
+            alignments: Each alignment is a sequence of ``(input, output)`` pairs, read in
+                order. Either side of a pair may be ``EPSILON``.
+            semiring: The semiring weights belong to.
 
-        Returns
-        -------
-        Fst
+        Returns:
             The frozen, minimal transducer.
         """
         return _build([(tuple(a), semiring.one) for a in alignments], semiring, cls)
@@ -126,17 +120,12 @@ class Fst(Automaton):
     ) -> Fst:
         """Build a transducer from weighted aligned pairs.
 
-        Parameters
-        ----------
-        pairs
-            ``(alignment, weight)`` pairs. Repeated alignments have their weights
-            combined with the semiring's ``plus``.
-        semiring
-            The semiring the weights belong to.
+        Args:
+            pairs: ``(alignment, weight)`` pairs. Repeated alignments have their weights
+                combined with the semiring's ``plus``.
+            semiring: The semiring the weights belong to.
 
-        Returns
-        -------
-        Fst
+        Returns:
             The frozen, minimal transducer.
         """
         return _build([(tuple(a), w) for a, w in pairs], semiring, cls)
@@ -151,20 +140,15 @@ class Fst(Automaton):
         """Build a transducer from unaligned sequence pairs.
 
         Convenience only. The two sides are zipped position by position and the
-        shorter one padded with :data:`EPSILON` at the end. That is *an*
+        shorter one padded with ``EPSILON`` at the end. That is *an*
         alignment, not the right one for any particular linguistic purpose — for
-        that, align deliberately and use :meth:`from_alignments`.
+        that, align deliberately and use ``from_alignments``.
 
-        Parameters
-        ----------
-        pairs
-            ``(input, output)`` sequence pairs.
-        semiring
-            The semiring weights belong to.
+        Args:
+            pairs: ``(input, output)`` sequence pairs.
+            semiring: The semiring weights belong to.
 
-        Returns
-        -------
-        Fst
+        Returns:
             The frozen, minimal transducer.
         """
         return cls.from_alignments(
@@ -174,14 +158,10 @@ class Fst(Automaton):
     def apply(self, sequence: Sequence[Token]) -> list[tuple[Token, ...]]:
         """Return every output the transducer relates to ``sequence``.
 
-        Parameters
-        ----------
-        sequence
-            The input tokens.
+        Args:
+            sequence: The input tokens.
 
-        Returns
-        -------
-        list of tuple
+        Returns:
             Each output, in the alphabet's order. Empty when the input is not
             related to anything, several when the transducer is ambiguous.
         """
@@ -214,29 +194,22 @@ class Fst(Automaton):
     def project(self, side: str = "input") -> Dafsa:
         """Return the acceptor for one side of the relation.
 
-        Parameters
-        ----------
-        side
-            ``"input"`` or ``"output"``.
+        Args:
+            side: ``"input"`` or ``"output"``.
 
-        Returns
-        -------
-        Dafsa
+        Returns:
             The minimal acceptor for the projected sequences, with epsilons
             removed.
 
-        Raises
-        ------
-        ValueError
-            If ``side`` is neither ``"input"`` nor ``"output"``.
+        Raises:
+            ValueError: If ``side`` is neither ``"input"`` nor ``"output"``.
 
-        Notes
-        -----
-        The projection is **unweighted**. Projecting collapses the distinction
-        between paths that shared a side, and reconciling their weights is
-        weighted determinization — a genuinely different algorithm, and out of
-        scope here. Dropping the weights is the honest option; carrying one
-        arbitrary path's weight would not be.
+        Notes:
+            The projection is **unweighted**. Projecting collapses the distinction
+            between paths that shared a side, and reconciling their weights is
+            weighted determinization — a genuinely different algorithm, and out of
+            scope here. Dropping the weights is the honest option; carrying one
+            arbitrary path's weight would not be.
         """
         if side not in {"input", "output"}:
             message = f"side must be 'input' or 'output', not {side!r}"
@@ -269,22 +242,18 @@ class Fst(Automaton):
 
 
 def align(source: Sequence[Token], target: Sequence[Token]) -> list[Pair]:
-    """Zip two sequences position by position, padding with :data:`EPSILON`.
+    """Zip two sequences position by position, padding with ``EPSILON``.
 
-    Parameters
-    ----------
-    source, target
-        The sequences to align.
+    Args:
+        source: The sequence supplying the input side.
+        target: The sequence supplying the output side.
 
-    Returns
-    -------
-    list of tuple
+    Returns:
         The aligned pairs.
 
-    Examples
-    --------
-    >>> align("ab", "xyz")
-    [('a', 'x'), ('b', 'y'), (EPSILON, 'z')]
+    Examples:
+        >>> align("ab", "xyz")
+        [('a', 'x'), ('b', 'y'), (EPSILON, 'z')]
     """
     length = max(len(source), len(target))
 
@@ -304,39 +273,31 @@ def compose(left: Fst, right: Fst, *, semiring: Semiring[Any] | None = None) -> 
     input plus a filter marker, and a transition matches ``left``'s output
     against ``right``'s input.
 
-    Parameters
-    ----------
-    left, right
-        The transducers to compose. ``left``'s output alphabet and ``right``'s
-        input alphabet are matched by token equality.
-    semiring
-        The semiring of the result. Defaults to ``left``'s.
+    Args:
+        left: The transducer applied first. Its output alphabet is matched against
+            ``right``'s input alphabet by token equality.
+        right: The transducer applied second.
+        semiring: The semiring of the result. Defaults to ``left``'s.
 
-    Returns
-    -------
-    Fst
+    Returns:
         The composed transducer.
 
-    Raises
-    ------
-    DeterminismError
-        If the composition is ambiguous — if two composed paths carry the same
-        ``(input, output)`` pair out of the same state. Resolving that needs
-        weighted determinization, which is out of scope; the error names the pair
-        so the ambiguity can be found in the inputs.
+    Raises:
+        DeterminismError: If the composition is ambiguous — if two composed paths carry the same
+            ``(input, output)`` pair out of the same state. Resolving that needs
+            weighted determinization, which is out of scope; the error names the pair
+            so the ambiguity can be found in the inputs.
 
-    Notes
-    -----
-    Epsilons are filtered after Mohri, Pereira and Riley: without a filter, a
-    composition where ``left`` deletes and ``right`` inserts produces the same
-    path by several interleavings.
+    Notes:
+        Epsilons are filtered after Mohri, Pereira and Riley: without a filter, a
+        composition where ``left`` deletes and ``right`` inserts produces the same
+        path by several interleavings.
 
-    Examples
-    --------
-    >>> upper = Fst.from_pairs([("cat", "CAT")])
-    >>> reverse = Fst.from_pairs([("CAT", "gato")])
-    >>> compose(upper, reverse).apply("cat")
-    [('g', 'a', 't', 'o')]
+    Examples:
+        >>> upper = Fst.from_pairs([("cat", "CAT")])
+        >>> reverse = Fst.from_pairs([("CAT", "gato")])
+        >>> compose(upper, reverse).apply("cat")
+        [('g', 'a', 't', 'o')]
     """
     algebra = semiring if semiring is not None else left.semiring
 
@@ -358,9 +319,7 @@ def compose(left: Fst, right: Fst, *, semiring: Semiring[Any] | None = None) -> 
             if middle is EPSILON:
                 # A left-alone move is always available, and closes the door on
                 # right-alone moves until the next match.
-                outgoing.append(
-                    ((source, EPSILON), weight, (target, there, _LEFT_ONLY))
-                )
+                outgoing.append(((source, EPSILON), weight, (target, there, _LEFT_ONLY)))
                 continue
 
             for other in right.transition_indices(there):
@@ -432,9 +391,7 @@ def _assemble(
         if left.is_final(here) and right.is_final(there):
             builder.set_final(
                 state,
-                weight=semiring.times(
-                    left.final_weight(here), right.final_weight(there)
-                ),
+                weight=semiring.times(left.final_weight(here), right.final_weight(there)),
             )
 
     return _algorithms.minimize(builder.freeze(Fst), Fst)

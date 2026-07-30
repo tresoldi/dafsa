@@ -29,9 +29,7 @@ def _compacted(text: Any) -> Cdawg:
     return SuffixAutomaton.from_sequence(text).compact()
 
 
-INDEXES = pytest.mark.parametrize(
-    "build", [_plain, _compacted], ids=["suffix-automaton", "cdawg"]
-)
+INDEXES = pytest.mark.parametrize("build", [_plain, _compacted], ids=["suffix-automaton", "cdawg"])
 
 
 def joined(tokens: tuple[Any, ...]) -> str:
@@ -47,9 +45,7 @@ def suffixes(text: str) -> set[tuple[str, ...]]:
 def substrings(text: str) -> set[str]:
     """Every distinct non-empty contiguous block of ``text``."""
     return {
-        text[start:stop]
-        for start in range(len(text))
-        for stop in range(start + 1, len(text) + 1)
+        text[start:stop] for start in range(len(text)) for stop in range(start + 1, len(text) + 1)
     }
 
 
@@ -104,9 +100,7 @@ def test_every_substring_is_found(build: Any, text: str) -> None:
 @INDEXES
 @settings(deadline=None, max_examples=300)
 @given(text=TEXTS, probe=st.text(alphabet="abcd", max_size=5))
-def test_substring_membership_matches_the_source(
-    build: Any, text: str, probe: str
-) -> None:
+def test_substring_membership_matches_the_source(build: Any, text: str, probe: str) -> None:
     assert build(text).contains_substring(probe) == (probe in text)
 
 
@@ -273,9 +267,7 @@ def test_longest_common_substring() -> None:
 @INDEXES
 @settings(deadline=None, max_examples=300)
 @given(left=TEXTS, right=st.text(alphabet="abcd", max_size=8))
-def test_longest_common_substring_matches_brute_force(
-    build: Any, left: str, right: str
-) -> None:
+def test_longest_common_substring_matches_brute_force(build: Any, left: str, right: str) -> None:
     found = joined(build(left).longest_common_subsequence_with(right))
 
     assert len(found) == len(longest_shared(left, right))

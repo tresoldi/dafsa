@@ -104,9 +104,7 @@ def test_iteration_is_in_order(structure: type[Any]) -> None:
 @STRUCTURES
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS)
-def test_iteration_matches_a_sorted_reference(
-    structure: type[Any], words: list[str]
-) -> None:
+def test_iteration_matches_a_sorted_reference(structure: type[Any], words: list[str]) -> None:
     automaton = structure.from_sequences(words)
 
     assert list(automaton) == sorted(tuple(word) for word in set(words))
@@ -123,9 +121,7 @@ def test_iteration_agrees_with_brute_force_enumeration(words: list[str]) -> None
 
 def test_iteration_is_lazy() -> None:
     """Taking one sequence must not enumerate the rest."""
-    automaton = Dafsa.from_sequences(
-        [f"{first}{second}" for first in "abc" for second in "abc"]
-    )
+    automaton = Dafsa.from_sequences([f"{first}{second}" for first in "abc" for second in "abc"])
 
     iterator = iter(automaton)
     assert next(iterator) == ("a", "a")
@@ -168,9 +164,7 @@ def test_unrank_is_the_inverse_of_rank(structure: type[Any]) -> None:
 @STRUCTURES
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS)
-def test_ranking_is_a_bijection_onto_range(
-    structure: type[Any], words: list[str]
-) -> None:
+def test_ranking_is_a_bijection_onto_range(structure: type[Any], words: list[str]) -> None:
     """The minimal-perfect-hash property, stated directly."""
     automaton = structure.from_sequences(words)
 
@@ -203,13 +197,7 @@ def test_unrank_does_not_enumerate_to_reach_a_position() -> None:
     visits one state per token.
     """
     automaton = Dafsa.from_sequences(
-        [
-            f"{a}{b}{c}{d}"
-            for a in "abcde"
-            for b in "abcde"
-            for c in "abcde"
-            for d in "abcde"
-        ]
+        [f"{a}{b}{c}{d}" for a in "abcde" for b in "abcde" for c in "abcde" for d in "abcde"]
     )
 
     assert len(automaton) == 5**4
@@ -250,9 +238,7 @@ def test_starts_with_includes_the_prefix_when_it_is_accepted() -> None:
 
 @settings(deadline=None, max_examples=200)
 @given(words=WORD_LISTS, prefix=st.text(alphabet="abc", max_size=3))
-def test_starts_with_matches_filtering_the_whole_language(
-    words: list[str], prefix: str
-) -> None:
+def test_starts_with_matches_filtering_the_whole_language(words: list[str], prefix: str) -> None:
     automaton = Dafsa.from_sequences(words)
     head = tuple(prefix)
 
@@ -388,17 +374,13 @@ def test_total_weight_matches_folding_the_input(pairs: list[tuple[str, int]]) ->
 
 
 def test_total_weight_is_a_minimum_under_the_tropical_semiring() -> None:
-    automaton = Dafsa.from_weighted(
-        [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
-    )
+    automaton = Dafsa.from_weighted([("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL)
 
     assert automaton.total_weight() == 0.5
 
 
 def test_total_weight_sums_probabilities() -> None:
-    automaton = Dafsa.from_weighted(
-        [("a", 0.5), ("b", 0.25), ("c", 0.125)], semiring=PROBABILITY
-    )
+    automaton = Dafsa.from_weighted([("a", 0.5), ("b", 0.25), ("c", 0.125)], semiring=PROBABILITY)
 
     assert math.isclose(automaton.total_weight(), 0.875)
 
@@ -418,18 +400,14 @@ def test_total_weight_agrees_with_summing_each_weight(words: list[str]) -> None:
 
 
 def test_k_best_under_the_tropical_semiring() -> None:
-    automaton = Dafsa.from_weighted(
-        [("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL
-    )
+    automaton = Dafsa.from_weighted([("tap", 2.0), ("taps", 0.5), ("top", 1.0)], semiring=TROPICAL)
 
     assert automaton.k_best(2) == [(("t", "a", "p", "s"), 0.5), (("t", "o", "p"), 1.0)]
     assert automaton.k_best(1) == [(("t", "a", "p", "s"), 0.5)]
 
 
 def test_k_best_under_the_viterbi_semiring_prefers_the_largest() -> None:
-    automaton = Dafsa.from_weighted(
-        [("tap", 0.2), ("taps", 0.5), ("top", 0.1)], semiring=VITERBI
-    )
+    automaton = Dafsa.from_weighted([("tap", 0.2), ("taps", 0.5), ("top", 0.1)], semiring=VITERBI)
 
     assert [weight for _, weight in automaton.k_best(3)] == [0.5, 0.2, 0.1]
 
@@ -466,9 +444,7 @@ def test_k_best_is_refused_for_non_idempotent_semirings() -> None:
     ),
     k=st.integers(1, 5),
 )
-def test_k_best_matches_sorting_everything(
-    pairs: list[tuple[str, float]], k: int
-) -> None:
+def test_k_best_matches_sorting_everything(pairs: list[tuple[str, float]], k: int) -> None:
     """The heap must agree with the obvious O(n log n) answer."""
     automaton = Dafsa.from_weighted(pairs, semiring=TROPICAL)
 
@@ -477,15 +453,11 @@ def test_k_best_matches_sorting_everything(
         key=lambda entry: entry[1],
     )
 
-    assert [weight for _, weight in automaton.k_best(k)] == [
-        weight for _, weight in everything[:k]
-    ]
+    assert [weight for _, weight in automaton.k_best(k)] == [weight for _, weight in everything[:k]]
 
 
 def test_k_best_breaks_ties_deterministically() -> None:
-    automaton = Dafsa.from_weighted(
-        [("a", 1.0), ("b", 1.0), ("c", 1.0)], semiring=TROPICAL
-    )
+    automaton = Dafsa.from_weighted([("a", 1.0), ("b", 1.0), ("c", 1.0)], semiring=TROPICAL)
 
     assert automaton.k_best(2) == automaton.k_best(2)
     assert len(automaton.k_best(2)) == 2
@@ -534,8 +506,7 @@ def test_canonical_numbering_is_not_topological() -> None:
     # the same state through an intermediate numbered 2, giving a 2 -> 1 edge.
     automaton = Dafsa.from_sequences(["a", "bc"])
     naive_is_topological = all(
-        transition.source < transition.target
-        for transition in automaton.all_transitions()
+        transition.source < transition.target for transition in automaton.all_transitions()
     )
 
     assert not naive_is_topological

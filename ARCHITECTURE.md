@@ -71,7 +71,8 @@ JOSS paper.
    (§6).
 7. **No required dependencies.** Every structure, algorithm and the DOT output are plain
    Python. networkx is needed by three graph exports and lives in an extra.
-8. **Typed throughout.** Full annotations, `py.typed` shipped, `mypy --strict` in CI.
+8. **Typed throughout.** Full annotations, `py.typed` shipped, and mypy in CI over `src/`,
+   `tests/` and `benchmarks/`.
 
 ---
 
@@ -271,7 +272,8 @@ Two distinctions are worth stating because they were run together in earlier sco
 ## 6. Testing and documentation architecture
 
 **Tests check the implementation against something other than itself.** The suite covers
-100% of branches, and the parts that matter are:
+100% of branches; the gate in `pyproject.toml` is set below that, at 88%, so an unrelated
+line-count change does not fail a pull request. The parts that matter are:
 
 - **Language equivalence.** The accepted set equals a reference Python `set`, in both
   directions, for random and corpus-derived inputs.
@@ -307,9 +309,12 @@ than a page that does not exist:
 - **`docs/reference.md`** — `::: dafsa`, generated from the docstrings by mkdocstrings,
   so there is no hand-maintained reference to drift.
 
-Tooling is MkDocs Material + mkdocstrings, published to GitHub Pages from CI; build with
-`make site`. `benchmarks/run.py` produces the numbers quoted here, so a claim in this
-document can be re-checked rather than taken on trust.
+Docstrings are **Google style**, which is what mkdocstrings parses and what ruff's
+pydocstyle rules enforce; types come from the annotations rather than from the docstring,
+so the two cannot disagree. Tooling is MkDocs Material + mkdocstrings, published to GitHub
+Pages from CI at `dafsa.tresoldi.org` (`docs/CNAME`); build with `make site`.
+`benchmarks/run.py` produces the numbers quoted here, so a claim in this document can be
+re-checked rather than taken on trust.
 
 ---
 
@@ -323,6 +328,10 @@ paper describes; the User Guide maps the old surface onto the new one.
 The public API is the top-level `dafsa` namespace. After 2.0.0, breaking changes to it
 are expected to be rare and clearly flagged; the project follows semantic versioning.
 Python 3.10 or later; the CI matrix is 3.10–3.13.
+
+The version has a single source: `dafsa.__version__`, which `pyproject.toml` declares
+`dynamic` and reads from. `make bump-version TYPE=patch|minor|major` edits it and
+`CITATION.cff` together, and a test asserts the installed metadata agrees.
 
 `manuscript/` and `paper.json` are untouched. 2.0 is documented in the changelog and the
 docs site, and gets a new Zenodo version DOI on release.

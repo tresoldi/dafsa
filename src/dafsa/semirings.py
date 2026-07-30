@@ -13,20 +13,19 @@ asked.
 
 A semiring is a set with two operations satisfying:
 
-* ``plus`` is associative and commutative, with identity :attr:`~Semiring.zero`.
-* ``times`` is associative, with identity :attr:`~Semiring.one`.
+* ``plus`` is associative and commutative, with identity ``zero``.
+* ``times`` is associative, with identity ``one``.
 * ``times`` distributes over ``plus`` from both sides.
-* :attr:`~Semiring.zero` annihilates: ``times(zero, x) == zero``.
+* ``zero`` annihilates: ``times(zero, x) == zero``.
 
 Every law above is checked against every built-in by the test suite, so a new
 semiring added here is not trusted on inspection.
 
-Notes
------
-There is deliberately no ``star`` (closure) operation. Every structure in this
-library is acyclic, so no algorithm needs to sum over an unbounded number of
-traversals of a cycle. Adding cyclic support later means adding ``star`` as an
-optional protocol member, not revisiting these definitions.
+Notes:
+    There is deliberately no ``star`` (closure) operation. Every structure in this
+    library is acyclic, so no algorithm needs to sum over an unbounded number of
+    traversals of a cycle. Adding cyclic support later means adding ``star`` as an
+    optional protocol member, not revisiting these definitions.
 """
 
 from __future__ import annotations
@@ -38,34 +37,28 @@ if TYPE_CHECKING:
     from collections.abc import Hashable
 
 #: The weight type of a semiring. Deliberately unbounded: weights need not be
-#: hashable, which is exactly why :meth:`Semiring.key` exists.
+#: hashable, which is exactly why ``Semiring.key`` exists.
 W = TypeVar("W")
 
 
 class Semiring(Protocol[W]):
     """The interface every semiring satisfies.
 
-    This is a :class:`~typing.Protocol`, so any object with these members works —
+    This is a ``Protocol``, so any object with these members works —
     a caller's own semiring needs no inheritance and no registration. The
     built-ins below are annotated as ``Semiring[...]`` at the point they are
     created, which makes conformance a type error rather than a runtime surprise.
 
-    Attributes
-    ----------
-    zero
-        Additive identity and multiplicative annihilator. Conventionally the
-        weight of a path that does not exist.
-    one
-        Multiplicative identity. The weight of the empty path.
-    idempotent
-        Whether ``plus(a, a) == a``. True for the min/max-based semirings, which
-        lets algorithms discard all but the best of several paths.
-    commutative
-        Whether ``times`` commutes. ``plus`` is required to commute by the
-        semiring axioms, so this refers to ``times`` alone; it is false for
-        things like a string-concatenation semiring.
-    divisible
-        Whether :meth:`divide` is defined, which is what weight pushing needs.
+    Attributes:
+        zero: Additive identity and multiplicative annihilator. Conventionally the
+            weight of a path that does not exist.
+        one: Multiplicative identity. The weight of the empty path.
+        idempotent: Whether ``plus(a, a) == a``. True for the min/max-based semirings, which
+            lets algorithms discard all but the best of several paths.
+        commutative: Whether ``times`` commutes. ``plus`` is required to commute by the
+            semiring axioms, so this refers to ``times`` alone; it is false for
+            things like a string-concatenation semiring.
+        divisible: Whether ``divide`` is defined, which is what weight pushing needs.
     """
 
     zero: W
@@ -94,10 +87,8 @@ class Semiring(Protocol[W]):
     def divide(self, left: W, right: W) -> W:
         """Return the ``w`` with ``times(w, right) == left``.
 
-        Raises
-        ------
-        NotImplementedError
-            If :attr:`divisible` is false.
+        Raises:
+            NotImplementedError: If ``divisible`` is false.
         """
         ...
 
@@ -105,7 +96,7 @@ class Semiring(Protocol[W]):
 class _SemiringBase(Generic[W]):
     """Shared defaults for the built-in semirings.
 
-    Not part of the public contract: :class:`Semiring` is a protocol, so nothing
+    Not part of the public contract: ``Semiring`` is a protocol, so nothing
     needs to inherit from anything. This exists only to avoid repeating the
     conservative defaults and the ``divide`` refusal six times.
     """
@@ -119,15 +110,12 @@ class _SemiringBase(Generic[W]):
     def divide(self, left: W, right: W) -> W:
         """Refuse division, which most semirings do not support.
 
-        Parameters
-        ----------
-        left, right
-            Ignored.
+        Args:
+            left: Ignored.
+            right: Ignored.
 
-        Raises
-        ------
-        NotImplementedError
-            Always. Check :attr:`~Semiring.divisible` first.
+        Raises:
+            NotImplementedError: Always. Check ``divisible`` first.
         """
         message = f"{type(self).__name__} is not divisible"
         raise NotImplementedError(message)
@@ -220,14 +208,12 @@ class TropicalSemiring(_SemiringBase[float]):
         return weight
 
     def divide(self, left: float, right: float) -> float:
-        """Return ``left - right``, the inverse of :meth:`times`.
+        """Return ``left - right``, the inverse of ``times``.
 
-        Raises
-        ------
-        ZeroDivisionError
-            If ``right`` is :attr:`zero`. No weight ``w`` satisfies
-            ``times(w, inf) == left`` for finite ``left``, so there is nothing
-            honest to return.
+        Raises:
+            ZeroDivisionError: If ``right`` is ``zero``. No weight ``w`` satisfies
+                ``times(w, inf) == left`` for finite ``left``, so there is nothing
+                honest to return.
         """
         if right == math.inf:
             message = "cannot divide by the tropical semiring's zero (inf)"
@@ -245,7 +231,7 @@ class LogSemiring(_SemiringBase[float]):
     breaks badly: ``-log(exp(-1000) + exp(-1000))`` evaluates ``exp(-1000)`` to
     ``0.0`` and then takes the log of zero.
 
-    :meth:`plus` therefore factors out the smaller weight, so the exponential is
+    ``plus`` therefore factors out the smaller weight, so the exponential is
     always of a non-positive number and lands in ``(0, 1]``. It is stable at
     magnitudes where the direct form overflows in one direction and underflows in
     the other.
@@ -277,13 +263,11 @@ class LogSemiring(_SemiringBase[float]):
         return weight
 
     def divide(self, left: float, right: float) -> float:
-        """Return ``left - right``, the inverse of :meth:`times`.
+        """Return ``left - right``, the inverse of ``times``.
 
-        Raises
-        ------
-        ZeroDivisionError
-            If ``right`` is :attr:`zero`, which corresponds to dividing by a
-            probability of zero.
+        Raises:
+            ZeroDivisionError: If ``right`` is ``zero``, which corresponds to dividing by a
+                probability of zero.
         """
         if right == math.inf:
             message = "cannot divide by the log semiring's zero (inf)"
@@ -296,7 +280,7 @@ class ProbabilitySemiring(_SemiringBase[float]):
     """``(+, *, 0.0, 1.0)`` — probabilities held directly.
 
     The readable choice, and the right one for small automata or when the numbers
-    are being shown to someone. Prefer :class:`LogSemiring` when paths are long
+    are being shown to someone. Prefer ``LogSemiring`` when paths are long
     enough for the products to underflow.
     """
 
@@ -321,10 +305,8 @@ class ProbabilitySemiring(_SemiringBase[float]):
     def divide(self, left: float, right: float) -> float:
         """Return ``left / right``.
 
-        Raises
-        ------
-        ZeroDivisionError
-            If ``right`` is :attr:`zero`.
+        Raises:
+            ZeroDivisionError: If ``right`` is ``zero``.
         """
         return left / right
 
@@ -332,7 +314,7 @@ class ProbabilitySemiring(_SemiringBase[float]):
 class ViterbiSemiring(_SemiringBase[float]):
     """``(max, *, 0.0, 1.0)`` — the single most probable path.
 
-    Identical to :class:`ProbabilitySemiring` along a path, but alternatives
+    Identical to ``ProbabilitySemiring`` along a path, but alternatives
     resolve to the best rather than the total. This is the difference between
     "how likely is this sequence" and "what is its most likely analysis".
     """
@@ -359,10 +341,8 @@ class ViterbiSemiring(_SemiringBase[float]):
     def divide(self, left: float, right: float) -> float:
         """Return ``left / right``.
 
-        Raises
-        ------
-        ZeroDivisionError
-            If ``right`` is :attr:`zero`.
+        Raises:
+            ZeroDivisionError: If ``right`` is ``zero``.
         """
         return left / right
 

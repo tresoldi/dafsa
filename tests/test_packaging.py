@@ -24,7 +24,7 @@ def test_version_is_importable() -> None:
 
 
 def test_version_has_a_single_source() -> None:
-    """``__version__`` must come from the installed metadata, not a literal."""
+    """``dafsa.__version__`` is the source; the metadata must be read from it."""
     assert dafsa.__version__ == version("dafsa")
 
 
