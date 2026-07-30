@@ -27,6 +27,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Quickstart: quickstart.md
+  - Migrating from 1.0: migration.md
   - API reference: api.md
   - References: references.md
 

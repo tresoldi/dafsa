@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–10 implemented (see §12)
+Status: accepted; milestones 0–11 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -593,7 +593,7 @@ unless asked, calling the same `tokenize` the API exposes.
 | Docs | **MkDocs Material + mkdocstrings**. Delete `.readthedocs.yml` (it pins Python 3.5 and cannot build), `docs/conf.py`, `docs/Makefile`, and the `.rst` sources; author Markdown; publish to GitHub Pages from CI |
 | `daciuk/` | **Removed** (896 KB of GPL-2 tarballs inside an MIT repository — an inconsistency, even though `MANIFEST.in` keeps them out of the sdist). Replaced by `docs/references.md` citing Daciuk's algorithms, his personal page, and the archive.org snapshot. Git history retains the files |
 | CI | Upgrade `actions/checkout` and `actions/setup-python` v2 → v4; add coverage; add the benchmark job below; update branch triggers |
-| Benchmarks | `benchmarks/` over `resources/*.txt` and a large word list, with a wall-clock budget asserted in CI so the O(n²) minimizer cannot come back unnoticed |
+| Benchmarks | `benchmarks/run.py` produces the numbers quoted in this document, and `tests/test_performance.py` guards them in CI |
 | README | Rewritten for the structure family; dead Travis badge removed; Zenodo DOI and citation kept; explicit 1.0 → 2.0 note |
 | `manuscript/`, `paper.json` | **Untouched.** They remain the record of the 1.0 JOSS paper. 2.0 is documented in the changelog and docs, and gets a new Zenodo version DOI on release |
 
@@ -666,7 +666,7 @@ an unverified layer.
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
 | 9 | Weight pushing | `push()` for divisible semirings | **done** |
 | 10 | CLI | rewrite against the new API — closes the remainder of #17 | **done** |
-| 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | |
+| 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | **done** |
 | 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | |
 
 Milestone 1 delivered the core at 100% branch coverage, checked against independent references
@@ -758,6 +758,15 @@ Two implementation decisions in milestone 3 worth recording:
   no canonical way to distribute a weight along a path — deciding that is exactly what weight
   pushing does (milestone 9) — so construction does not invent one. `weight(seq)` is then the
   product of a chain of `one`s and the final weight, which is the weight that was inserted.
+**The benchmark guard is a ratio, not a stopwatch.** A wall-clock threshold on shared CI
+hardware either trips on a loaded runner or is set so loose it catches nothing. What is asserted
+instead is that quadrupling the input does not multiply the work by more than ten: linear growth
+is about four, and the quadratic scan 1.0 shipped would be about sixteen. Loose absolute budgets
+sit alongside to catch a catastrophe. It also lives in `tests/`, not in a separate CI job, so it
+runs under the existing `pytest` step — which incidentally avoids needing a workflow change,
+since the credentials available to automated sessions here cannot touch `.github/workflows`
+(§10).
+
 Milestone 9 needed one addition to the core: **an initial weight**. Pushing moves weight
 towards the front of a path, and the front of the *first* transition has nowhere further to go,
 so without somewhere to put it the total weight of the language would change and `weight(seq)`

@@ -40,6 +40,12 @@ The full rationale, the audit of 1.0 that motivated the rewrite, the API, the mi
 and the 1.0 → 2.0 migration table are in
 [`DESIGN.md`](https://github.com/tresoldi/dafsa/blob/master/DESIGN.md).
 
+## Where to start
+
+- **[Quickstart](quickstart.md)** — the whole library in one page of examples.
+- **[Migrating from 1.0](migration.md)** — what maps to what, and what changed meaning.
+- **[API reference](api.md)** — generated from the source.
+
 ## Installation
 
 2.0 is not released. To work against the development line:
