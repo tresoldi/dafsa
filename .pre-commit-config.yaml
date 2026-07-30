@@ -21,13 +21,16 @@ repos:
       # Formatter (matches `ruff format --check .`)
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+  # mypy runs from the development environment rather than from an isolated one
+  # built by pre-commit. It has to: the checked files import `dafsa`, and an
+  # isolated env would not have it installed, so every import would be
+  # unresolved. `pass_filenames: false` lets the `files` list in pyproject.toml
+  # decide what is checked, exactly as `make quality` and CI do.
+  - repo: local
     hooks:
       - id: mypy
-        files: ^(src/dafsa|tests|benchmarks)/
-        # dafsa has no required dependencies; networkx is needed only so that the
-        # three graph exports type-check the same way they do in CI.
-        additional_dependencies:
-          - networkx
-          - pytest
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        pass_filenames: false

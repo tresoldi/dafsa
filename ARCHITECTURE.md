@@ -85,7 +85,7 @@ transparent to users.
 src/dafsa/
 ├── __init__.py       # public API surface (stable import path)
 ├── _types.py         # Token, Symbol, State, ROOT — the vocabulary, no logic
-├── exceptions.py     # DafsaError and the five errors deriving from it
+├── exceptions.py     # DafsaError and the four errors deriving from it
 ├── alphabet.py       # Alphabet (token <-> symbol id), tokenize
 ├── semirings.py      # the Semiring protocol and six built-ins
 ├── automaton.py      # Transition, Match, Automaton — the frozen CSR core
@@ -233,14 +233,19 @@ test asserts that importing `dafsa` does not import networkx at all.
 ### Command line
 
 ```
-dafsa [-f trie|dafsa|suffix|cdawg] [-s boolean|counting|tropical|log|probability|viterbi]
-      [-o OUTPUT] [-t stdout|json|dot|png|pdf|svg|gml|graphml] [--dpi N] [--compact]
-      [--sep SEP | --words] [--label-nodes] [--font NAME] SOURCE
+dafsa [-f dafsa|trie|suffix] [-s boolean|counting|tropical|log|probability|viterbi]
+      [--sep SEP | --words] [--compact] [--push]
+      [-t text|json|dot|gml|graphml|png|pdf|svg] [-o PATH] [--dpi N]
+      [--label-nodes] [--font NAME] [--label-sep SEP] [--scale-edges] SOURCE
 ```
 
 Tokenization is explicit and needs two flags rather than one: `--words` splits on
 whitespace, `--sep SEP` on a given separator, and omitting both leaves every character a
 token.
+
+There is no `-f cdawg`, because a CDAWG is not a separate construction: it is a suffix
+automaton with `compact()` applied, so `-f suffix --compact` builds one and the summary
+names it `Cdawg`. The same holds for `CompactDafsa` and `-f dafsa --compact`.
 
 ---
 
@@ -313,8 +318,19 @@ Docstrings are **Google style**, which is what mkdocstrings parses and what ruff
 pydocstyle rules enforce; types come from the annotations rather than from the docstring,
 so the two cannot disagree. Tooling is MkDocs Material + mkdocstrings, published to GitHub
 Pages from CI at `dafsa.tresoldi.org` (`docs/CNAME`); build with `make site`.
-`benchmarks/run.py` produces the numbers quoted here, so a claim in this document can be
-re-checked rather than taken on trust.
+
+**Nothing committed is unreproducible.** `benchmarks/run.py` produces the numbers quoted
+here and `figures/trie-vs-dafsa.py` redraws the figure the README opens with, from the
+library's own DOT emitter — so a claim in this document, and a picture in the README, can
+be re-checked rather than taken on trust. The three remaining files under `figures/` belong
+to `manuscript/`, and `resources/` is the sample data the User Guide's command-line
+examples run against, exercised by `tests/test_cli.py` so that it cannot quietly rot.
+
+**`ruff` and `mypy` are pinned to exact versions** in the `dev` extra, and the pre-commit
+hooks use the same ones. This is not fussiness: ruff 0.15 and 0.16 disagree about whether
+`PLR0917` exists, so the `noqa` comment one of them demands the other reports as unused,
+and no source file can satisfy both. A range would make `make quality` pass or fail
+depending on what a contributor happened to have installed.
 
 ---
 

@@ -27,6 +27,10 @@ from dafsa import Dafsa, SuffixAutomaton, Trie
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+# These build corpora of tens of thousands of sequences and are most of the
+# suite's running time. `make test-fast` deselects them with -m "not slow".
+pytestmark = pytest.mark.slow
+
 SMALL = 4_000
 LARGE = 16_000
 

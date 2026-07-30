@@ -401,19 +401,30 @@ inspection and interchange, not a persistence format.
 
 ## From the command line
 
+The examples below run against the sample data in `resources/`, so they work from a
+clone as written.
+
 ```bash
-dafsa words.txt                          # a summary
-dafsa --words phrases.txt                # split lines on whitespace
-dafsa --sep , codes.txt                  # split lines on a separator
-dafsa -s counting words.txt              # with frequencies
-dafsa --compact -t svg -o words.svg words.txt
-dafsa -f suffix -t json -o index.json text.txt
+dafsa resources/ciura.txt                       # a summary
+dafsa --words resources/phonemes.txt            # split lines on whitespace
+dafsa -s counting resources/ciura.txt           # with frequencies
+dafsa --compact -t svg -o words.svg resources/ciura.txt
+dafsa -f suffix -t json -o index.json resources/dna.txt
+dafsa --sep , -                                 # read from standard input
 ```
 
-`-f` selects the structure (`dafsa`, `trie`, `suffix`, `cdawg`), `-s` the semiring, `-t`
-the output type. Tokenization is explicit and the two forms are mutually exclusive:
+`-f` selects the structure (`dafsa`, `trie`, `suffix`), `-s` the semiring, `-t` the
+output type. Tokenization is explicit and the two forms are mutually exclusive:
 `--words` splits on whitespace, `--sep SEP` on a given separator, and neither means one
 token per character. `dafsa --help` lists everything.
+
+There is no `-f cdawg` or `-f compact`, because neither is a separate construction:
+`--compact` applies `compact()` to whatever `-f` built, so `-f suffix --compact` produces
+a `Cdawg` and `-f dafsa --compact` a `CompactDafsa`. The summary names what you got.
+
+`resources/phonemes.txt` is worth a look as the example that motivates `--words`: its
+lines are space-separated phonemes, including multi-character ones like `kː`, so reading
+it without `--words` would treat every character — and every space — as a token.
 
 ---
 

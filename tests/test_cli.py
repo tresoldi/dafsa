@@ -6,14 +6,11 @@ import json
 import shutil
 import subprocess
 import sys
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 
 from dafsa.__main__ import build_parser, main
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 needs_graphviz = pytest.mark.skipif(shutil.which("dot") is None, reason="Graphviz is not installed")
 
@@ -325,3 +322,50 @@ def test_help_mentions_the_tokenization_flags() -> None:
 
     assert "--words" in result.stdout
     assert "--sep" in result.stdout
+
+
+# -- the shipped sample data -----------------------------------------------
+#
+# `resources/` is what the User Guide's command-line examples run against, and
+# it ships in the sdist. These keep the examples honest and the files alive: a
+# sample that nothing reads is a sample nobody notices going stale.
+
+RESOURCES = Path(__file__).resolve().parent.parent / "resources"
+
+
+@pytest.mark.parametrize(
+    ("name", "flags", "sequences"),
+    [
+        ("ciura.txt", (), 10),
+        ("dna.txt", (), 6),
+        # Space-separated phonemes, several of them multi-character, which is
+        # precisely what --words exists for.
+        ("phonemes.txt", ("--words",), 9),
+    ],
+)
+def test_the_sample_data_builds(
+    name: str,
+    flags: tuple[str, ...],
+    sequences: int,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert run(*flags, str(RESOURCES / name)) == 0
+    assert f"sequences    {sequences}" in capsys.readouterr().out
+
+
+def test_phonemes_are_tokens_not_characters(capsys: pytest.CaptureFixture[str]) -> None:
+    """Without ``--words`` the same file is read one character at a time."""
+    source = str(RESOURCES / "phonemes.txt")
+
+    run("--words", "-t", "json", source)
+    as_phonemes = json.loads(capsys.readouterr().out)["alphabet"]
+
+    run("-t", "json", source)
+    as_characters = json.loads(capsys.readouterr().out)["alphabet"]
+
+    # A multi-character segment survives as one token, and the space that
+    # separated it from its neighbours is not a token at all.
+    assert "kː" in as_phonemes
+    assert "kː" not in as_characters
+    assert " " not in as_phonemes
+    assert " " in as_characters

@@ -64,8 +64,13 @@ test = [
 ]
 dev = [
     "dafsa[docs,graph,test]",
-    "mypy>=1.11",
-    "ruff>=0.6",
+    # ruff and mypy are pinned exactly so that a developer, the pre-commit hook
+    # and CI all run the same versions. An unpinned range does not merely drift:
+    # ruff 0.15 and 0.16 disagree about whether PLR0917 exists, so the `noqa`
+    # that one of them requires the other reports as unused, and no single
+    # source file satisfies both.
+    "ruff==0.16.0",
+    "mypy==2.3.0",
     "pre-commit>=3.8",
     "build>=1.2",
     "twine>=5.1",
@@ -110,14 +115,10 @@ addopts = [
     "--cov=dafsa",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-report=xml",
     "--cov-fail-under=88",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "regression: marks regression tests reproducing a reported issue",
-    "property: marks property-based tests with hypothesis",
 ]
 filterwarnings = ["error"]
 
@@ -138,9 +139,6 @@ precision = 2
 [tool.coverage.html]
 directory = "htmlcov"
 
-[tool.coverage.xml]
-output = "coverage.xml"
-
 # ---------------------------------------------------------------------------
 # Typing
 # ---------------------------------------------------------------------------
@@ -149,7 +147,7 @@ output = "coverage.xml"
 # 3.10 is the floor the package supports and what ruff targets; there are no
 # stub-bearing third-party dependencies that would need a later parse target.
 python_version = "3.10"
-files = ["src", "tests", "benchmarks"]
+files = ["src", "tests", "benchmarks", "figures"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -238,6 +236,9 @@ convention = "google"
 "benchmarks/*" = [
     "S311",    # the benchmark corpus is pseudo-random, not cryptographic
 ]
+# Redraws the README's figure by shelling out to Graphviz, exactly as
+# ``write_figure`` does, with an argument list built here rather than by a caller.
+"figures/*" = ["S603", "S607"]
 # ``write_figure`` shells out to Graphviz. Resolving ``dot`` on PATH is the point --
 # an absolute path would break every installation that puts it somewhere else -- and
 # the argument list is built here, never from user input, with shell=False.

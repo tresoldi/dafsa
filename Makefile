@@ -56,7 +56,7 @@ test-cov: ## Run tests with coverage (HTML report in htmlcov/; the gate is in py
 
 test-fast: ## Run tests in parallel, skipping the slow performance guards
 	@echo "==> Running tests in parallel..."
-	pytest -n auto --ignore=tests/test_performance.py
+	pytest -n auto -m "not slow" --no-cov
 	@echo "OK: tests passed."
 
 bump-version: ## Bump version (TYPE=patch|minor|major) in pyproject.toml, commit, and tag
@@ -100,7 +100,7 @@ build-release: clean quality test build ## Full release build (clean -> quality 
 clean: ## Remove build artifacts, caches, and coverage reports
 	@echo "==> Cleaning build artifacts..."
 	rm -rf dist/ build/ src/*.egg-info site/
-	rm -rf .coverage htmlcov/ coverage.xml
+	rm -rf .coverage htmlcov/
 	rm -rf .pytest_cache .ruff_cache .mypy_cache .hypothesis
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	@echo "OK: cleaned."

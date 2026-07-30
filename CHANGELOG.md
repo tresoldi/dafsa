@@ -94,7 +94,7 @@ states are ever allocated. `benchmarks/run.py` reproduces the numbers, and
 - `d.nodes`, `d.lookup_nodes`, `dafsa.utils`.
 - `lookup()`, whose cumulative weight was not a well-defined quantity.
 - The vendored `daciuk/` archives — 896 KB of GPL-2 C source in an MIT repository. They remain in
-  the git history, and `docs/references.md` cites the algorithms.
+  the git history, and the User Guide's references section cites the algorithms.
 - `resources/template.dot`, superseded by the DOT emitter, which can set graph attributes.
 
 ---
