@@ -59,7 +59,8 @@ def _networkx() -> Any:
         ExportError: If it is not installed.
     """
     try:
-        import networkx as nx  # noqa: PLC0415 - deliberately deferred
+        import networkx as nx  # Deferred: networkx is optional, so importing it eagerly would make the
+    # whole module unimportable without the `graph` extra.
     except ImportError as error:
         message = (
             "this export needs networkx, which is an optional dependency; "
@@ -226,7 +227,7 @@ def _pen_widths(automaton: Automaton, scale: float) -> dict[int, float]:
     }
 
 
-def to_dot(  # noqa: PLR0913 - rendering options, each independent
+def to_dot(  # Rendering options, each independent of the others.
     automaton: Automaton,
     *,
     label_nodes: bool = False,

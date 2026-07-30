@@ -71,8 +71,8 @@ JOSS paper.
    (§6).
 7. **No required dependencies.** Every structure, algorithm and the DOT output are plain
    Python. networkx is needed by three graph exports and lives in an extra.
-8. **Typed throughout.** Full annotations, `py.typed` shipped, and mypy in CI over `src/`,
-   `tests/` and `benchmarks/`.
+8. **Typed throughout.** Full annotations, `py.typed` shipped, and mypy in CI over
+   `src/`, `tests/`, `benchmarks/` and `figures/`.
 
 ---
 
@@ -293,16 +293,24 @@ line-count change does not fail a pull request. The parts that matter are:
 - **Weight preservation.** For every inserted `(sequence, weight)`, `weight(seq)` equals
   the assigned weight and `total_weight()` equals the ⊕-fold of all of them. This is the
   test 1.0 could not have passed (§8).
-- **Regression tests** reproducing #10, #14, #15, #16, #17 and #18 from their reported
-  inputs, and a depth test that builds, freezes, exports and queries a 50,000-token
-  sequence with a guard asserting the recursion limit was not raised.
+- **Regression tests** reproducing every closed issue from its reported input. They live
+  beside the unit tests for the code they exercise rather than in one file, because they
+  need the same fixtures — but each is named `test_issue_NN_…`, so `pytest -k issue`
+  collects the whole set at once. That includes a depth test which builds, freezes,
+  exports and queries a 50,000-token sequence with a guard asserting the recursion limit
+  was not raised.
 - **Doctests** over `src/` and **executed documentation**: every `python` block in
-  `README.md` and the User Guide is run by `tests/test_docs_examples.py`, so an example
-  naming a renamed API fails the suite instead of shipping.
+  `README.md`, `MIGRATION.md` and the User Guide is run by `tests/test_docs_examples.py`,
+  so an example naming a renamed API fails the suite instead of shipping.
 - **A benchmark guard that is a ratio, not a stopwatch.** Quadrupling the input must not
   multiply the work by more than ten — linear growth is about four, and the quadratic
   scan 1.0 shipped would be about sixteen. Loose absolute budgets sit alongside to catch
   a catastrophe.
+
+Test files are named for the module they cover (`test_alphabet.py`, `test_automaton.py`,
+…) with three exceptions named for a concern that crosses modules: `test_efficiency.py`,
+`test_docs_examples.py` and `test_packaging.py`. Property-based tests are not gathered
+into one file either — they belong next to the behaviour they generalise.
 
 **Documentation is three pages**, and no more, because a page nobody maintains is worse
 than a page that does not exist:
@@ -310,7 +318,8 @@ than a page that does not exist:
 - **`docs/index.md`** — front-matter only; the landing page is `overrides/home.html`, a
   standalone template with its own typography.
 - **`docs/USER_GUIDE.md`** — the narrative: concepts, choosing a structure, worked
-  examples by domain, migration from 1.0, and the references.
+  examples by domain, and the references. Migration has its own root-level
+  `MIGRATION.md`, which the guide and the README both point at.
 - **`docs/reference.md`** — `::: dafsa`, generated from the docstrings by mkdocstrings,
   so there is no hand-maintained reference to drift.
 
@@ -325,6 +334,13 @@ library's own DOT emitter — so a claim in this document, and a picture in the 
 be re-checked rather than taken on trust. The three remaining files under `figures/` belong
 to `manuscript/`, and `resources/` is the sample data the User Guide's command-line
 examples run against, exercised by `tests/test_cli.py` so that it cannot quietly rot.
+
+Linting is **ruff** with a rule set matching the sibling `freqprob` project, formatting
+is `ruff format`, typing is **mypy**, and static security analysis is **bandit** — the
+same four checks `make quality` runs and CI enforces. `filterwarnings = ["error"]` is
+kept stricter than `freqprob`'s deliberately: a warning escaping a test is how several
+real defects surfaced during this rewrite, and swallowing `DeprecationWarning` would have
+hidden them.
 
 **`ruff` and `mypy` are pinned to exact versions** in the `dev` extra, and the pre-commit
 hooks use the same ones. This is not fussiness: ruff 0.15 and 0.16 disagree about whether

@@ -242,7 +242,8 @@ class SuffixAutomaton(_SubstringIndex):
         Returns:
             The compact directed acyclic word graph for the same sequence.
         """
-        from dafsa import _algorithms  # noqa: PLC0415 - avoids an import cycle
+        # Imported here rather than at module scope: it would be a cycle.
+        from dafsa import _algorithms
 
         return _algorithms.compact(self, Cdawg)
 

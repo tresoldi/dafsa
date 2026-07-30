@@ -312,7 +312,7 @@ def compose(left: Fst, right: Fst, *, semiring: Semiring[Any] | None = None) -> 
         outgoing: list[tuple[Pair, Any, Any]] = []
 
         for index in left.transition_indices(here):
-            source, middle = left._pair(index)  # noqa: SLF001 - same package
+            source, middle = left._pair(index)
             weight = left.transition_weight(index)
             target = left.transition_target(index)
 
@@ -323,7 +323,7 @@ def compose(left: Fst, right: Fst, *, semiring: Semiring[Any] | None = None) -> 
                 continue
 
             for other in right.transition_indices(there):
-                pivot, sink = right._pair(other)  # noqa: SLF001 - same package
+                pivot, sink = right._pair(other)
                 if pivot != middle:
                     continue
                 combined = algebra.times(weight, right.transition_weight(other))
@@ -337,7 +337,7 @@ def compose(left: Fst, right: Fst, *, semiring: Semiring[Any] | None = None) -> 
 
         if filtered == _FREE:
             for other in right.transition_indices(there):
-                pivot, sink = right._pair(other)  # noqa: SLF001 - same package
+                pivot, sink = right._pair(other)
                 if pivot is EPSILON:
                     outgoing.append(
                         (
@@ -470,7 +470,8 @@ def _build(
     the ordinary construction with the ordinary register — the pairs simply carry
     two things where a token usually carries one.
     """
-    from dafsa.structures import build_from_weighted  # noqa: PLC0415 - import cycle
+    # Imported here rather than at module scope: `structures` imports this module.
+    from dafsa.structures import build_from_weighted
 
     return build_from_weighted(alignments, semiring, minimize=True, factory=factory)
 

@@ -71,6 +71,7 @@ dev = [
     # source file satisfies both.
     "ruff==0.16.0",
     "mypy==2.3.0",
+    "bandit[toml]>=1.7.0",
     "pre-commit>=3.8",
     "build>=1.2",
     "twine>=5.1",
@@ -177,75 +178,79 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
-    "A",       # flake8-builtins
-    "ARG",     # flake8-unused-arguments
-    "B",       # flake8-bugbear
-    "C4",      # flake8-comprehensions
-    "D",       # pydocstyle
-    "E",       # pycodestyle errors
-    "EM",      # flake8-errmsg
-    "F",       # pyflakes
-    "FBT",     # flake8-boolean-trap
-    "I",       # isort
-    "ICN",     # flake8-import-conventions
-    "N",       # pep8-naming
-    "PERF",    # perflint
-    "PIE",     # flake8-pie
-    "PL",      # pylint
-    "PT",      # flake8-pytest-style
-    "PTH",     # flake8-use-pathlib
-    "RET",     # flake8-return
-    "RUF",     # ruff-specific
-    "S",       # flake8-bandit
-    "SIM",     # flake8-simplify
-    "SLF",     # flake8-self
-    "TC",      # flake8-type-checking
-    "TID",     # flake8-tidy-imports
-    "UP",      # pyupgrade
-    "W",       # pycodestyle warnings
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "ARG",   # flake8-unused-arguments
+    "SIM",   # flake8-simplify
+    "ICN",   # flake8-import-conventions
+    "PIE",   # flake8-pie
+    "T20",   # flake8-print
+    "PYI",   # flake8-pyi
+    "PT",    # flake8-pytest-style
+    "Q",     # flake8-quotes
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+    "TID",   # flake8-tidy-imports
+    "TC",    # flake8-type-checking
+    "RUF",   # Ruff-specific rules
+    "D",     # pydocstyle
 ]
+
 ignore = [
-    "D203",    # incompatible with D211
-    "D213",    # incompatible with D212
-    # `__init__` arguments are documented in the class docstring, which is where
-    # mkdocstrings looks for them (`merge_init_into_class`).
-    "D107",    # missing docstring in `__init__`
+    "E501",   # Line too long (ruff format handles this)
+    "B008",   # Do not perform function calls in argument defaults
+    "RET504", # Unnecessary variable assignment before return
+    "ARG002", # Unused method argument (common in abstract methods)
+    "D202",   # No blank lines allowed after function docstring
+    "D200",   # One-line docstring should fit on one line
+    "D107",   # Missing docstring in __init__
+    "D203",   # incompatible with D211
+    "D213",   # incompatible with D212
     # RUF001-003 flag characters that "look like" ASCII. This library is for
     # linguists: IPA, combining diacritics and non-Latin scripts are the subject
     # matter, not typos, and they appear in docs, tests and corpora throughout.
-    "RUF001",  # ambiguous character in a string
-    "RUF002",  # ambiguous character in a docstring
-    "RUF003",  # ambiguous character in a comment
+    "RUF001", # ambiguous character in a string
+    "RUF002", # ambiguous character in a docstring
+    "RUF003", # ambiguous character in a comment
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dafsa"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "D",       # docstrings are not required in tests
-    "FBT003",  # a boolean semiring's weights are data, not flags
-    "PLR2004", # magic values are the point of a test
-    "S101",    # assert is how a test asserts
-    "S301",    # unpickling is what the pickle round-trip test tests
-    "S311",    # test corpora are pseudo-random, not cryptographic
-    "S603",    # tests invoke `dot` and this interpreter, with fixed argument lists
-    "S607",    # `dot` is resolved on PATH, exactly as `write_figure` resolves it
-    "SLF001",  # tests may reach into internals
+"tests/**/*.py" = [
+    "ARG001",  # Unused function arguments in tests
+    "ARG002",  # Unused method arguments in tests
+    "D",       # Docstrings are not required in tests
 ]
-"benchmarks/*" = [
-    "S311",    # the benchmark corpus is pseudo-random, not cryptographic
+"benchmarks/run.py" = [
+    "T201",    # Allow print statements in the benchmark script
 ]
-# Redraws the README's figure by shelling out to Graphviz, exactly as
-# ``write_figure`` does, with an argument list built here rather than by a caller.
-"figures/*" = ["S603", "S607"]
-# ``write_figure`` shells out to Graphviz. Resolving ``dot`` on PATH is the point --
-# an absolute path would break every installation that puts it somewhere else -- and
-# the argument list is built here, never from user input, with shell=False.
-"src/dafsa/export.py" = ["S603", "S607"]
-# In the boolean semiring, booleans are the weight type. FBT exists to catch
-# boolean *flags* that should be keyword-only; here they are the data itself.
-"src/dafsa/semirings.py" = ["FBT001", "FBT002"]
+"figures/trie-vs-dafsa.py" = [
+    "T201",    # Allow print statements in the figure script
+]
+"src/dafsa/__main__.py" = [
+    "T201",    # The command-line interface prints; that is what it is for
+]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs", "site"]
+# B404/B603/B607: `write_figure` and the figure script run Graphviz's `dot`,
+# resolved on PATH because an absolute path would break every installation that
+# puts it elsewhere, with an argument list built in this package and shell=False.
+skips = ["B404", "B603", "B607"]

@@ -25,19 +25,21 @@ help: ## Show this help message
 	@echo "  make bump-version TYPE=minor  # Bump minor version"
 	@echo "  make build-release        # Full release build"
 
-quality: ## Run code quality checks (ruff format --check, ruff check, mypy)
+quality: ## Run code quality checks (ruff format --check, ruff check, mypy, bandit)
 	@echo "==> Checking code formatting..."
 	ruff format --check .
 	@echo "==> Running ruff linter..."
 	ruff check .
 	@echo "==> Running mypy type checker..."
 	mypy
+	@echo "==> Running bandit security scan..."
+	bandit -c pyproject.toml -r src/dafsa/
 	@echo "OK: all quality checks passed."
 
-security: ## Run the flake8-bandit security rules on their own
-	@echo "==> Running security lint..."
-	ruff check --select S .
-	@echo "OK: security lint passed."
+security: ## Run bandit static security analysis
+	@echo "==> Running bandit security scan..."
+	bandit -c pyproject.toml -r src/dafsa/
+	@echo "OK: security scan passed."
 
 format: ## Auto-format code with ruff
 	@echo "==> Formatting code with ruff..."
@@ -117,7 +119,7 @@ install-dev: ## Install with development dependencies (everything the Makefile n
 	@echo ""
 	@echo "Installed tools for the Makefile:"
 	@echo "  - pytest, pytest-cov, hypothesis (testing)"
-	@echo "  - ruff, mypy (code quality)"
+	@echo "  - ruff, mypy, bandit (code quality)"
 	@echo "  - build, twine (build/release)"
 	@echo "  - mkdocs-material, mkdocstrings (docs site)"
 

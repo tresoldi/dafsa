@@ -454,7 +454,7 @@ def test_importing_dafsa_does_not_import_networkx() -> None:
     assert result.stdout.strip() == "False"
 
 
-def _convert(automaton: Any, path: Path) -> None:  # noqa: ARG001 - uniform signature
+def _convert(automaton: Any, path: Path) -> None:
     to_networkx(automaton)
 
 

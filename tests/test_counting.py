@@ -288,7 +288,7 @@ def test_greedy_segmentation_against_a_lexicon() -> None:
 # -- match -----------------------------------------------------------------
 
 
-def test_match_returns_the_whole_path() -> None:
+def test_issue_8_match_returns_the_whole_path() -> None:
     """Issue #8: 1.0 returned only a final node and an uninterpretable weight."""
     automaton = Dafsa.from_sequences(["tap"])
     found = automaton.match("tap")

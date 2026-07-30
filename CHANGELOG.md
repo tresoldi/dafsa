@@ -4,8 +4,7 @@
 
 A rewrite. 2.0 shares no implementation with 1.0 and its API is a deliberate break; `dafsa==1.0`
 stays on PyPI, and the
-[migration guide](https://dafsa.tresoldi.org/USER_GUIDE/#migrating-from-10) maps the old surface
-onto the new one.
+[migration guide](MIGRATION.md) maps the old surface onto the new one.
 
 ### Why
 
@@ -56,10 +55,11 @@ paths is defined — and everything else followed from providing one.
   graph exports.
 - Documentation moved from Sphinx/ReadTheDocs to MkDocs Material, published to GitHub Pages: a
   landing page, one [User Guide](https://dafsa.tresoldi.org/USER_GUIDE/) covering concepts,
-  worked examples, migration and references, and an API reference generated from the docstrings.
-  Every `python` block in the README and the guide is executed by the test suite.
+  worked examples and references, and an API reference generated from the docstrings. Every
+  `python` block in the README, the guide and the migration guide is executed by the test suite.
 - `DESIGN.md` became [`ARCHITECTURE.md`](ARCHITECTURE.md), describing the delivered library rather
-  than a plan, with the 1.0 audit as history and the decisions taken recorded as a log.
+  than a plan, with the 1.0 audit as history and the decisions taken recorded as a log. The
+  migration table moved to [`MIGRATION.md`](MIGRATION.md).
 
 ### Fixed
 
@@ -86,7 +86,7 @@ Construction is roughly two orders of magnitude faster: the 0.5 changelog record
 sequences taking "under 8 minutes", where a comparable corpus of 96,393 now builds in under four
 seconds. Minimization also makes construction *cheaper* than building a trie, because fewer
 states are ever allocated. `benchmarks/run.py` reproduces the numbers, and
-`tests/test_performance.py` guards the scaling.
+`tests/test_efficiency.py` guards the scaling.
 
 ### Removed
 

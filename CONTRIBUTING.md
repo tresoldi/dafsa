@@ -20,16 +20,15 @@ pip install -e ".[dev]"
 Before opening a pull request, run what CI runs:
 
 ```bash
-ruff check .              # lint
-ruff format .             # format
-mypy                      # type-check
-pytest                    # tests
-mkdocs build --strict     # documentation
+make quality              # ruff format --check, ruff check, mypy, bandit
+make test                 # the full suite, including doctests and the docs examples
+make site                 # mkdocs build --strict
 ```
 
-All five must pass, and `make quality` runs the first three. `mypy` covers `src/`, `tests/`
-and `benchmarks/`, so new code needs type annotations. Docstrings are Google style, checked
-by ruff's pydocstyle rules and rendered by mkdocstrings.
+`make test-fast` runs the suite in parallel without the slow performance guards, and
+`make help` lists everything. `mypy` covers `src/`, `tests/`, `benchmarks/` and
+`figures/`, so new code needs type annotations. Docstrings are Google style, checked by
+ruff's pydocstyle rules and rendered by mkdocstrings.
 
 `master` is the 2.0 development line, and 2.0 is a deliberate break from the released 1.0.
 Before proposing a change, please read [`ARCHITECTURE.md`](ARCHITECTURE.md): it records the

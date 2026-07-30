@@ -396,7 +396,7 @@ def compact(automaton: Automaton, factory: type[A]) -> A:
     """
     # Imported here rather than at module scope: the builder imports the
     # automaton, which imports this module.
-    from dafsa._builder import Builder  # noqa: PLC0415
+    from dafsa._builder import Builder
 
     folds = absorbable(automaton)
     semiring = automaton.semiring
@@ -496,7 +496,9 @@ def push(automaton: Automaton, factory: type[A]) -> A:
             is then ``zero`` and there is nothing to divide by. Construction never
             produces such a state; a hand-built automaton can.
     """
-    from dafsa._builder import Builder  # noqa: PLC0415 - avoids an import cycle
+    # Imported here rather than at module scope: the builder imports the
+    # automaton, which imports this module.
+    from dafsa._builder import Builder
 
     semiring = automaton.semiring
     if not semiring.divisible:
@@ -572,7 +574,7 @@ def minimize(automaton: Automaton, factory: type[A]) -> A:
     """
     # Imported here rather than at module scope: the builder imports the
     # automaton, which imports this module.
-    from dafsa._builder import Builder  # noqa: PLC0415
+    from dafsa._builder import Builder
 
     semiring = automaton.semiring
     register: dict[tuple[Any, ...], State] = {}

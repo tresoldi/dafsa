@@ -3,6 +3,7 @@ include CHANGELOG.md
 include AUTHORS.md
 include CONTRIBUTING.md
 include ARCHITECTURE.md
+include MIGRATION.md
 include SECURITY.md
 include CITATION.cff
 include LICENSE

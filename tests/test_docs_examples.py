@@ -24,6 +24,7 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _DOC_FILES = [
     _REPO_ROOT / "README.md",
+    _REPO_ROOT / "MIGRATION.md",
     _REPO_ROOT / "docs" / "USER_GUIDE.md",
 ]
 
@@ -65,4 +66,4 @@ def test_documentation_has_runnable_examples() -> None:
 def test_doc_code_block_runs(doc_file: str, index: int, code: str) -> None:
     namespace: dict[str, object] = {"__name__": "__doc_example__"}
     compiled = compile(code, f"{doc_file}#block{index}", "exec")
-    exec(compiled, namespace)  # noqa: S102 - executing the docs is the point
+    exec(compiled, namespace)

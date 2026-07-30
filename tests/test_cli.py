@@ -105,14 +105,18 @@ def test_suffix_indexes_the_whole_input(tmp_path: Path, capsys: pytest.CaptureFi
 # -- tokenization, which is issue #17 --------------------------------------
 
 
-def test_characters_are_the_default(phrases: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_issue_17_characters_are_the_default(
+    phrases: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Without a flag, a line is a sequence of characters — spaces included."""
     run(str(phrases))
 
     assert "over 4 tokens" in capsys.readouterr().out
 
 
-def test_words_splits_on_whitespace(phrases: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_issue_17_words_splits_on_whitespace(
+    phrases: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Issue #17's expectation: a, ab, ac, b, c — and no space token."""
     run("--words", str(phrases))
     printed = capsys.readouterr().out
@@ -121,7 +125,7 @@ def test_words_splits_on_whitespace(phrases: Path, capsys: pytest.CaptureFixture
     assert "sequences    3" in printed
 
 
-def test_sep_splits_on_a_given_separator(
+def test_issue_17_sep_splits_on_a_given_separator(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source = tmp_path / "dashed.txt"

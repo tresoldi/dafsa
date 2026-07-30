@@ -6,6 +6,14 @@ Development
 
 * Tiago Tresoldi (dafsa@tresoldi.org)
 
+Funding
+-------
+
+The author has received funding from the European Research Council (ERC) under the
+European Union's Horizon 2020 research and innovation programme (grant agreement
+[ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en),
+[Computer-Assisted Language Comparison](https://digling.org/calc/)).
+
 Acknowledgements
 ----------------
 

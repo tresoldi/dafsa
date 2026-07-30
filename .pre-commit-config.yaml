@@ -34,3 +34,10 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+
+      - id: bandit
+        name: bandit
+        entry: bandit -c pyproject.toml -r src/dafsa/
+        language: system
+        types: [python]
+        pass_filenames: false

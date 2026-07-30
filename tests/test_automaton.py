@@ -176,21 +176,21 @@ def test_membership_agrees_with_a_reference_set(words: list[str], probe: str) ->
 DEEP = 50_000
 
 
-def test_deep_automaton_builds_and_freezes() -> None:
+def test_issue_10_deep_automaton_builds_and_freezes() -> None:
     automaton = build_trie(["a" * DEEP])
 
     assert automaton.num_states == DEEP + 1
     assert automaton.num_transitions == DEEP
 
 
-def test_deep_automaton_is_traversable() -> None:
+def test_issue_10_deep_automaton_is_traversable() -> None:
     automaton = build_trie(["a" * DEEP])
 
     assert automaton.accepts("a" * DEEP)
     assert not automaton.accepts("a" * (DEEP - 1))
 
 
-def test_deep_automaton_survives_deepcopy() -> None:
+def test_issue_10_deep_automaton_survives_deepcopy() -> None:
     """``copy.deepcopy`` on the 1.0 node graph was the direct cause of #10."""
     automaton = build_trie(["a" * DEEP])
     duplicate = copy.deepcopy(automaton)
@@ -199,7 +199,7 @@ def test_deep_automaton_survives_deepcopy() -> None:
     assert duplicate.accepts("a" * DEEP)
 
 
-def test_deep_automaton_survives_pickling() -> None:
+def test_issue_10_deep_automaton_survives_pickling() -> None:
     automaton = build_trie(["a" * DEEP])
     restored: Automaton = pickle.loads(pickle.dumps(automaton))
 

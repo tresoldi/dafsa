@@ -212,7 +212,7 @@ def test_mutually_incomparable_tokens(structure: type[Any]) -> None:
 
 
 @STRUCTURES
-def test_a_deep_sequence_builds_and_is_queried(structure: type[Any]) -> None:
+def test_issue_10_a_deep_sequence_builds_and_is_queried(structure: type[Any]) -> None:
     """Issue #10, through the public construction path."""
     depth = 20_000
     automaton = structure.from_sequences(["a" * depth])

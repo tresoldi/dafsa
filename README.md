@@ -1,34 +1,38 @@
 # dafsa
 
-[![PyPI](https://img.shields.io/pypi/v/dafsa.svg)](https://pypi.org/project/dafsa)
-[![CI](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml)
-[![Docs](https://github.com/tresoldi/dafsa/actions/workflows/docs.yml/badge.svg)](https://dafsa.tresoldi.org)
+[![CI](https://github.com/tresoldi/dafsa/actions/workflows/quality.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/quality.yml)
+[![Docs](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://dafsa.tresoldi.org/)
+[![PyPI version](https://badge.fury.io/py/dafsa.svg)](https://badge.fury.io/py/dafsa)
+[![Python versions](https://img.shields.io/pypi/pyversions/dafsa.svg)](https://pypi.org/project/dafsa/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)](https://doi.org/10.5281/zenodo.3668870)
-[![Joss](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725/status.svg)](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725)
+[![JOSS](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725/status.svg)](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725)
 
-Finite-state structures for sequence data: tries, DAFSAs, path-compacted DAFSAs, suffix
-automata, and acyclic weighted transducers — with weights that mean something, and small enough
-drawings to look at.
+**Store sets of sequences as finite-state automata.**
 
-Written for linguists and researchers working with morphology, phonology and sequence data, and
-readable enough to be used as a reference implementation of the algorithms it contains.
+`dafsa` turns a collection of sequences into a graph in which every shared beginning
+and every shared ending is stored once, then answers membership, counting, ranking,
+prefix and weight queries by walking it. Tokens are anything hashable — characters,
+phonemes, tags, integers, tuples — so it is as much at home in phonology or genomics as
+in a spell checker.
 
 ```python
 from dafsa import Dafsa
 
 lexicon = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
 
-assert "taps" in lexicon
-assert "ta" not in lexicon  # a prefix is not a member
-assert len(lexicon) == 4
-assert lexicon.num_states == 5  # where a trie would need 8
+lexicon.num_states  # 5   — a trie would need 8
+len(lexicon)  # 4   — counted, not enumerated
+lexicon.unrank(2)  # ('t', 'o', 'p')
 ```
 
 ![Trie vs. DAFSA](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/trie-vs-dafsa.png)
 
-A DAFSA eliminates the suffix and infix redundancy a [trie](https://en.wikipedia.org/wiki/Trie)
-leaves behind, storing a set of sequences in a directed acyclic graph with a single source. Being
-acyclic, it accepts all and only the sequences it was built from.
+That third line is the point beyond compression: because a minimal acyclic automaton
+knows how many sequences leave each state, it is also a **minimal perfect hash over its
+own language**. Every accepted sequence has a position, every position has a sequence,
+and reaching the millionth costs no more than reaching the first.
 
 ## Install
 
@@ -36,145 +40,85 @@ acyclic, it accepts all and only the sequences it was built from.
 pip install dafsa
 ```
 
-Python 3.10 or later. Writing image files also needs [Graphviz](https://graphviz.org/) on the
-path; every other export, including the DOT source itself, is pure Python.
+No required dependencies. `pip install "dafsa[graph]"` adds networkx for the three graph
+exports; writing image files additionally needs [Graphviz](https://graphviz.org/) on the
+path.
 
-## What it does
+## The interface
 
-**A family of structures**, sharing one frozen core:
-
-| | |
-|---|---|
-| `Trie` | prefix tree — keeps every prefix distinct |
-| `Dafsa` | the minimal automaton for a set of sequences |
-| `CompactDafsa` | chains of forced states collapsed into compound transitions |
-| `SuffixAutomaton` | index every substring of a single sequence |
-| `Cdawg` | the compacted form of that index |
-| `Fst` | relate one sequence to another |
-
-**Tokens are whatever you say they are** — characters, phonemes, words, tags, feature bundles,
-even types that cannot be compared with each other:
+Six structures share one frozen core, so they all answer the same queries.
 
 ```python
-from dafsa import Dafsa, tokenize
-
-phrases = Dafsa.from_sequences([tokenize("the cat sat"), tokenize("the dog sat")])
-assert ("the", "cat", "sat") in phrases
-```
-
-**Weights belong to a semiring**, so combining them along a path and across paths is defined:
-
-```python
-from dafsa import Dafsa
+from dafsa import Dafsa, SuffixAutomaton, Fst
 from dafsa.semirings import COUNTING
 
 counted = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
-assert counted.weight("tip") == 2
-assert counted.total_weight() == 3  # insertions, over 2 distinct sequences
+counted.weight("tip")  # 2 — what it was inserted with, not a path sum
+
+index = SuffixAutomaton.from_sequence("banana")
+index.contains_substring("nan")  # True
+
+translate = Fst.from_pairs([("cat", "chat")])
+translate.apply("cat")  # [('c', 'h', 'a', 't')]
 ```
 
-**The automaton is an index, not only a set.** Suffix counts make it a minimal perfect hash over
-its own language:
+Weights belong to an explicit **semiring** — boolean, counting, tropical, log,
+probability and Viterbi are built in, and any type satisfying the protocol works.
+Because minimization is weight-aware, the weight of a path is the weight the sequence
+was inserted with. There is also a command line: `dafsa --help`.
 
-```python
-from dafsa import Dafsa
+## Choosing a structure
 
-lexicon = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
+| Structure | Use it for | Note |
+|-----------|------------|------|
+| `Dafsa` | storing and querying a set of sequences | the usual choice |
+| `Trie` | when the structure must stay a tree | states grow with total input length |
+| `CompactDafsa` | drawing, exporting, or shrinking further | via `.compact()` |
+| `SuffixAutomaton` | what occurs *inside* one long sequence | online, linear time and space |
+| `Cdawg` | the same, with forced chains collapsed | via `.compact()` |
+| `Fst` | mapping sequences to sequences | may be ambiguous, so `apply` returns a list |
 
-assert lexicon.rank("top") == 2
-assert lexicon.unrank(2) == ("t", "o", "p")
-assert list(lexicon.starts_with("ta")) == [("t", "a", "p"), ("t", "a", "p", "s")]
-```
+## Why dafsa
 
-**Drawings you can read**, with compaction and correct fonts:
-
-```python
-# docs-test: skip — writing a figure needs Graphviz on the path
-from dafsa import export
-
-export.write_figure(lexicon.compact(), "words.png", scale_edges=True)
-```
-
-## From the command line
-
-```bash
-dafsa words.txt                    # a summary
-dafsa --words phrases.txt          # split lines on whitespace
-dafsa -s counting words.txt        # with frequencies
-dafsa --compact -t svg -o words.svg words.txt
-```
+- **Weights that mean what they say.** Minimization is weight-aware, so `weight(seq)`
+  returns what `seq` was inserted with. 1.0's `lookup()` returned the sum of shared edge
+  counters along the path — `7` for a sequence inserted once.
+- **An index, not only a set.** Constant-time `len()`, `rank`/`unrank`, ordered
+  iteration, prefix queries, `total_weight` and `k_best`.
+- **Flat arrays, no object graph.** Compressed sparse row adjacency over `array.array`,
+  so 96,393 sequences build in under four seconds where 1.0's changelog records "under 8
+  minutes" for a comparable corpus — and `RecursionError` is structurally unreachable.
+- **Typed and tested.** Full type hints (`py.typed`), strict linting and type-checking,
+  100% branch coverage, and property-based tests checking the automata against
+  independent references rather than against themselves.
 
 ## Documentation
 
-- [User Guide](https://dafsa.tresoldi.org/USER_GUIDE/) — the library in one page,
-  including migration from 1.0 and the references
-- [API Reference](https://dafsa.tresoldi.org/reference/)
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the library is put together, and why
+- **[Documentation site](https://dafsa.tresoldi.org/)** — user guide and full API
+  reference.
+- **[User Guide](docs/USER_GUIDE.md)** — concepts, choosing a structure, and worked
+  examples across lexicography, phonology, historical linguistics and genomics.
+- **[API Reference](https://dafsa.tresoldi.org/reference/)** — every public class and
+  function, generated from the source.
+- **[MIGRATION.md](MIGRATION.md)** — 2.0 is a deliberate break from 1.0; this maps the
+  old API onto the new one.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — how the library is put together, and why.
 
-## Upgrading from 1.0
+## Citation
 
-2.0 is a deliberate break; 1.0 code will not run unchanged, and `dafsa==1.0` stays on PyPI. The
-[migration section of the User Guide](https://dafsa.tresoldi.org/USER_GUIDE/#migrating-from-10)
-maps the old API onto the new one.
-
-The reason for breaking is worth stating plainly. 1.0 collected weights by re-walking sequences
-over the already-minimized graph, so an edge counter held the total frequency of *every* sequence
-crossing it, and `lookup()` summed those along the queried path:
-
-```python
-# docs-test: skip — this is 1.0, kept here to show what it did
->>> DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")[1]
-7
-```
-
-`"tip"` was inserted once. That is not a patchable bug — it is the absence of an algebra, and
-fixing it is what the rest of 2.0 was built around.
-
-2.0 also closes the open issues 1.0 accumulated: the `condense()` crashes ([#18], [#14]), the
-undirected graph export and its lost parallel-edge labels ([#16]), missing glyphs in figures
-([#15]), the recursion limit ([#10]), gaps in state ids ([#7]), `lookup()` not returning a path
-([#8]), and the `delimiter` that never split anything ([#17]).
-
-Construction is also about two orders of magnitude faster: the 0.5 changelog records 99,171
-sequences taking "under 8 minutes", where a comparable corpus of 96,393 now builds in under four
-seconds.
-
-[#7]: https://github.com/tresoldi/dafsa/issues/7
-[#8]: https://github.com/tresoldi/dafsa/issues/8
-[#10]: https://github.com/tresoldi/dafsa/issues/10
-[#14]: https://github.com/tresoldi/dafsa/issues/14
-[#15]: https://github.com/tresoldi/dafsa/issues/15
-[#16]: https://github.com/tresoldi/dafsa/issues/16
-[#17]: https://github.com/tresoldi/dafsa/issues/17
-[#18]: https://github.com/tresoldi/dafsa/issues/18
-
-## Contributing
-
-Contributing guidelines, including a code of conduct, are in
-[CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and questions are welcome as GitHub issues.
-
-## Author and citation
-
-The library is developed by Tiago Tresoldi (dafsa@tresoldi.org).
-
-The author has received funding from the European Research Council (ERC) under the European
-Union's Horizon 2020 research and innovation programme (grant agreement
-[ERC Grant #715618](https://cordis.europa.eu/project/rcn/206320/factsheet/en),
-[Computer-Assisted Language Comparison](https://digling.org/calc/)).
-
-If you use `dafsa`, please cite it as:
-
-> Tresoldi, Tiago (2020). *DAFSA, a library for computing Deterministic Acyclic Finite State
-> Automata.* Version 1.0. Jena. DOI: [10.5281/zenodo.3668870](https://doi.org/10.5281/zenodo.3668870)
+If you use `dafsa` in academic research, please cite:
 
 ```bibtex
-@misc{Tresoldi2020dafsa,
-  author = {Tresoldi, Tiago},
-  title = {DAFSA, a library for computing Deterministic Acyclic Finite State Automata},
-  howpublished = {\url{https://github.com/tresoldi/dafsa}},
-  address = {Jena},
-  doi = {10.5281/zenodo.3668870}
+@software{tresoldi_dafsa,
+  author  = {Tresoldi, Tiago},
+  title   = {DAFSA: Finite-state structures for sequence data},
+  url     = {https://github.com/tresoldi/dafsa},
+  doi     = {10.5281/zenodo.3668870},
+  version = {2.0.0},
+  year    = {2026}
 }
 ```
 
-The full changelog is in [CHANGELOG.md](CHANGELOG.md).
+## License
+
+MIT — see [LICENSE](LICENSE).
