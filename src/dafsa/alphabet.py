@@ -24,6 +24,48 @@ if TYPE_CHECKING:
     from dafsa._types import Symbol, Token
 
 
+def tokenize(text: str, sep: str | None = None) -> tuple[str, ...]:
+    """Split ``text`` into tokens.
+
+    The library's input contract is a *sequence of tokens*, and a ``str`` is a
+    sequence of single characters. Multi-character tokens therefore need an
+    explicit split, and this is it.
+
+    That explicitness is the fix for issue #17. 1.0 took a ``delimiter``
+    parameter that was never used to split anything — it only joined labels when
+    compacting — so ``DAFSA(["a b c"], delimiter=" ")`` silently treated the
+    spaces as tokens. The command-line tool split on whitespace before calling
+    the library, which is why the CLI appeared to work while the API did not.
+
+    Parameters
+    ----------
+    text
+        The text to split.
+    sep
+        The separator. ``None`` splits on runs of whitespace and discards empty
+        fields, matching :meth:`str.split`.
+
+    Returns
+    -------
+    tuple of str
+        The tokens.
+
+    Examples
+    --------
+    >>> tokenize("a b c")
+    ('a', 'b', 'c')
+    >>> tokenize("a-b-c", "-")
+    ('a', 'b', 'c')
+
+    Without it, a string is characters — which is a reasonable default, and now a
+    visible choice rather than a surprise:
+
+    >>> tuple("a b")
+    ('a', ' ', 'b')
+    """
+    return tuple(text.split(sep))
+
+
 def _canonical_order(tokens: Iterable[Token]) -> list[Token]:
     """Order tokens for symbol assignment.
 
@@ -263,4 +305,4 @@ class Alphabet:
         return f"Alphabet({self._tokens!r})"
 
 
-__all__ = ["Alphabet"]
+__all__ = ["Alphabet", "tokenize"]

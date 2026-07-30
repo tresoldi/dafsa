@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–2 implemented (see §12)
+Status: accepted; milestones 0–3 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -162,15 +162,21 @@ s_first       array[int32], length num_states + 1     # transitions of q are [s_
 t_symbol      array[int32], length num_transitions    # sorted by (source, symbol)
 t_target      array[int32], length num_transitions
 s_flags       array[uint8]                            # bit 0: final
-t_weight      list[W] | None                          # semiring elements, weighted case only   [M2]
-s_final       list[W] | None                          # final weights, weighted case only       [M2]
+t_weight      list[W] | None                          # semiring elements, weighted case only   [M3]
+s_final       list[W] | None                          # final weights, weighted case only       [M3]
 s_count       array[int64]                            # accepted suffixes from q (§6.3)         [M4]
 ```
 
-The fields marked `[M2]` and `[M4]` are added by the milestone noted, not carried as `None`
+The fields marked `[M3]` and `[M4]` are added by the milestone noted, not carried as `None`
 placeholders beforehand: a weight field means nothing until the semiring that interprets it
 exists, and a field whose only possible value is `None` is worse documentation than its
 absence. The first four fields plus `s_flags` are what milestone 1 built.
+
+The weight fields stay `None` even *after* milestone 3 whenever every weight equals the
+semiring's `one`, which is the case for any plain acceptor and for a counting automaton whose
+every count is 1. `weight()` then returns `one` for an accepted sequence without consulting an
+array. A weightless structure therefore pays nothing for the weight machinery, which matters
+because memory frugality is much of the argument for this representation.
 
 Consequences, each of which answers something in §2:
 
@@ -290,8 +296,16 @@ Daciuk's incremental construction from sorted symbol-id tuples, with a **registe
 `dict[StateKey, int]`, where `StateKey` is `(is_final, final_weight_key, symbol₀, target₀,
 weight₀_key, …)`. Children are registered before their parents, so the key is well defined and
 equivalence testing is a single dict lookup on a hash of the state's out-degree — replacing
-1.0's linear scan and its restart loop. Expected effect on the 0.5 changelog benchmark: the
-99k-sequence corpus goes from minutes to roughly a second.
+1.0's linear scan and its restart loop.
+
+One departure from the classic formulation, which is what lets the builder stay append-only.
+The textbook version wires a parent to its child immediately and *rewires* that edge when the
+child turns out to be equivalent to a registered state. Here the parent's edge is instead
+deferred until the child is popped from the unchecked chain — at which point the child's own
+edges are all present and its canonical representative is known — so each edge is added exactly
+once and nothing is ever rewired. The builder therefore needs no operation for mutating an
+existing transition, and a state that lost to a canonical representative is simply never
+referenced: `freeze()` prunes it as unreachable, using machinery that already had to exist.
 
 ### 6.3 Counting, ranking, and enumeration
 
@@ -549,7 +563,7 @@ an unverified layer.
 | 0 | Infrastructure | `pyproject.toml` (3.10+, ruff, mypy, `py.typed`), CI refresh, MkDocs skeleton, remove `daciuk/` and the Sphinx/RTD files | **done** |
 | 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` | **done** |
 | 2 | Semiring layer | protocol, six built-ins, law tests | **done** |
-| 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | |
+| 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | **done** |
 | 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` | |
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | |
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
@@ -567,11 +581,31 @@ membership agrees with a plain Python `set`. Issue #10's depth tests build a 50,
 automaton and then freeze, traverse, `deepcopy`, and `pickle` it, with a guard test asserting
 the recursion limit has *not* been raised so the other four cannot pass vacuously.
 
-For scale, a 96,393-sequence corpus builds and freezes in ~4s at ~425,000 lookups/s. That
-figure is a **trie** built by a deliberately naive register-free helper, so it measures
-`freeze()` at scale and says nothing yet about minimization — the number that answers 1.0's
-eight-minute benchmark (§2.2) belongs to milestone 3, and should be recorded here when it
-lands.
+Milestone 3 answers the benchmark §2.2 quotes. On a 96,393-sequence corpus (639,088 tokens):
+
+| | time | states | transitions |
+|---|---|---|---|
+| `Trie` | 6.7s | 360,103 | 360,102 |
+| `Dafsa` | 3.8s | 109,160 | 194,703 |
+
+Against 1.0's "under 8 minutes" for 99,171 sequences, that is roughly two orders of magnitude,
+and the register is where nearly all of it comes from. Note that the DAFSA builds *faster* than
+the trie: minimization means fewer states are ever allocated, so sharing pays for itself during
+construction rather than costing extra. Lookups run at ~290,000/s. Minimality at that scale was
+confirmed by checking that all 109,160 state signatures are distinct, computed from the frozen
+arrays with no involvement from the register that built them.
+
+Two implementation decisions in milestone 3 worth recording:
+
+- **A sequence's weight sits on its final state; every transition weight is `one`.** There is
+  no canonical way to distribute a weight along a path — deciding that is exactly what weight
+  pushing does (milestone 9) — so construction does not invent one. `weight(seq)` is then the
+  product of a chain of `one`s and the final weight, which is the weight that was inserted.
+- **`Automaton` is not generic over the weight type.** Weights are typed `Any`. Making the
+  class `Automaton[W]` would thread a type parameter through every structure, the builder, and
+  `freeze()`'s overloads for a gain confined to callers who mix semirings in one program. It is
+  the clearest remaining typing wart and worth revisiting once the transducers exist, since
+  composition is where mixing actually arises.
 
 ---
 

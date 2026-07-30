@@ -8,6 +8,7 @@ from dafsa._builder import Builder
 from dafsa.alphabet import Alphabet
 from dafsa.automaton import ROOT
 from dafsa.exceptions import AcyclicityError, DeterminismError
+from dafsa.semirings import COUNTING
 from helpers import assert_csr_invariants, build_trie, csr
 
 
@@ -214,6 +215,56 @@ def test_builder_repr_is_informative() -> None:
     builder.add_transition(ROOT, 0, state)
 
     assert repr(builder) == "<Builder states=2 transitions=1>"
+
+
+def test_transition_weights_are_stored_and_surfaced() -> None:
+    """The dictionary structures always weight transitions with ``one``.
+
+    Non-unit transition weights come from the builder, which is the path weight
+    pushing and transducers will use, so the storage has to work before they do.
+    """
+    alphabet = Alphabet("ab")
+    builder = Builder(alphabet, COUNTING)
+    middle = builder.new_state()
+    end = builder.new_state()
+    builder.add_transition(ROOT, alphabet.id("a"), middle, 3)
+    builder.add_transition(middle, alphabet.id("b"), end, 5)
+    builder.set_final(end, weight=7)
+
+    automaton = builder.freeze()
+
+    assert automaton.is_weighted
+    assert [t.weight for t in automaton.all_transitions()] == [3, 5]
+    assert automaton.weight("ab") == 3 * 5 * 7
+
+
+def test_weights_equal_to_one_are_not_stored() -> None:
+    alphabet = Alphabet("ab")
+    builder = Builder(alphabet, COUNTING)
+    end = builder.new_state()
+    builder.add_transition(ROOT, alphabet.id("a"), end, COUNTING.one)
+    builder.set_final(end, weight=COUNTING.one)
+
+    automaton = builder.freeze()
+
+    assert not automaton.is_weighted
+    assert automaton.weight("a") == 1
+
+
+def test_setting_a_state_non_final_clears_its_weight() -> None:
+    builder = Builder(Alphabet("ab"), COUNTING)
+    builder.set_final(ROOT, weight=9)
+    assert builder.final_weight(ROOT) == 9
+
+    builder.set_final(ROOT, final=False)
+    assert builder.final_weight(ROOT) == COUNTING.zero
+
+
+def test_builder_carries_its_semiring() -> None:
+    builder = Builder(Alphabet("ab"), COUNTING)
+
+    assert builder.semiring is COUNTING
+    assert builder.freeze().semiring is COUNTING
 
 
 def test_csr_invariants_hold_for_a_trie() -> None:

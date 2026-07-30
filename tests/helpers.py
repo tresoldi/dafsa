@@ -16,7 +16,8 @@ from dafsa.alphabet import Alphabet
 from dafsa.automaton import ROOT
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Hashable, Iterable, Sequence
+    from typing import Any
 
     from dafsa._types import State, Symbol, Token
     from dafsa.automaton import Automaton
@@ -78,6 +79,109 @@ def assert_csr_invariants(automaton: Automaton) -> None:
 
     assert all(0 <= item < automaton.num_states for item in target)
     assert all(0 <= item < len(automaton.alphabet) for item in symbol)
+
+
+def topological_order(automaton: Automaton) -> list[State]:
+    """Return the states with every state before all of its successors.
+
+    Kahn's algorithm. Note that the canonical breadth-first numbering ``freeze()``
+    assigns is *not* topological — a state can be discovered early via one
+    predecessor while another predecessor is discovered later — so this cannot be
+    replaced by ``range(num_states)``.
+    """
+    indegree = dict.fromkeys(automaton.states(), 0)
+    for transition in automaton.all_transitions():
+        indegree[transition.target] += 1
+
+    queue = [state for state, count in indegree.items() if count == 0]
+    order: list[State] = []
+    while queue:
+        state = queue.pop()
+        order.append(state)
+        for transition in automaton.transitions(state):
+            indegree[transition.target] -= 1
+            if indegree[transition.target] == 0:
+                queue.append(transition.target)
+
+    assert len(order) == automaton.num_states, "graph is not acyclic"
+
+    return order
+
+
+def weighted_right_languages(
+    automaton: Automaton,
+) -> dict[State, frozenset[tuple[tuple[Token, ...], Hashable]]]:
+    """Return each state's weighted right language, computed by brute force.
+
+    A state's weighted right language is the map from every suffix it accepts to
+    the weight it accepts that suffix with. It is the definition of what a state
+    *is*, behaviourally: two states are equivalent precisely when theirs agree.
+
+    This shares no logic with the construction's register — it works from the
+    frozen arrays, bottom up — which is what makes it usable as an independent
+    check of minimality rather than a restatement of the builder's own belief.
+    """
+    semiring = automaton.semiring
+    tables: dict[State, dict[tuple[Token, ...], Any]] = {}
+
+    for state in reversed(topological_order(automaton)):
+        table: dict[tuple[Token, ...], Any] = {}
+        if automaton.is_final(state):
+            table[()] = automaton.final_weight(state)
+        for transition in automaton.transitions(state):
+            token = automaton.alphabet.token(transition.symbol)
+            for suffix, weight in tables[transition.target].items():
+                table[(token, *suffix)] = semiring.times(transition.weight, weight)
+        tables[state] = table
+
+    return {
+        state: frozenset(
+            (suffix, semiring.key(weight)) for suffix, weight in table.items()
+        )
+        for state, table in tables.items()
+    }
+
+
+def assert_minimal(automaton: Automaton) -> None:
+    """Assert no two states are behaviourally equivalent, and none is dead.
+
+    Checked against weighted right languages rather than against state
+    signatures, so a bug shared between the builder's register and a
+    signature-based checker cannot hide here.
+    """
+    languages = weighted_right_languages(automaton)
+
+    # Every state must be able to reach acceptance, or it is dead weight — except
+    # the root, which exists whether or not the language is empty. The minimal
+    # automaton for the empty language is exactly one non-accepting state.
+    for state, language in languages.items():
+        if state == ROOT:
+            continue
+        assert language, f"state {state} accepts nothing and should not exist"
+
+    seen: dict[frozenset[tuple[tuple[Token, ...], Hashable]], State] = {}
+    for state, language in languages.items():
+        duplicate = seen.get(language)
+        assert duplicate is None, (
+            f"states {duplicate} and {state} have the same weighted right "
+            f"language, so the automaton is not minimal"
+        )
+        seen[language] = state
+
+
+def assert_deterministic_and_dense(automaton: Automaton) -> None:
+    """Assert determinism, canonical numbering, and full reachability."""
+    assert_csr_invariants(automaton)
+
+    reached = {ROOT}
+    frontier = [ROOT]
+    while frontier:
+        for transition in automaton.transitions(frontier.pop()):
+            if transition.target not in reached:
+                reached.add(transition.target)
+                frontier.append(transition.target)
+
+    assert reached == set(automaton.states()), "unreachable states survived freeze()"
 
 
 def accepted_sequences(automaton: Automaton) -> set[tuple[Token, ...]]:

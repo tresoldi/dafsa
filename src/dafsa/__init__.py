@@ -4,18 +4,32 @@ This is the 2.0 development line, a clean break from 1.0. The design, the audit
 of 1.0 that motivated it, and the milestone plan are in ``DESIGN.md`` at the root
 of the repository.
 
-Currently available is the frozen core the structures are built on: an
-:class:`~dafsa.alphabet.Alphabet` mapping tokens to dense symbols, and an
-:class:`~dafsa.automaton.Automaton` holding deterministic acyclic transitions as
-flat arrays. The user-facing structures (``Trie``, ``Dafsa``, and the rest) land
-in later milestones.
+Available now: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
+:class:`~dafsa.automaton.Automaton`), the semiring layer
+(:mod:`dafsa.semirings`), and the dictionary structures :class:`Trie` and
+:class:`Dafsa`. The compacted, substring and transducer structures land in later
+milestones.
+
+Examples
+--------
+>>> import dafsa
+>>> automaton = dafsa.Dafsa.from_sequences(["tap", "taps", "top", "tops"])
+>>> "taps" in automaton
+True
+
+>>> counted = dafsa.Dafsa.from_sequences(
+...     ["tip", "tip", "tap"], semiring=dafsa.semirings.COUNTING
+... )
+>>> counted.weight("tip")
+2
 """
 
 from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
 
-from dafsa.alphabet import Alphabet
+from dafsa import semirings
+from dafsa.alphabet import Alphabet, tokenize
 from dafsa.automaton import ROOT, Automaton, Transition
 from dafsa.exceptions import (
     AcyclicityError,
@@ -23,6 +37,8 @@ from dafsa.exceptions import (
     DeterminismError,
     UnknownTokenError,
 )
+from dafsa.semirings import Semiring
+from dafsa.structures import Dafsa, Trie
 
 try:
     __version__ = version("dafsa")
@@ -37,9 +53,14 @@ __all__ = [
     "AcyclicityError",
     "Alphabet",
     "Automaton",
+    "Dafsa",
     "DafsaError",
     "DeterminismError",
+    "Semiring",
     "Transition",
+    "Trie",
     "UnknownTokenError",
     "__version__",
+    "semirings",
+    "tokenize",
 ]

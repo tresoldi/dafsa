@@ -25,16 +25,21 @@ of the automaton being built.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from dafsa.automaton import ROOT, Automaton, Transition, flag_array, index_array
 from dafsa.exceptions import AcyclicityError, DeterminismError
+from dafsa.semirings import BOOLEAN
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from dafsa._types import State, Symbol
     from dafsa.alphabet import Alphabet
+    from dafsa.semirings import Semiring
+
+#: The concrete automaton class a builder freezes into.
+A = TypeVar("A", bound=Automaton)
 
 _FINAL = 1
 
@@ -54,6 +59,9 @@ class Builder:
     ----------
     alphabet
         The alphabet whose symbols the transitions will use.
+    semiring
+        The semiring weights belong to. Defaults to
+        :data:`~dafsa.semirings.BOOLEAN`, which is the unweighted case.
 
     Examples
     --------
@@ -68,18 +76,34 @@ class Builder:
     (True, False)
     """
 
-    __slots__ = ("_alphabet", "_final", "_symbols", "_targets")
+    __slots__ = (
+        "_alphabet",
+        "_final",
+        "_final_weights",
+        "_semiring",
+        "_symbols",
+        "_targets",
+        "_weights",
+    )
 
-    def __init__(self, alphabet: Alphabet) -> None:
+    def __init__(self, alphabet: Alphabet, semiring: Semiring[Any] = BOOLEAN) -> None:
         self._alphabet = alphabet
+        self._semiring = semiring
         self._symbols: list[list[Symbol]] = [[]]
         self._targets: list[list[State]] = [[]]
+        self._weights: list[list[Any]] = [[]]
         self._final: list[bool] = [False]
+        self._final_weights: list[Any] = [semiring.zero]
 
     @property
     def alphabet(self) -> Alphabet:
         """The alphabet this builder's symbols refer to."""
         return self._alphabet
+
+    @property
+    def semiring(self) -> Semiring[Any]:
+        """The semiring this builder's weights belong to."""
+        return self._semiring
 
     @property
     def num_states(self) -> int:
@@ -97,11 +121,19 @@ class Builder:
         """
         self._symbols.append([])
         self._targets.append([])
+        self._weights.append([])
         self._final.append(False)
+        self._final_weights.append(self._semiring.zero)
 
         return len(self._final) - 1
 
-    def add_transition(self, source: State, symbol: Symbol, target: State) -> None:
+    def add_transition(
+        self,
+        source: State,
+        symbol: Symbol,
+        target: State,
+        weight: Any = None,
+    ) -> None:
         """Add a transition.
 
         Parameters
@@ -112,6 +144,10 @@ class Builder:
             The symbol consumed.
         target
             The state the transition enters.
+        weight
+            The transition's weight. ``None`` means the semiring's ``one``, which
+            is the identity for combining along a path and so contributes
+            nothing.
 
         Raises
         ------
@@ -140,8 +176,15 @@ class Builder:
 
         symbols.append(symbol)
         self._targets[source].append(target)
+        self._weights[source].append(self._semiring.one if weight is None else weight)
 
-    def set_final(self, state: State, *, final: bool = True) -> None:
+    def set_final(
+        self,
+        state: State,
+        *,
+        final: bool = True,
+        weight: Any = None,
+    ) -> None:
         """Mark ``state`` as accepting, or not.
 
         Parameters
@@ -151,6 +194,9 @@ class Builder:
         final
             Whether the state accepts. Keyword-only, so call sites read as
             ``set_final(q)`` or ``set_final(q, final=False)``.
+        weight
+            The state's final weight. ``None`` means the semiring's ``one``.
+            Ignored when ``final`` is false, which resets the weight to ``zero``.
 
         Raises
         ------
@@ -159,6 +205,32 @@ class Builder:
         """
         self._check_state(state)
         self._final[state] = final
+        if final:
+            self._final_weights[state] = (
+                self._semiring.one if weight is None else weight
+            )
+        else:
+            self._final_weights[state] = self._semiring.zero
+
+    def final_weight(self, state: State) -> Any:
+        """Return ``state``'s final weight.
+
+        Parameters
+        ----------
+        state
+            The state to inspect.
+
+        Returns
+        -------
+        Any
+            The final weight, or the semiring's ``zero`` if the state does not
+            accept. Returning ``zero`` rather than raising is what lets a caller
+            accumulate with ``plus`` without a special case for the first time a
+            sequence reaches a state.
+        """
+        self._check_state(state)
+
+        return self._final_weights[state]
 
     def is_final(self, state: State) -> bool:
         """Return whether ``state`` is currently marked accepting.
@@ -191,11 +263,24 @@ class Builder:
             Each outgoing transition.
         """
         self._check_state(state)
-        for symbol, target in self._ordered(state):
-            yield Transition(state, symbol, target)
+        for symbol, target, weight in self._ordered(state):
+            yield Transition(state, symbol, target, weight)
 
-    def freeze(self) -> Automaton:
-        """Validate, renumber, and flatten into an :class:`Automaton`.
+    @overload
+    def freeze(self) -> Automaton: ...
+
+    @overload
+    def freeze(self, factory: type[A]) -> A: ...
+
+    def freeze(self, factory: type[Automaton] = Automaton) -> Automaton:
+        """Validate, renumber, and flatten into a frozen automaton.
+
+        Parameters
+        ----------
+        factory
+            The class to instantiate. Defaults to :class:`~dafsa.automaton.Automaton`;
+            the structures pass themselves so that a frozen ``Dafsa`` is a
+            ``Dafsa`` and not merely an automaton that happens to be minimal.
 
         Returns
         -------
@@ -220,16 +305,59 @@ class Builder:
         symbol = index_array()
         target = index_array()
         flags = flag_array()
+        transition_weights: list[Any] = []
+        final_weights: list[Any] = []
 
         first.append(0)
         for old in order:
-            for out_symbol, out_target in outgoing[old]:
+            for out_symbol, out_target, out_weight in outgoing[old]:
                 symbol.append(out_symbol)
                 target.append(renumbered[out_target])
+                transition_weights.append(out_weight)
             first.append(len(symbol))
             flags.append(_FINAL if self._final[old] else 0)
+            final_weights.append(self._final_weights[old])
 
-        return Automaton(self._alphabet, first, symbol, target, flags)
+        return factory(
+            self._alphabet,
+            first,
+            symbol,
+            target,
+            flags,
+            self._semiring,
+            self._trivial_or(transition_weights),
+            self._trivial_or(final_weights, skip=self._semiring.zero),
+        )
+
+    def _trivial_or(self, weights: list[Any], skip: Any = None) -> list[Any] | None:
+        """Return ``weights``, or ``None`` when every entry is trivial.
+
+        A list of nothing but ``one`` carries no information, and storing it would
+        cost memory on every plain acceptor. ``skip`` names an additional value to
+        treat as trivial — ``zero`` for final weights, since a non-accepting state
+        holds ``zero`` and says nothing about weighting.
+
+        Parameters
+        ----------
+        weights
+            The weights to inspect.
+        skip
+            An extra value to treat as carrying no information, or ``None``.
+
+        Returns
+        -------
+        list or None
+            ``None`` if every weight is trivial, otherwise the list unchanged.
+        """
+        semiring = self._semiring
+        trivial = {semiring.key(semiring.one)}
+        if skip is not None:
+            trivial.add(semiring.key(skip))
+
+        if all(semiring.key(weight) in trivial for weight in weights):
+            return None
+
+        return weights
 
     # -- internals ---------------------------------------------------------
 
@@ -251,8 +379,8 @@ class Builder:
             message = f"no such state: {state}"
             raise IndexError(message)
 
-    def _ordered(self, state: State) -> list[tuple[Symbol, State]]:
-        """Return ``state``'s transitions as ``(symbol, target)``, symbol-ascending.
+    def _ordered(self, state: State) -> list[tuple[Symbol, State, Any]]:
+        """Return ``state``'s transitions as triples, symbol-ascending.
 
         Parameters
         ----------
@@ -262,13 +390,23 @@ class Builder:
         Returns
         -------
         list of tuple
-            The transitions, sorted by symbol. Symbols are unique per state, so
-            the order is total.
+            ``(symbol, target, weight)`` triples, sorted by symbol. Symbols are
+            unique per state, so sorting on the first element alone is a total
+            order and never has to compare weights — which may not be orderable.
         """
-        return sorted(zip(self._symbols[state], self._targets[state], strict=True))
+        triples = zip(
+            self._symbols[state],
+            self._targets[state],
+            self._weights[state],
+            strict=True,
+        )
+
+        return sorted(triples, key=lambda triple: triple[0])
 
     @staticmethod
-    def _canonical_order(outgoing: list[list[tuple[Symbol, State]]]) -> list[State]:
+    def _canonical_order(
+        outgoing: list[list[tuple[Symbol, State, Any]]],
+    ) -> list[State]:
         """Return the reachable states in canonical (breadth-first) order.
 
         Discovery follows each state's transitions in ascending symbol order, so
@@ -294,7 +432,7 @@ class Builder:
         while head < len(order):
             state = order[head]
             head += 1
-            for _, target in outgoing[state]:
+            for _, target, _weight in outgoing[state]:
                 if target not in seen:
                     seen.add(target)
                     order.append(target)
@@ -304,7 +442,7 @@ class Builder:
     def _check_acyclic(
         self,
         order: list[State],
-        outgoing: list[list[tuple[Symbol, State]]],
+        outgoing: list[list[tuple[Symbol, State, Any]]],
     ) -> None:
         """Raise if the states in ``order`` contain a cycle.
 
@@ -344,7 +482,7 @@ class Builder:
                     continue
 
                 stack.append((state, index + 1))
-                symbol, target = transitions[index]
+                symbol, target, _weight = transitions[index]
 
                 if colour[target] == _GREY:
                     token = self._alphabet.token(symbol)

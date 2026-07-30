@@ -22,13 +22,16 @@ from __future__ import annotations
 from array import array
 from bisect import bisect_left
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+from dafsa.semirings import BOOLEAN
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     from dafsa._types import State, Symbol, Token
     from dafsa.alphabet import Alphabet
+    from dafsa.semirings import Semiring
 
 #: The state every traversal starts from. Canonical renumbering guarantees it.
 ROOT: State = 0
@@ -77,11 +80,18 @@ def flag_array(values: Iterable[int] = ()) -> array[int]:
 
 
 class Transition(NamedTuple):
-    """One outgoing transition of a state."""
+    """One outgoing transition of a state.
+
+    ``weight`` is typed :obj:`~typing.Any` because it belongs to whichever
+    semiring the automaton was built over, and the automaton does not carry that
+    type as a parameter. For an unweighted automaton it is the semiring's
+    :attr:`~dafsa.semirings.Semiring.one`.
+    """
 
     source: State
     symbol: Symbol
     target: State
+    weight: Any
 
 
 class Automaton:
@@ -104,6 +114,14 @@ class Automaton:
         Transition targets, parallel to ``symbol``.
     flags
         Per-state flag bits, one entry per state.
+    semiring
+        The semiring the weights belong to.
+    transition_weights
+        One weight per transition, or ``None`` when every transition weight is
+        the semiring's ``one``.
+    final_weights
+        One weight per state, or ``None`` when every accepting state's weight is
+        the semiring's ``one``.
 
     Notes
     -----
@@ -112,23 +130,43 @@ class Automaton:
     ascending within each state's slice, which is what makes the binary search
     in :meth:`step` correct and encodes determinism; every state is reachable
     from :data:`ROOT`; and the transitions contain no cycle.
+
+    The two weight arrays are ``None`` in the common unweighted case rather than
+    filled with copies of ``one``. A plain acceptor therefore costs nothing for
+    weights it does not use, which matters because memory frugality is much of
+    the point of this representation.
     """
 
-    __slots__ = ("_alphabet", "_first", "_flags", "_symbol", "_target")
+    __slots__ = (
+        "_alphabet",
+        "_final_weights",
+        "_first",
+        "_flags",
+        "_semiring",
+        "_symbol",
+        "_target",
+        "_transition_weights",
+    )
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - the CSR arrays are irreducibly separate
         self,
         alphabet: Alphabet,
         first: array[int],
         symbol: array[int],
         target: array[int],
         flags: array[int],
+        semiring: Semiring[Any] = BOOLEAN,
+        transition_weights: list[Any] | None = None,
+        final_weights: list[Any] | None = None,
     ) -> None:
         self._alphabet = alphabet
         self._first = first
         self._symbol = symbol
         self._target = target
         self._flags = flags
+        self._semiring = semiring
+        self._transition_weights = transition_weights
+        self._final_weights = final_weights
 
     # -- structure ---------------------------------------------------------
 
@@ -136,6 +174,21 @@ class Automaton:
     def alphabet(self) -> Alphabet:
         """The alphabet this automaton's symbols refer to."""
         return self._alphabet
+
+    @property
+    def semiring(self) -> Semiring[Any]:
+        """The semiring this automaton's weights belong to."""
+        return self._semiring
+
+    @property
+    def is_weighted(self) -> bool:
+        """Whether any weight differs from the semiring's ``one``.
+
+        ``False`` means the automaton is a plain acceptor and stores no weight
+        arrays; :meth:`weight` still answers, with ``one`` for accepted
+        sequences.
+        """
+        return self._transition_weights is not None or self._final_weights is not None
 
     @property
     def num_states(self) -> int:
@@ -187,6 +240,46 @@ class Automaton:
         """
         return self._first[state + 1] - self._first[state]
 
+    def final_weight(self, state: State) -> Any:
+        """Return the weight contributed by accepting at ``state``.
+
+        Parameters
+        ----------
+        state
+            The state to inspect.
+
+        Returns
+        -------
+        Any
+            The state's final weight, or the semiring's ``zero`` if the state is
+            not accepting.
+        """
+        if not self.is_final(state):
+            return self._semiring.zero
+        if self._final_weights is None:
+            return self._semiring.one
+
+        return self._final_weights[state]
+
+    def transition_weight(self, index: int) -> Any:
+        """Return the weight of the transition at ``index``.
+
+        Parameters
+        ----------
+        index
+            A transition index, as produced by :meth:`transition_index`.
+
+        Returns
+        -------
+        Any
+            The transition's weight, or the semiring's ``one`` if the automaton
+            stores no transition weights.
+        """
+        if self._transition_weights is None:
+            return self._semiring.one
+
+        return self._transition_weights[index]
+
     def transitions(self, state: State) -> Iterator[Transition]:
         """Iterate over the transitions leaving ``state``, in symbol order.
 
@@ -198,12 +291,14 @@ class Automaton:
         Yields
         ------
         Transition
-            Each outgoing transition.
+            Each outgoing transition, carrying its weight.
         """
         symbols = self._symbol
         targets = self._target
         for index in range(self._first[state], self._first[state + 1]):
-            yield Transition(state, symbols[index], targets[index])
+            yield Transition(
+                state, symbols[index], targets[index], self.transition_weight(index)
+            )
 
     def all_transitions(self) -> Iterator[Transition]:
         """Iterate over every transition, ordered by source then symbol.
@@ -217,6 +312,33 @@ class Automaton:
             yield from self.transitions(state)
 
     # -- traversal ---------------------------------------------------------
+
+    def transition_index(self, state: State, symbol: Symbol) -> int | None:
+        """Return the index of ``state``'s transition on ``symbol``.
+
+        The binary search is over one state's slice of the symbol array, which is
+        ascending — the invariant that makes this correct is established by
+        ``freeze()``.
+
+        Parameters
+        ----------
+        state
+            The state to leave.
+        symbol
+            The symbol to consume.
+
+        Returns
+        -------
+        int or None
+            The transition's index into the transition arrays, or ``None`` if
+            there is no such transition.
+        """
+        high = self._first[state + 1]
+        index = bisect_left(self._symbol, symbol, self._first[state], high)
+        if index < high and self._symbol[index] == symbol:
+            return index
+
+        return None
 
     def step(self, state: State, symbol: Symbol) -> State | None:
         """Follow one transition.
@@ -234,13 +356,9 @@ class Automaton:
             The state reached, or ``None`` if ``state`` has no transition on
             ``symbol``.
         """
-        low = self._first[state]
-        high = self._first[state + 1]
-        index = bisect_left(self._symbol, symbol, low, high)
-        if index < high and self._symbol[index] == symbol:
-            return self._target[index]
+        index = self.transition_index(state, symbol)
 
-        return None
+        return None if index is None else self._target[index]
 
     def walk(self, symbols: Iterable[Symbol], start: State = ROOT) -> State | None:
         """Follow a sequence of symbols.
@@ -294,6 +412,51 @@ class Automaton:
 
         return state is not None and self.is_final(state)
 
+    def weight(self, sequence: Sequence[Token]) -> Any:
+        """Return the weight ``sequence`` is accepted with.
+
+        The weight is the semiring product of the transition weights along the
+        path and the final weight of the state it ends at — which, for an
+        automaton built from weighted sequences, is exactly the weight that
+        sequence was inserted with.
+
+        This is the query 1.0's ``lookup()`` was reaching for and got wrong:
+        there, weights were counters over a minimized graph, so the returned
+        "cumulative weight" summed the frequencies of every sequence sharing an
+        edge. ``DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")`` gave ``7``
+        for a sequence inserted once.
+
+        Parameters
+        ----------
+        sequence
+            The tokens to weigh.
+
+        Returns
+        -------
+        Any
+            The sequence's weight, or the semiring's ``zero`` if it is not
+            accepted. ``zero`` is the weight of a path that does not exist, so a
+            rejection needs no special case at the call site.
+        """
+        symbols = self._alphabet.try_encode(sequence)
+        if symbols is None:
+            return self._semiring.zero
+
+        semiring = self._semiring
+        total = semiring.one
+        state = ROOT
+        for symbol in symbols:
+            index = self.transition_index(state, symbol)
+            if index is None:
+                return semiring.zero
+            total = semiring.times(total, self.transition_weight(index))
+            state = self._target[index]
+
+        if not self.is_final(state):
+            return semiring.zero
+
+        return semiring.times(total, self.final_weight(state))
+
     def __contains__(self, sequence: object) -> bool:
         """Return whether ``sequence`` is accepted, for ``in`` syntax."""
         if not isinstance(sequence, Sequence):
@@ -303,11 +466,13 @@ class Automaton:
 
     def __repr__(self) -> str:
         """Return a debugging representation."""
+        weighted = f" {type(self._semiring).__name__}" if self.is_weighted else ""
+
         return (
             f"<{type(self).__name__} "
             f"states={self.num_states} "
             f"transitions={self.num_transitions} "
-            f"alphabet={len(self._alphabet)}>"
+            f"alphabet={len(self._alphabet)}{weighted}>"
         )
 
 
