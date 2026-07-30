@@ -59,7 +59,7 @@ test = [
     "dafsa[graph]",
     "pytest>=8.0",
     "pytest-cov>=5.0",
-    "pytest-xdist>=3.6",
+    "pytest-xdist>=3.8.0",
     "hypothesis>=6.100",
 ]
 dev = [
