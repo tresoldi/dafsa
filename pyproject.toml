@@ -71,7 +71,7 @@ dev = [
     # source file satisfies both.
     "ruff==0.16.0",
     "mypy==2.3.0",
-    "bandit[toml]>=1.7.0",
+    "bandit[toml]>=1.9.4",
     "pre-commit>=3.8",
     "build>=1.2",
     "twine>=5.1",
