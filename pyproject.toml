@@ -89,8 +89,8 @@ dafsa = ["py.typed"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["tests"]
-addopts = ["--strict-markers", "--strict-config", "-ra"]
+testpaths = ["tests", "src"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "--doctest-modules"]
 filterwarnings = ["error"]
 
 [tool.coverage.run]

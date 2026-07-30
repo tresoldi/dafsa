@@ -6,7 +6,10 @@ automata, and acyclic weighted transducers.
 !!! warning "2.0 is under development"
 
     This documentation tracks the 2.0 development line, which is a **clean break** from 1.0.
-    Nothing here is stable yet, and the structures themselves are still being built.
+    Nothing here is stable yet. Currently available is the frozen core the structures are
+    built on — [`Alphabet`](api.md#dafsa.alphabet.Alphabet) and
+    [`Automaton`](api.md#dafsa.automaton.Automaton) — while the user-facing structures are
+    still being built.
 
     For the released library — the one described by the JOSS paper and the Zenodo DOI — use
     `pip install dafsa==1.0` and read
