@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from array import array
 from heapq import heappush, heappushpop
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from dafsa._types import ROOT
 
@@ -34,6 +34,9 @@ if TYPE_CHECKING:
     from dafsa._types import State, Symbol, Token
     from dafsa.automaton import Automaton
     from dafsa.semirings import Semiring
+
+#: The concrete automaton class a compaction freezes into.
+A = TypeVar("A", bound="Automaton")
 
 _COUNT_TYPECODE = "q"
 
@@ -179,29 +182,31 @@ def iterate(
     tuple of Token
         Each accepted sequence, in ascending order.
     """
-    alphabet = automaton.alphabet
     buffer: list[Token] = list(prefix)
 
     if automaton.is_final(start):
         yield tuple(buffer)
 
-    # Each frame is a state, how far through its transitions we are, and whether
-    # entering it appended a token that leaving it must remove.
-    stack: list[tuple[State, int, bool]] = [(start, 0, False)]
+    # Each frame is a state, how far through its transitions we are, and how many
+    # tokens entering it appended that leaving it must remove. A compacted
+    # transition appends several at once, so a boolean will not do.
+    stack: list[tuple[State, int, int]] = [(start, 0, 0)]
     while stack:
-        state, index, appended = stack.pop()
-        outgoing = list(automaton.transitions(state))
-        if index == len(outgoing):
-            if appended:
-                buffer.pop()
+        state, offset, consumed = stack.pop()
+        indices = automaton.transition_indices(state)
+        if offset == len(indices):
+            if consumed:
+                del buffer[len(buffer) - consumed :]
             continue
 
-        stack.append((state, index + 1, appended))
-        transition = outgoing[index]
-        buffer.append(alphabet.token(transition.symbol))
-        if automaton.is_final(transition.target):
+        stack.append((state, offset + 1, consumed))
+        index = indices[offset]
+        tokens = automaton.transition_tokens(index)
+        buffer.extend(tokens)
+        target = automaton.transition_target(index)
+        if automaton.is_final(target):
             yield tuple(buffer)
-        stack.append((transition.target, 0, True))
+        stack.append((target, 0, len(tokens)))
 
 
 def rank(automaton: Automaton, symbols: tuple[Symbol, ...], counts: array[int]) -> int:
@@ -232,17 +237,22 @@ def rank(automaton: Automaton, symbols: tuple[Symbol, ...], counts: array[int]) 
     """
     position = 0
     state = ROOT
+    consumed = 0
 
-    for symbol in symbols:
+    while consumed < len(symbols):
         if automaton.is_final(state):
             position += 1
 
         found = None
-        for transition in automaton.transitions(state):
-            if transition.symbol == symbol:
-                found = transition.target
+        for index in automaton.transition_indices(state):
+            if automaton.transition_symbol(index) == symbols[consumed]:
+                label = automaton.transition_label(index)
+                if symbols[consumed : consumed + len(label)] != label:
+                    break
+                found = automaton.transition_target(index)
+                consumed += len(label)
                 break
-            position += counts[transition.target]
+            position += counts[automaton.transition_target(index)]
 
         if found is None:
             message = "sequence is not accepted, so it has no rank"
@@ -288,7 +298,6 @@ def unrank(
         message = f"position out of range: {position}"
         raise IndexError(message)
 
-    alphabet = automaton.alphabet
     remaining = position
     state = ROOT
     tokens: list[Token] = []
@@ -299,11 +308,12 @@ def unrank(
                 return tuple(tokens)
             remaining -= 1
 
-        for transition in automaton.transitions(state):
-            size = counts[transition.target]
+        for index in automaton.transition_indices(state):
+            target = automaton.transition_target(index)
+            size = counts[target]
             if remaining < size:
-                tokens.append(alphabet.token(transition.symbol))
-                state = transition.target
+                tokens.extend(automaton.transition_tokens(index))
+                state = target
                 break
             remaining -= size
         else:  # pragma: no cover - counts guarantee a branch is always found
@@ -370,6 +380,114 @@ def k_best(automaton: Automaton, k: int) -> list[tuple[tuple[Token, ...], Any]]:
     return [(entry.sequence, entry.weight) for entry in sorted(heap, reverse=True)]
 
 
+def absorbable(automaton: Automaton) -> list[bool]:
+    """Return which states can be folded into the transition that reaches them.
+
+    A state disappears into its incoming edge when every path through it is
+    forced: it has exactly one way in, exactly one way out, and does not accept.
+    Then ``p -a-> q -b-> r`` carries the same language as ``p -ab-> r``, and ``q``
+    holds no information.
+
+    The predicate that matters is ``in_degree == 1``, **not** ``<= 1``. A state
+    with no incoming edge — the root — has nothing to be folded into, and it is
+    precisely that case which 1.0 failed to exclude: its ``_joining_round``
+    skipped candidates with ``targets[node_id] > 1`` and then indexed
+    ``[edge for edge in edges if edge["target"] == node_id][0]``, so the root
+    raised ``IndexError`` the moment it had a single outgoing edge. That is
+    issues #18 and #14, and the fix is this one comparison.
+
+    Parameters
+    ----------
+    automaton
+        The automaton to analyse.
+
+    Returns
+    -------
+    list of bool
+        Indexed by state.
+
+    Notes
+    -----
+    1.0 also required the *predecessor* to have exactly one outgoing edge, and
+    this does not. The condition is unnecessary: a compacted label keeps the
+    first symbol of the edge it replaces, so the predecessor's other transitions
+    remain distinguishable and determinism is preserved. Dropping it compacts
+    strictly more.
+    """
+    in_degree = [0] * automaton.num_states
+    for state in automaton.states():
+        for index in automaton.transition_indices(state):
+            in_degree[automaton.transition_target(index)] += 1
+
+    return [
+        in_degree[state] == 1
+        and automaton.out_degree(state) == 1
+        and not automaton.is_final(state)
+        for state in automaton.states()
+    ]
+
+
+def compact(automaton: Automaton, factory: type[A]) -> A:
+    """Collapse forced chains of states into single compound transitions.
+
+    Every chain is collapsed in one pass. 1.0 needed repeated rounds because its
+    de-duplication guard iterated a dict and compared the literal keys
+    ``"source"`` and ``"target"``, which meant at most one join happened per
+    round; the whole thing converged only through O(n) rounds of O(n²) work.
+
+    Parameters
+    ----------
+    automaton
+        The automaton to compact.
+    factory
+        The class to freeze the result into.
+
+    Returns
+    -------
+    Automaton
+        A new frozen automaton. The input is untouched, so there is no way for
+        reported counts to describe a different graph from the one being
+        queried — which is what 1.0's in-place ``condense()`` plus its
+        ``lookup_nodes`` deep copy allowed.
+    """
+    # Imported here rather than at module scope: the builder imports the
+    # automaton, which imports this module.
+    from dafsa._builder import Builder  # noqa: PLC0415
+
+    folds = absorbable(automaton)
+    semiring = automaton.semiring
+    survivors = [state for state in automaton.states() if not folds[state]]
+    renumbered = {old: new for new, old in enumerate(survivors)}
+
+    builder = Builder(automaton.alphabet, semiring)
+    for _ in range(len(survivors) - 1):
+        builder.new_state()
+
+    for state in survivors:
+        for index in automaton.transition_indices(state):
+            label = list(automaton.transition_label(index))
+            weight = automaton.transition_weight(index)
+            target = automaton.transition_target(index)
+
+            while folds[target]:
+                (following,) = automaton.transition_indices(target)
+                label.extend(automaton.transition_label(following))
+                weight = semiring.times(weight, automaton.transition_weight(following))
+                target = automaton.transition_target(following)
+
+            builder.add_transition(
+                renumbered[state],
+                label[0],
+                renumbered[target],
+                weight,
+                tuple(label),
+            )
+        if automaton.is_final(state):
+            builder.set_final(renumbered[state], weight=automaton.final_weight(state))
+
+    return builder.freeze(factory)
+
+
 class _Worst:
     """Orders weighted sequences worst-first, for eviction from a bounded heap.
 
@@ -410,6 +528,8 @@ def _tie_break(sequence: tuple[Token, ...]) -> tuple[str, ...]:
 
 
 __all__ = [
+    "absorbable",
+    "compact",
     "iterate",
     "k_best",
     "rank",

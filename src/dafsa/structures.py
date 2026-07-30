@@ -35,6 +35,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
+from dafsa import _algorithms
 from dafsa._builder import Builder
 
 # State and Symbol are imported at runtime, not under TYPE_CHECKING, because the
@@ -60,7 +61,41 @@ _Signature = tuple[Any, ...]
 _Unchecked = tuple[State, Symbol, State]
 
 
-class Trie(Automaton):
+class _Structure(Automaton):
+    """Shared behaviour for the dictionary structures.
+
+    Exists so that :meth:`compact` has one home. It lives here rather than on
+    :class:`~dafsa.automaton.Automaton` because the result is a
+    :class:`CompactDafsa`, and the core must not depend on the structures built
+    on top of it.
+    """
+
+    __slots__ = ()
+
+    def compact(self) -> CompactDafsa:
+        """Return a path-compacted copy of this structure.
+
+        Chains of states that every path is forced through collapse into single
+        transitions labelled with several tokens. The language, the weights and
+        the accepted order are all unchanged; only the number of states falls.
+
+        Returns
+        -------
+        CompactDafsa
+            A new frozen automaton. This one is untouched.
+
+        Examples
+        --------
+        >>> automaton = Dafsa.from_sequences(["tapas", "topos"])
+        >>> automaton.num_states, automaton.compact().num_states
+        (8, 4)
+        >>> "tapas" in automaton.compact()
+        True
+        """
+        return _algorithms.compact(self, CompactDafsa)
+
+
+class Trie(_Structure):
     """A prefix tree: shared prefixes, no shared suffixes.
 
     A trie is the honest baseline for the comparison this library was originally
@@ -143,7 +178,7 @@ class Trie(Automaton):
         return _build(pairs, semiring, minimize=False, factory=cls)
 
 
-class Dafsa(Automaton):
+class Dafsa(_Structure):
     """A minimal deterministic acyclic finite-state automaton.
 
     Equivalent states are shared, so the structure is as small as a deterministic
@@ -234,6 +269,39 @@ class Dafsa(Automaton):
             states — the price of weights that mean something.
         """
         return _build(pairs, semiring, minimize=True, factory=cls)
+
+
+class CompactDafsa(_Structure):
+    """A path-compacted automaton: transitions may consume several tokens.
+
+    Produced by :meth:`_Structure.compact`. Where an ordinary automaton spends a
+    state on each token of a forced chain, this spends one transition on the
+    whole chain, which is what makes a drawn automaton readable at any size.
+
+    The token contract is unchanged. Membership, weights, ranking and iteration
+    all still take and return sequences of the original tokens; the compound
+    labels are an internal matter, visible through
+    :meth:`~dafsa.automaton.Automaton.transition_tokens` when a renderer needs
+    them.
+
+    Examples
+    --------
+    >>> compacted = Dafsa.from_sequences(["tapas", "topos"]).compact()
+    >>> "tapas" in compacted, "tapa" in compacted
+    (True, False)
+    >>> sorted("".join(str(t) for t in s) for s in compacted)
+    ['tapas', 'topos']
+
+    The single ``t`` transition out of the root now carries the whole forced
+    prefix, and 1.0 raised ``IndexError`` on exactly this input:
+
+    >>> compacted.transition_tokens(0)
+    ('t',)
+    >>> compacted.num_states
+    4
+    """
+
+    __slots__ = ()
 
 
 def _unit_weighted(
@@ -421,4 +489,4 @@ def _signature(builder: Builder, state: State) -> _Signature:
     )
 
 
-__all__ = ["Dafsa", "Trie"]
+__all__ = ["CompactDafsa", "Dafsa", "Trie"]

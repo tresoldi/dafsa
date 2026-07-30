@@ -136,6 +136,10 @@ class Automaton:
     final_weights
         One weight per state, or ``None`` when every accepting state's weight is
         the semiring's ``one``.
+    labels
+        One compound label per transition, or ``None`` when every transition
+        consumes exactly one token. A label is a tuple of symbols whose first
+        element equals the transition's entry in ``symbol``.
 
     Notes
     -----
@@ -148,7 +152,13 @@ class Automaton:
     The two weight arrays are ``None`` in the common unweighted case rather than
     filled with copies of ``one``. A plain acceptor therefore costs nothing for
     weights it does not use, which matters because memory frugality is much of
-    the point of this representation.
+    the point of this representation. ``labels`` follows the same rule.
+
+    Compound labels do not change the CSR layout. ``symbol`` continues to hold
+    one symbol per transition — the *first* of its label — so determinism,
+    ascending order within a state, and the binary search in :meth:`step` all
+    work exactly as before. What changes is only how many tokens a transition
+    consumes.
     """
 
     __slots__ = (
@@ -157,6 +167,7 @@ class Automaton:
         "_final_weights",
         "_first",
         "_flags",
+        "_labels",
         "_semiring",
         "_symbol",
         "_target",
@@ -173,6 +184,7 @@ class Automaton:
         semiring: Semiring[Any] = BOOLEAN,
         transition_weights: list[Any] | None = None,
         final_weights: list[Any] | None = None,
+        labels: list[tuple[Symbol, ...]] | None = None,
     ) -> None:
         self._alphabet = alphabet
         self._first = first
@@ -182,6 +194,7 @@ class Automaton:
         self._semiring = semiring
         self._transition_weights = transition_weights
         self._final_weights = final_weights
+        self._labels = labels
 
         # Suffix counts are derived from the transitions, so they cannot be passed
         # in and be wrong. They are computed on first use rather than at
@@ -217,6 +230,11 @@ class Automaton:
         sequences.
         """
         return self._transition_weights is not None or self._final_weights is not None
+
+    @property
+    def is_compact(self) -> bool:
+        """Whether any transition consumes more than one token."""
+        return self._labels is not None
 
     @property
     def num_states(self) -> int:
@@ -307,6 +325,67 @@ class Automaton:
             return self._semiring.one
 
         return self._transition_weights[index]
+
+    def transition_indices(self, state: State) -> range:
+        """Return the indices of ``state``'s transitions, in symbol order.
+
+        The index-based accessors below exist so that the dynamic programs can
+        walk the arrays without allocating a :class:`Transition` per step.
+
+        Parameters
+        ----------
+        state
+            The state whose transitions to index.
+
+        Returns
+        -------
+        range
+            Indices into the transition arrays.
+        """
+        return range(self._first[state], self._first[state + 1])
+
+    def transition_symbol(self, index: int) -> Symbol:
+        """Return the first symbol consumed by the transition at ``index``."""
+        return self._symbol[index]
+
+    def transition_target(self, index: int) -> State:
+        """Return the state entered by the transition at ``index``."""
+        return self._target[index]
+
+    def transition_label(self, index: int) -> tuple[Symbol, ...]:
+        """Return every symbol consumed by the transition at ``index``.
+
+        One symbol for an ordinary transition, several for a compacted one.
+
+        Parameters
+        ----------
+        index
+            A transition index.
+
+        Returns
+        -------
+        tuple of Symbol
+            The transition's label.
+        """
+        if self._labels is None:
+            return (self._symbol[index],)
+
+        return self._labels[index]
+
+    def transition_tokens(self, index: int) -> tuple[Token, ...]:
+        """Return the transition's label as caller-facing tokens.
+
+        Parameters
+        ----------
+        index
+            A transition index.
+
+        Returns
+        -------
+        tuple of Token
+            The tokens the transition consumes.
+        """
+        return self._alphabet.decode(self.transition_label(index))
 
     def transitions(self, state: State) -> Iterator[Transition]:
         """Iterate over the transitions leaving ``state``, in symbol order.
@@ -407,12 +486,31 @@ class Automaton:
             The state reached after consuming every symbol, or ``None`` if the
             path leaves the automaton partway through.
         """
+        if self._labels is None:
+            state = start
+            for symbol in symbols:
+                following = self.step(state, symbol)
+                if following is None:
+                    return None
+                state = following
+
+            return state
+
+        # A compacted transition consumes several symbols at once, so the walk
+        # advances by the label's length and must check that the label actually
+        # matches what comes next rather than only its first symbol.
+        pending = tuple(symbols)
         state = start
-        for symbol in symbols:
-            following = self.step(state, symbol)
-            if following is None:
+        position = 0
+        while position < len(pending):
+            index = self.transition_index(state, pending[position])
+            if index is None:
                 return None
-            state = following
+            label = self._labels[index]
+            if pending[position : position + len(label)] != label:
+                return None
+            position += len(label)
+            state = self._target[index]
 
         return state
 
@@ -473,11 +571,16 @@ class Automaton:
         semiring = self._semiring
         total = semiring.one
         state = ROOT
-        for symbol in symbols:
-            index = self.transition_index(state, symbol)
+        position = 0
+        while position < len(symbols):
+            index = self.transition_index(state, symbols[position])
             if index is None:
                 return semiring.zero
+            label = self.transition_label(index)
+            if symbols[position : position + len(label)] != label:
+                return semiring.zero
             total = semiring.times(total, self.transition_weight(index))
+            position += len(label)
             state = self._target[index]
 
         if not self.is_final(state):
@@ -523,16 +626,23 @@ class Automaton:
         states = [state]
         transitions: list[Transition] = []
         weight = semiring.one
+        position = 0
 
-        for symbol in symbols:
-            index = self.transition_index(state, symbol)
+        while position < len(symbols):
+            index = self.transition_index(state, symbols[position])
             if index is None:
+                return None
+            label = self.transition_label(index)
+            if symbols[position : position + len(label)] != label:
                 return None
             target = self._target[index]
             transitions.append(
-                Transition(state, symbol, target, self.transition_weight(index))
+                Transition(
+                    state, symbols[position], target, self.transition_weight(index)
+                )
             )
             weight = semiring.times(weight, self.transition_weight(index))
+            position += len(label)
             state = target
             states.append(state)
 
@@ -598,18 +708,31 @@ class Automaton:
         True
         """
         longest: tuple[Token, ...] | None = () if self.is_final(ROOT) else None
-        state = ROOT
+        symbols = self._alphabet.try_encode(sequence)
+        if symbols is None:
+            # Encode as far as the alphabet allows; an unknown token simply ends
+            # the search rather than invalidating the prefixes before it.
+            known = []
+            for token in sequence:
+                encoded = self._alphabet.try_encode((token,))
+                if encoded is None:
+                    break
+                known.append(encoded[0])
+            symbols = tuple(known)
 
-        for length, token in enumerate(sequence, start=1):
-            symbol = self._alphabet.try_encode((token,))
-            if symbol is None:
+        state = ROOT
+        position = 0
+        while position < len(symbols):
+            index = self.transition_index(state, symbols[position])
+            if index is None:
                 break
-            following = self.step(state, symbol[0])
-            if following is None:
+            label = self.transition_label(index)
+            if symbols[position : position + len(label)] != label:
                 break
-            state = following
+            position += len(label)
+            state = self._target[index]
             if self.is_final(state):
-                longest = tuple(sequence[:length])
+                longest = tuple(sequence[:position])
 
         return longest
 
@@ -641,11 +764,37 @@ class Automaton:
         if symbols is None:
             return
 
-        state = self.walk(symbols)
-        if state is None:
-            return
+        state = ROOT
+        emitted: list[Token] = []
+        position = 0
 
-        yield from _algorithms.iterate(self, state, tuple(prefix))
+        while position < len(symbols):
+            index = self.transition_index(state, symbols[position])
+            if index is None:
+                return
+
+            label = self.transition_label(index)
+            remaining = symbols[position:]
+
+            if len(remaining) < len(label):
+                # The prefix stops in the middle of a compound label. Every
+                # sequence through this transition consumes the whole label, so
+                # the query is answered by descending anyway and reporting the
+                # label in full — which is why this cannot be a plain `walk`,
+                # since there is no state at the position the caller named.
+                if label[: len(remaining)] != remaining:
+                    return
+                emitted.extend(self.transition_tokens(index))
+                state = self._target[index]
+                break
+
+            if remaining[: len(label)] != label:
+                return
+            emitted.extend(self.transition_tokens(index))
+            state = self._target[index]
+            position += len(label)
+
+        yield from _algorithms.iterate(self, state, tuple(emitted))
 
     # -- counting ----------------------------------------------------------
 
@@ -821,6 +970,7 @@ class Automaton:
     def __repr__(self) -> str:
         """Return a debugging representation."""
         weighted = f" {type(self._semiring).__name__}" if self.is_weighted else ""
+        weighted += " compact" if self.is_compact else ""
 
         return (
             f"<{type(self).__name__} "

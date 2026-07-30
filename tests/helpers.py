@@ -128,10 +128,12 @@ def weighted_right_languages(
         table: dict[tuple[Token, ...], Any] = {}
         if automaton.is_final(state):
             table[()] = automaton.final_weight(state)
-        for transition in automaton.transitions(state):
-            token = automaton.alphabet.token(transition.symbol)
-            for suffix, weight in tables[transition.target].items():
-                table[(token, *suffix)] = semiring.times(transition.weight, weight)
+        for index in automaton.transition_indices(state):
+            tokens = automaton.transition_tokens(index)
+            target = automaton.transition_target(index)
+            weight_of = automaton.transition_weight(index)
+            for suffix, weight in tables[target].items():
+                table[(*tokens, *suffix)] = semiring.times(weight_of, weight)
         tables[state] = table
 
     return {
@@ -198,8 +200,11 @@ def accepted_sequences(automaton: Automaton) -> set[tuple[Token, ...]]:
         state, prefix = stack.pop()
         if automaton.is_final(state):
             found.add(prefix)
-        for transition in automaton.transitions(state):
-            token = automaton.alphabet.token(transition.symbol)
-            stack.append((transition.target, (*prefix, token)))
+        for index in automaton.transition_indices(state):
+            # Every token the transition consumes, which is several once the
+            # automaton has been compacted.
+            tokens = automaton.transition_tokens(index)
+            target = automaton.transition_target(index)
+            stack.append((target, (*prefix, *tokens)))
 
     return found

@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–4 implemented (see §12)
+Status: accepted; milestones 0–5 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -338,6 +338,24 @@ into a single transition labelled with a **tuple of tokens**. Differences from 1
 - Joining tokens into a display string is a rendering concern, handled by the DOT emitter's
   `label_sep` parameter.
 
+**One deliberate departure from the condition stated above.** 1.0 also required the *predecessor*
+to have exactly one outgoing edge, and this document originally repeated that. The condition is
+unnecessary: a compound label keeps the first token of the edge it replaces, so a branching
+predecessor's transitions stay distinguishable and determinism is untouched. Dropping it
+compacts strictly more — `["axyz", "b"]` collapses to two transitions out of the root rather
+than leaving the `xyz` chain expanded.
+
+**Compound labels do not change the CSR layout.** `t_symbol` keeps holding one symbol per
+transition — the *first* of its label — so ascending order within a state, determinism, and the
+binary search in `step` all work unchanged. A parallel `labels` list holds the full tuple, and
+is `None` when every label has length one, exactly as the weight arrays are. What changes is
+only how many tokens a transition consumes, which the traversal, ranking and enumeration code
+now accounts for.
+
+Measured on the 96,393-sequence corpus: 109,160 states fall to 39,864 (63% fewer) and 194,703
+transitions to 125,407, in 0.64s. The language, `len()`, iteration order and every weight are
+unchanged, which is the whole contract.
+
 ### 6.5 `SuffixAutomaton` and `Cdawg`
 
 Worth stating plainly, because the two were run together in earlier scoping: a *compact
@@ -565,7 +583,7 @@ an unverified layer.
 | 2 | Semiring layer | protocol, six built-ins, law tests | **done** |
 | 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | **done** |
 | 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best`, plus the §7 query methods `match`/`paths`/`longest_prefix_of`/`starts_with` — closes #8 | **done** |
-| 5 | Compaction | `CompactDafsa` — closes #18, #14 | |
+| 5 | Compaction | `CompactDafsa` — closes #18, #14 | **done** |
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
 | 7 | Transducers | `Fst`, `compose`, `project` | |
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | |
@@ -623,6 +641,19 @@ over all 96,393 sequences in 3.9s; a prefix query returning 4 results in 0.11ms.
 position-independent as intended — 26.0ms per thousand calls at position ~48,000 against
 29.3ms at ~96,000, where enumeration would have made the latter tens of thousands of times
 slower.
+
+Milestone 5 closed **#18** and **#14**, both of which were the same one-character defect:
+1.0 tested `in_degree > 1` when selecting compaction candidates and so failed to exclude states
+with *no* incoming edge. The root qualifies whenever it emits a single edge, and the next line
+indexed `[0]` into its empty list of incoming edges. The predicate is `in_degree == 1`. Both
+reporters' inputs are now regression tests, and `DAFSA(["tapas", "topos"]).condense()` — which
+raised `IndexError` — produces exactly the `apa` and `opo` edges the reporter of #18 guessed at.
+
+One bug of our own surfaced while testing it, worth recording because it is the failure mode
+compaction invites: a prefix query whose prefix ends *inside* a compound label cannot be
+answered by walking to a state, because there is no state at that position. `starts_with` now
+descends the transition when the query is a proper prefix of its label and reports the label in
+full, which is correct — every sequence through that transition consumes all of it.
 
 Two implementation decisions in milestone 3 worth recording:
 

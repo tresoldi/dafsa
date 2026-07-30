@@ -80,6 +80,7 @@ class Builder:
         "_alphabet",
         "_final",
         "_final_weights",
+        "_labels",
         "_semiring",
         "_symbols",
         "_targets",
@@ -92,6 +93,7 @@ class Builder:
         self._symbols: list[list[Symbol]] = [[]]
         self._targets: list[list[State]] = [[]]
         self._weights: list[list[Any]] = [[]]
+        self._labels: list[list[tuple[Symbol, ...]]] = [[]]
         self._final: list[bool] = [False]
         self._final_weights: list[Any] = [semiring.zero]
 
@@ -122,6 +124,7 @@ class Builder:
         self._symbols.append([])
         self._targets.append([])
         self._weights.append([])
+        self._labels.append([])
         self._final.append(False)
         self._final_weights.append(self._semiring.zero)
 
@@ -133,6 +136,7 @@ class Builder:
         symbol: Symbol,
         target: State,
         weight: Any = None,
+        label: tuple[Symbol, ...] | None = None,
     ) -> None:
         """Add a transition.
 
@@ -148,13 +152,19 @@ class Builder:
             The transition's weight. ``None`` means the semiring's ``one``, which
             is the identity for combining along a path and so contributes
             nothing.
+        label
+            Every symbol the transition consumes, for a compacted transition.
+            ``None`` means the transition consumes ``symbol`` alone. The first
+            element must be ``symbol``, because determinism and ordering are keyed
+            on it.
 
         Raises
         ------
         IndexError
             If ``source`` or ``target`` is not an allocated state.
         ValueError
-            If ``symbol`` is not a symbol of the alphabet.
+            If ``symbol`` is not a symbol of the alphabet, or if ``label`` does
+            not begin with it.
         DeterminismError
             If ``source`` already has a transition on ``symbol``.
         """
@@ -174,9 +184,16 @@ class Builder:
             )
             raise DeterminismError(message)
 
+        if label is None:
+            label = (symbol,)
+        elif not label or label[0] != symbol:
+            message = f"label {label!r} does not begin with symbol {symbol}"
+            raise ValueError(message)
+
         symbols.append(symbol)
         self._targets[source].append(target)
         self._weights[source].append(self._semiring.one if weight is None else weight)
+        self._labels[source].append(label)
 
     def set_final(
         self,
@@ -263,7 +280,7 @@ class Builder:
             Each outgoing transition.
         """
         self._check_state(state)
-        for symbol, target, weight in self._ordered(state):
+        for symbol, target, weight, _label in self._ordered(state):
             yield Transition(state, symbol, target, weight)
 
     @overload
@@ -307,13 +324,15 @@ class Builder:
         flags = flag_array()
         transition_weights: list[Any] = []
         final_weights: list[Any] = []
+        labels: list[tuple[Symbol, ...]] = []
 
         first.append(0)
         for old in order:
-            for out_symbol, out_target, out_weight in outgoing[old]:
+            for out_symbol, out_target, out_weight, out_label in outgoing[old]:
                 symbol.append(out_symbol)
                 target.append(renumbered[out_target])
                 transition_weights.append(out_weight)
+                labels.append(out_label)
             first.append(len(symbol))
             flags.append(_FINAL if self._final[old] else 0)
             final_weights.append(self._final_weights[old])
@@ -327,6 +346,7 @@ class Builder:
             self._semiring,
             self._trivial_or(transition_weights),
             self._trivial_or(final_weights, skip=self._semiring.zero),
+            labels if any(len(entry) > 1 for entry in labels) else None,
         )
 
     def _trivial_or(self, weights: list[Any], skip: Any = None) -> list[Any] | None:
@@ -379,8 +399,8 @@ class Builder:
             message = f"no such state: {state}"
             raise IndexError(message)
 
-    def _ordered(self, state: State) -> list[tuple[Symbol, State, Any]]:
-        """Return ``state``'s transitions as triples, symbol-ascending.
+    def _ordered(self, state: State) -> list[tuple[Symbol, State, Any, Any]]:
+        """Return ``state``'s transitions as tuples, symbol-ascending.
 
         Parameters
         ----------
@@ -390,22 +410,23 @@ class Builder:
         Returns
         -------
         list of tuple
-            ``(symbol, target, weight)`` triples, sorted by symbol. Symbols are
-            unique per state, so sorting on the first element alone is a total
+            ``(symbol, target, weight, label)`` tuples, sorted by symbol. Symbols
+            are unique per state, so sorting on the first element alone is a total
             order and never has to compare weights — which may not be orderable.
         """
-        triples = zip(
+        entries = zip(
             self._symbols[state],
             self._targets[state],
             self._weights[state],
+            self._labels[state],
             strict=True,
         )
 
-        return sorted(triples, key=lambda triple: triple[0])
+        return sorted(entries, key=lambda entry: entry[0])
 
     @staticmethod
     def _canonical_order(
-        outgoing: list[list[tuple[Symbol, State, Any]]],
+        outgoing: list[list[tuple[Symbol, State, Any, Any]]],
     ) -> list[State]:
         """Return the reachable states in canonical (breadth-first) order.
 
@@ -432,7 +453,7 @@ class Builder:
         while head < len(order):
             state = order[head]
             head += 1
-            for _, target, _weight in outgoing[state]:
+            for _, target, _weight, _label in outgoing[state]:
                 if target not in seen:
                     seen.add(target)
                     order.append(target)
@@ -442,7 +463,7 @@ class Builder:
     def _check_acyclic(
         self,
         order: list[State],
-        outgoing: list[list[tuple[Symbol, State, Any]]],
+        outgoing: list[list[tuple[Symbol, State, Any, Any]]],
     ) -> None:
         """Raise if the states in ``order`` contain a cycle.
 
@@ -482,7 +503,7 @@ class Builder:
                     continue
 
                 stack.append((state, index + 1))
-                symbol, target, _weight = transitions[index]
+                symbol, target, _weight, _label = transitions[index]
 
                 if colour[target] == _GREY:
                     token = self._alphabet.token(symbol)

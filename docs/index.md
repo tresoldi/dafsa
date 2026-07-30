@@ -9,9 +9,10 @@ automata, and acyclic weighted transducers.
     Nothing here is stable yet. Currently available: the frozen core
     ([`Alphabet`](api.md#dafsa.alphabet.Alphabet),
     [`Automaton`](api.md#dafsa.automaton.Automaton)), the
-    [semiring layer](api.md#dafsa.semirings), and the dictionary structures
-    [`Trie`](api.md#dafsa.structures.Trie) and [`Dafsa`](api.md#dafsa.structures.Dafsa).
-    The compacted, substring and transducer structures are still being built.
+    [semiring layer](api.md#dafsa.semirings), and the structures
+    [`Trie`](api.md#dafsa.structures.Trie), [`Dafsa`](api.md#dafsa.structures.Dafsa) and
+    [`CompactDafsa`](api.md#dafsa.structures.CompactDafsa). The substring and transducer
+    structures are still being built.
 
     For the released library — the one described by the JOSS paper and the Zenodo DOI — use
     `pip install dafsa==1.0` and read
