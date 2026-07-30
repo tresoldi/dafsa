@@ -31,10 +31,11 @@ All five must pass. `mypy` runs in strict mode over `src/` and `tests/`, so new 
 type annotations.
 
 `master` is the 2.0 development line, and 2.0 is a deliberate break from the released 1.0.
-Before proposing a change, please read [`DESIGN.md`](DESIGN.md): it records the target API, the
-audit of 1.0 that motivated the rewrite, and the milestone the work is organised around. A
-change that cuts against a decision recorded there is worth discussing in an issue first — the
-decision may well be wrong, but it should be revised deliberately rather than by accident.
+Before proposing a change, please read [`ARCHITECTURE.md`](ARCHITECTURE.md): it records the
+package structure, the API contract, the audit of 1.0 that motivated the rewrite, and the
+decisions taken along the way. A change that cuts against a decision recorded there is worth
+discussing in an issue first — the decision may well be wrong, but it should be revised
+deliberately rather than by accident.
 
 ## Pull Request Process
 

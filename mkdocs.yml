@@ -7,11 +7,13 @@ edit_uri: edit/master/docs/
 
 theme:
   name: material
+  custom_dir: overrides
   features:
     - content.code.copy
     - navigation.sections
     - navigation.top
     - search.highlight
+    - search.suggest
     - toc.follow
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -27,10 +29,8 @@ theme:
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
-  - Migrating from 1.0: migration.md
-  - API reference: api.md
-  - References: references.md
+  - User Guide: USER_GUIDE.md
+  - API Reference: reference.md
 
 plugins:
   - search
@@ -44,6 +44,7 @@ plugins:
             show_source: true
             members_order: source
             separate_signature: true
+            filters: ["!^_"]
 
 markdown_extensions:
   - admonition

@@ -1,10 +1,11 @@
 """Finite-state structures for sequence data.
 
-This is the 2.0 development line, a clean break from 1.0. The design, the audit
-of 1.0 that motivated it, and the milestone plan are in ``DESIGN.md`` at the root
-of the repository.
+Sets of sequences are stored as automata in which every shared beginning and every
+shared ending is held once. The package structure, the API contract, the audit of
+1.0 that motivated the 2.0 rewrite, and the decisions taken along the way are in
+``ARCHITECTURE.md`` at the root of the repository.
 
-Available now: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
+The pieces: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
 :class:`~dafsa.automaton.Automaton`), the semiring layer
 (:mod:`dafsa.semirings`), the dictionary structures :class:`Trie`, :class:`Dafsa` and
 :class:`CompactDafsa`, the substring indexes :class:`SuffixAutomaton` and

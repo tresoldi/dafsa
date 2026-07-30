@@ -58,12 +58,14 @@ test = [
     "dafsa[graph]",
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "pytest-xdist>=3.6",
     "hypothesis>=6.100",
 ]
 dev = [
     "dafsa[docs,graph,test]",
     "mypy>=1.11",
     "ruff>=0.6",
+    "pre-commit>=3.8",
     "build>=1.2",
     "twine>=5.1",
 ]
@@ -159,6 +161,7 @@ select = [
     "PTH",     # flake8-use-pathlib
     "RET",     # flake8-return
     "RUF",     # ruff-specific
+    "S",       # flake8-bandit
     "SIM",     # flake8-simplify
     "SLF",     # flake8-self
     "TC",      # flake8-type-checking
@@ -185,8 +188,20 @@ convention = "numpy"
     "D",       # docstrings are not required in tests
     "FBT003",  # a boolean semiring's weights are data, not flags
     "PLR2004", # magic values are the point of a test
+    "S101",    # assert is how a test asserts
+    "S301",    # unpickling is what the pickle round-trip test tests
+    "S311",    # test corpora are pseudo-random, not cryptographic
+    "S603",    # tests invoke `dot` and this interpreter, with fixed argument lists
+    "S607",    # `dot` is resolved on PATH, exactly as `write_figure` resolves it
     "SLF001",  # tests may reach into internals
 ]
+"benchmarks/*" = [
+    "S311",    # the benchmark corpus is pseudo-random, not cryptographic
+]
+# ``write_figure`` shells out to Graphviz. Resolving ``dot`` on PATH is the point --
+# an absolute path would break every installation that puts it somewhere else -- and
+# the argument list is built here, never from user input, with shell=False.
+"src/dafsa/export.py" = ["S603", "S607"]
 # In the boolean semiring, booleans are the weight type. FBT exists to catch
 # boolean *flags* that should be keyword-only; here they are the data itself.
 "src/dafsa/semirings.py" = ["FBT001", "FBT002"]

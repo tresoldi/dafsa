@@ -53,7 +53,12 @@ paths is defined — and everything else followed from providing one.
 - **The command-line interface** was rewritten; `--condense` is now `--compact`.
 - **networkx is an optional dependency**, in the `graph` extra. It is needed only by the three
   graph exports.
-- Documentation moved from Sphinx/ReadTheDocs to MkDocs Material, published to GitHub Pages.
+- Documentation moved from Sphinx/ReadTheDocs to MkDocs Material, published to GitHub Pages: a
+  landing page, one [User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/) covering concepts,
+  worked examples, migration and references, and an API reference generated from the docstrings.
+  Every `python` block in the README and the guide is executed by the test suite.
+- `DESIGN.md` became [`ARCHITECTURE.md`](ARCHITECTURE.md), describing the delivered library rather
+  than a plan, with the 1.0 audit as history and the decisions taken recorded as a log.
 
 ### Fixed
 

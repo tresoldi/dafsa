@@ -18,10 +18,10 @@ from dafsa import Dafsa
 
 lexicon = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
 
-"taps" in lexicon     # True
-"ta" in lexicon       # False — a prefix is not a member
-len(lexicon)          # 4
-lexicon.num_states    # 5, where a trie would need 8
+assert "taps" in lexicon
+assert "ta" not in lexicon  # a prefix is not a member
+assert len(lexicon) == 4
+assert lexicon.num_states == 5  # where a trie would need 8
 ```
 
 ![Trie vs. DAFSA](https://raw.githubusercontent.com/tresoldi/dafsa/master/figures/trie-vs-dafsa.png)
@@ -58,31 +58,38 @@ even types that cannot be compared with each other:
 ```python
 from dafsa import Dafsa, tokenize
 
-Dafsa.from_sequences([tokenize("the cat sat"), tokenize("the dog sat")])
+phrases = Dafsa.from_sequences([tokenize("the cat sat"), tokenize("the dog sat")])
+assert ("the", "cat", "sat") in phrases
 ```
 
 **Weights belong to a semiring**, so combining them along a path and across paths is defined:
 
 ```python
+from dafsa import Dafsa
 from dafsa.semirings import COUNTING
 
 counted = Dafsa.from_sequences(["tip", "tip", "tap"], semiring=COUNTING)
-counted.weight("tip")    # 2
-counted.total_weight()   # 3 insertions, over 2 distinct sequences
+assert counted.weight("tip") == 2
+assert counted.total_weight() == 3  # insertions, over 2 distinct sequences
 ```
 
 **The automaton is an index, not only a set.** Suffix counts make it a minimal perfect hash over
 its own language:
 
 ```python
-lexicon.rank("top")   # 2
-lexicon.unrank(2)     # ('t', 'o', 'p')
-list(lexicon.starts_with("ta"))
+from dafsa import Dafsa
+
+lexicon = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
+
+assert lexicon.rank("top") == 2
+assert lexicon.unrank(2) == ("t", "o", "p")
+assert list(lexicon.starts_with("ta")) == [("t", "a", "p"), ("t", "a", "p", "s")]
 ```
 
 **Drawings you can read**, with compaction and correct fonts:
 
 ```python
+# docs-test: skip — writing a figure needs Graphviz on the path
 from dafsa import export
 
 export.write_figure(lexicon.compact(), "words.png", scale_edges=True)
@@ -99,22 +106,24 @@ dafsa --compact -t svg -o words.svg words.txt
 
 ## Documentation
 
-- [Quickstart](https://tresoldi.github.io/dafsa/quickstart/) — the library in one page
-- [Migrating from 1.0](https://tresoldi.github.io/dafsa/migration/)
-- [API reference](https://tresoldi.github.io/dafsa/api/)
-- [`DESIGN.md`](DESIGN.md) — the design, the audit of 1.0 behind it, and the milestone plan
+- [User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/) — the library in one page,
+  including migration from 1.0 and the references
+- [API Reference](https://tresoldi.github.io/dafsa/reference/)
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the library is put together, and why
 
 ## Upgrading from 1.0
 
 2.0 is a deliberate break; 1.0 code will not run unchanged, and `dafsa==1.0` stays on PyPI. The
-[migration guide](https://tresoldi.github.io/dafsa/migration/) maps the old API onto the new one.
+[migration section of the User Guide](https://tresoldi.github.io/dafsa/USER_GUIDE/#migrating-from-10)
+maps the old API onto the new one.
 
 The reason for breaking is worth stating plainly. 1.0 collected weights by re-walking sequences
 over the already-minimized graph, so an edge counter held the total frequency of *every* sequence
 crossing it, and `lookup()` summed those along the queried path:
 
 ```python
->>> DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")[1]   # 1.0
+# docs-test: skip — this is 1.0, kept here to show what it did
+>>> DAFSA(["dib", "tip", "tips", "top"]).lookup("tip")[1]
 7
 ```
 

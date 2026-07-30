@@ -1,0 +1,30 @@
+version: 2
+
+updates:
+  # Python dependencies. dafsa has no required dependencies; this covers the
+  # graph, docs, test and dev extras.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "tresoldi"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "tresoldi"
+    commit-message:
+      prefix: "ci"

@@ -179,7 +179,7 @@ class Automaton:
         "_transition_weights",
     )
 
-    def __init__(  # noqa: PLR0913 - the CSR arrays are irreducibly separate
+    def __init__(  # noqa: PLR0913, PLR0917 - the CSR arrays are irreducibly separate
         self,
         alphabet: Alphabet,
         first: array[int],

@@ -1,6 +1,6 @@
 """Measure construction and query cost at a size where the shape of the curve shows.
 
-Run with ``python benchmarks/run.py``. The numbers quoted in ``DESIGN.md`` come
+Run with ``python benchmarks/run.py``. The numbers quoted in ``ARCHITECTURE.md`` come
 from here, so that a claim in the design document can be re-checked rather than
 taken on trust.
 

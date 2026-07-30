@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dafsa — finite-state structures for sequence data</title>
+<meta name="description" content="A small, dependency-free Python library for storing and querying sets of sequences as deterministic acyclic finite-state automata: tries, DAFSAs, suffix automata, and transducers.">
+<link rel="canonical" href="{{ config.site_url }}">
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-2: #474747;
+    --ink-3: #737373;
+    --rule: #d8d8d8;
+    --rule-2: #ececec;
+    --link: #234a86;
+    --code-bg: #f6f6f6;
+    --fig-ink: #1a1a1a;
+    --fig-grey: #8f8f8f;
+    --fig-light: #c9c9c9;
+    --serif: "Times New Roman", Times, Georgia, "Nimbus Roman", serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    --measure: 42rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121212; --ink: #e6e6e6; --ink-2: #b2b2b2; --ink-3: #8a8a8a;
+      --rule: #2d2d2d; --rule-2: #242424; --link: #8fb0e6;
+      --code-bg: #1a1a1a; --fig-ink: #e6e6e6; --fig-grey: #969696; --fig-light: #575757;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 18px; line-height: 1.55;
+    text-rendering: optimizeLegibility;
+  }
+  .page { max-width: var(--measure); margin: 0 auto; padding: 0 26px 80px; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+
+  header.mast { padding: 60px 0 22px; border-bottom: 1px solid var(--ink); }
+  .title { font-size: 1.9rem; font-weight: 700; margin: 0 0 8px; }
+  .title .mono { font-family: var(--mono); font-weight: 600; letter-spacing: -0.02em; }
+  .dek { font-size: 1.05rem; color: var(--ink-2); margin: 0 0 18px; max-width: 34em; }
+  .meta { font-size: 0.9rem; color: var(--ink-3); }
+  .meta a { color: var(--ink-2); }
+  .meta .sep { padding: 0 6px; color: var(--rule); }
+
+  main > section { padding: 26px 0; border-bottom: 1px solid var(--rule-2); }
+  main > section:last-of-type { border-bottom: 0; }
+  h2 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0 0 12px; }
+  p { margin: 0 0 14px; } p:last-child { margin-bottom: 0; }
+  .lead { font-size: 1.08rem; } .lead b { font-weight: 700; }
+
+  code { font-family: var(--mono); font-size: 0.84em; }
+  pre {
+    margin: 4px 0 0; background: var(--code-bg); border: 1px solid var(--rule);
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono);
+    font-size: 13.5px; line-height: 1.65; color: var(--ink);
+  }
+  pre.install { padding: 10px 14px; }
+  .c-com { color: var(--ink-3); }
+  .after-code { font-size: 0.96rem; color: var(--ink-2); margin-top: 12px; }
+
+  figure { margin: 4px 0 0; }
+  .fig-frame { border: 1px solid var(--rule); background: var(--paper); padding: 12px 14px 6px; }
+  canvas { width: 100%; height: 190px; display: block; }
+  .fig-legend { font-size: 0.8rem; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--rule-2); }
+  .fig-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .fig-legend i { width: 14px; height: 0; display: inline-block; border-top: 2px solid var(--fig-ink); }
+  .fig-legend i.grey { border-top-color: var(--fig-grey); }
+  .fig-legend i.light { border-top-color: var(--fig-light); }
+  figcaption { font-size: 0.9rem; color: var(--ink-2); line-height: 1.5; margin-top: 10px; }
+  figcaption b { font-weight: 700; color: var(--ink); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  thead th { font-size: 0.82rem; color: var(--ink-2); font-weight: 700; text-align: left; padding: 0 14px 7px 0; border-bottom: 1px solid var(--ink); }
+  tbody td { padding: 8px 14px 8px 0; border-bottom: 1px solid var(--rule-2); vertical-align: baseline; }
+  tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+  td.m { font-family: var(--mono); font-size: 0.82rem; color: var(--ink); white-space: nowrap; }
+  td.k { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-3); white-space: nowrap; }
+  .tbl-scroll { overflow-x: auto; }
+
+  ul.plain { margin: 0; padding: 0; list-style: none; }
+  ul.plain li { padding: 6px 0; border-bottom: 1px solid var(--rule-2); }
+  ul.plain li:last-child { border-bottom: 0; }
+  ul.plain b { font-weight: 700; } ul.plain .d { color: var(--ink-2); }
+
+  .links-row { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 0.98rem; }
+
+  footer { padding-top: 24px; margin-top: 6px; border-top: 1px solid var(--ink); font-size: 0.85rem; color: var(--ink-3); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="mast">
+    <h1 class="title"><span class="mono">dafsa</span></h1>
+    <p class="dek">Finite-state structures for sequence data — a small, dependency-free
+      Python library.</p>
+    <div class="meta">
+      MIT<span class="sep">·</span>Python 3.10–3.13<span class="sep">·</span><a href="https://github.com/tresoldi/dafsa">GitHub</a><span class="sep">·</span><a href="https://pypi.org/project/dafsa/">PyPI</a><span class="sep">·</span><a href="{{ base_url }}/USER_GUIDE/">Documentation</a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <p class="lead">A set of sequences holds a great deal of redundancy: words share
+        beginnings, and they share endings. A <b>deterministic acyclic finite-state
+        automaton</b> stores each shared part once, so the set becomes a graph whose size
+        reflects how much its members have in common rather than how many there are.
+        Membership is then a walk, and the same walk answers rather more — how many
+        sequences follow a prefix, which is the <i>n</i>-th in order, what a sequence
+        weighs. <code>dafsa</code> builds these structures, minimises them, and lets you
+        query and export them.</p>
+    </section>
+
+    <section>
+      <h2>Installation</h2>
+      <pre class="install">pip install dafsa</pre>
+    </section>
+
+    <section>
+      <h2>Example</h2>
+<pre>from dafsa import Dafsa
+
+lexicon = Dafsa.from_sequences(["tap", "taps", "top", "tops"])
+
+"taps" in lexicon      <span class="c-com"># True</span>
+"ta" in lexicon        <span class="c-com"># False    a prefix is not a member</span>
+len(lexicon)           <span class="c-com"># 4        counted, not enumerated</span>
+lexicon.unrank(2)      <span class="c-com"># ('t', 'o', 'p')</span>
+lexicon.num_states     <span class="c-com"># 5        a trie would need 8</span></pre>
+      <p class="after-code">The shared <code>ps</code> ending is stored once, and the
+        shared <code>t</code> beginning too. Nothing about the answers changes; only the
+        space they are computed in.</p>
+    </section>
+
+    <section>
+      <h2>What minimisation buys</h2>
+      <figure>
+        <div class="fig-frame">
+          <canvas id="viz" width="720" height="190"></canvas>
+          <div class="fig-legend">
+            <span><i></i>trie</span>
+            <span><i class="grey"></i>minimised (DAFSA)</span>
+            <span><i class="light"></i>minimised and compacted</span>
+          </div>
+        </div>
+        <figcaption><b>Figure 1.</b> States needed to hold a growing set of sequences.
+          A trie grows with the total length of its input; merging equivalent states
+          folds the shared endings away, and collapsing forced chains removes most of
+          what is left. At 96,393 sequences: 360,103 states, 109,160, and 39,864.
+          Reproduce with <code>benchmarks/run.py</code>.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Structures</h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr><th>Structure</th><th>Appropriate when</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="m">Trie</td><td>prefixes are shared but the structure must stay a tree</td><td class="k">O(total)</td></tr>
+            <tr><td class="m">Dafsa</td><td>a set of sequences is stored and queried; the usual choice</td><td class="k">O(n log n)</td></tr>
+            <tr><td class="m">CompactDafsa</td><td>the automaton is to be drawn, exported, or made smaller still</td><td class="k">O(states)</td></tr>
+            <tr><td class="m">SuffixAutomaton</td><td>questions are about substrings <i>within</i> one sequence</td><td class="k">O(n)</td></tr>
+            <tr><td class="m">Cdawg</td><td>the same, with forced chains collapsed</td><td class="k">O(n)</td></tr>
+            <tr><td class="m">Fst</td><td>sequences are mapped to sequences, not merely accepted</td><td class="k">O(n log n)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="after-code">All six share one frozen core — compressed sparse row
+        adjacency over <code>array.array</code>, no object per state — and one weight
+        algebra. Weights live in a <b>semiring</b>: boolean, counting, tropical, log,
+        probability and Viterbi are built in, and any type satisfying the protocol
+        works. Because minimisation is weight-aware, the weight of a path is the weight
+        the sequence was inserted with.</p>
+    </section>
+
+    <section>
+      <h2>Beyond words</h2>
+      <p>Tokens need only be hashable, and a sequence is any
+        <code>Sequence[Hashable]</code>. Characters are the default because a
+        <code>str</code> is a sequence of them, not because the library is about text:</p>
+      <ul class="plain">
+        <li><b>Lexicography.</b> <span class="d">word lists and spell-checker dictionaries, indexed and ranked in place.</span></li>
+        <li><b>Phonology.</b> <span class="d">sequences of phonemes or feature bundles, with multi-character segments kept whole.</span></li>
+        <li><b>Historical linguistics.</b> <span class="d">sound-change rules as transducers, composed into a chain.</span></li>
+        <li><b>Genomics.</b> <span class="d">substring indexes over sequence data, in linear time and space.</span></li>
+        <li><b>Anything discrete.</b> <span class="d">tags, integers, tuples, mixed and mutually incomparable types.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Documentation</h2>
+      <div class="links-row">
+        <a href="{{ base_url }}/USER_GUIDE/">User Guide →</a>
+        <a href="{{ base_url }}/reference/">API Reference →</a>
+        <a href="https://github.com/tresoldi/dafsa/blob/master/CHANGELOG.md">Changelog →</a>
+        <a href="https://github.com/tresoldi/dafsa">Source (GitHub) →</a>
+        <a href="https://pypi.org/project/dafsa/">Package (PyPI) →</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Citation</h2>
+<pre>@software{tresoldi_dafsa,
+  author  = {Tresoldi, Tiago},
+  title   = {DAFSA: Finite-state structures for sequence data},
+  year    = {2026},
+  version = {2.0.0},
+  doi     = {10.5281/zenodo.3668870},
+  url     = {https://github.com/tresoldi/dafsa}
+}</pre>
+    </section>
+  </main>
+
+  <footer>
+    <span>MIT License</span>
+    <span>© 2026 Tiago Tresoldi</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var canvas = document.getElementById("viz");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+    // Measured with benchmarks/run.py: states held by each structure for the
+    // first N sequences of a 96,393-word pseudo-lexicon.
+    var sizes   = [0,  2000,  5000, 10000, 20000,  40000,  60000,  80000,  96393];
+    var trie    = [1,  7433, 18630, 37330, 74409, 149102, 224037, 298771, 360103];
+    var dafsa   = [1,  3457,  7797, 14708, 27388,  50928,  72540,  92882, 109160];
+    var compact = [1,   959,  2110,  3857,  7822,  16710,  25428,  33574,  39864];
+    var maxX = sizes[sizes.length - 1], maxY = trie[trie.length - 1];
+
+    function dims() {
+      var ratio = window.devicePixelRatio || 1;
+      var w = canvas.clientWidth, h = canvas.clientHeight;
+      canvas.width = w * ratio; canvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { w: w, h: h };
+    }
+    function draw() {
+      var d = dims(), w = d.w, h = d.h;
+      ctx.clearRect(0, 0, w, h);
+      var fig = css("--fig-ink"), grey = css("--fig-grey"),
+          light = css("--fig-light"), ink3 = css("--ink-3"), rule = css("--rule");
+      var padL = 4, padR = 44, padB = 22, padT = 14;
+      var plotH = h - padT - padB, plotW = w - padL - padR;
+      var i;
+
+      function x(v) { return padL + (v / maxX) * plotW; }
+      function y(v) { return padT + plotH - (v / maxY) * plotH; }
+
+      ctx.strokeStyle = rule; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, padT + plotH + 0.5); ctx.lineTo(w - padR, padT + plotH + 0.5); ctx.stroke();
+
+      function series(values, colour, label) {
+        ctx.strokeStyle = colour; ctx.lineWidth = 1.75; ctx.beginPath();
+        ctx.moveTo(x(sizes[0]), y(values[0]));
+        for (i = 1; i < sizes.length; i++) {
+          var px = x(sizes[i]), py = y(values[i]);
+          var qx = x(sizes[i - 1]), qy = y(values[i - 1]);
+          ctx.quadraticCurveTo((qx + px) / 2, qy, px, py);
+        }
+        ctx.stroke();
+        ctx.fillStyle = colour; ctx.font = "10px " + css("--mono");
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText(label, x(maxX) + 6, y(values[values.length - 1]));
+      }
+      series(trie, fig, "360k");
+      series(dafsa, grey, "109k");
+      series(compact, light, "40k");
+
+      ctx.fillStyle = ink3; ctx.font = "10px " + css("--mono");
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("0", padL, padT + plotH + 15);
+      ctx.textAlign = "right";
+      ctx.fillText("96,393 sequences", w - padR, padT + plotH + 15);
+    }
+    draw();
+    window.addEventListener("resize", draw);
+  })();
+</script>
+</body>
+</html>
