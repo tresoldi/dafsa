@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–1 implemented (see §12)
+Status: accepted; milestones 0–2 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -253,6 +253,23 @@ outgoing `(symbol, target, weight)` triples agree, compared through `Semiring.ke
 what makes `weight(seq)` equal to the weight assigned to `seq` (§2.3), at the cost of less
 state sharing than an unweighted DAFSA. Weight pushing (Mohri) recovers some of that sharing
 for divisible semirings and is offered as an explicit optional pass, not a default.
+
+Two decisions taken while implementing this layer:
+
+- **`LOG.plus` is computed stably, not literally.** The spelling in the table above is what the
+  operation *means*; evaluating it directly is unusable, because `exp(-1000)` flushes to zero
+  and the log of zero follows. The implementation factors out the smaller weight so the
+  exponential is always of a non-positive number: `m - log1p(exp(m - M))`. That form is correct
+  at magnitudes where the direct one underflows in one direction and raises `OverflowError` in
+  the other, and both failures are pinned by tests.
+- **Dividing by `zero` raises `ZeroDivisionError` in every divisible semiring.** For the
+  log-space semirings the tempting alternative is to return `-inf`, but no weight `w` satisfies
+  `times(w, inf) == left` for finite `left`, so there is nothing honest to return. This makes
+  the tropical and log semirings behave like the probability ones, which raise for the same
+  reason.
+
+`COUNTING` is deliberately **not** divisible: integer division is not exact, and a semiring
+that silently truncated would corrupt weight pushing in a way that is hard to attribute later.
 
 ---
 
@@ -531,7 +548,7 @@ an unverified layer.
 |---|---|---|---|
 | 0 | Infrastructure | `pyproject.toml` (3.10+, ruff, mypy, `py.typed`), CI refresh, MkDocs skeleton, remove `daciuk/` and the Sphinx/RTD files | **done** |
 | 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` | **done** |
-| 2 | Semiring layer | protocol, six built-ins, law tests | |
+| 2 | Semiring layer | protocol, six built-ins, law tests | **done** |
 | 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | |
 | 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` | |
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | |

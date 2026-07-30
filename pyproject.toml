@@ -171,9 +171,13 @@ convention = "numpy"
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
     "D",       # docstrings are not required in tests
+    "FBT003",  # a boolean semiring's weights are data, not flags
     "PLR2004", # magic values are the point of a test
     "SLF001",  # tests may reach into internals
 ]
+# In the boolean semiring, booleans are the weight type. FBT exists to catch
+# boolean *flags* that should be keyword-only; here they are the data itself.
+"src/dafsa/semirings.py" = ["FBT001", "FBT002"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
