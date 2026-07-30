@@ -47,7 +47,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-graph = ["networkx>=3.0"]
+graph = ["networkx>=3.4.2"]
 docs = [
     # MkDocs 2.0 removes the plugin system outright, which breaks mkdocs-material
     # and mkdocstrings with no migration path. Pinned until that shakes out.
