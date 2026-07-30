@@ -586,6 +586,15 @@ Recorded because they are worth reversing deliberately rather than by accident.
     fontconfig there substitutes a covering font for Graphviz's unresolvable default. What
     *is* verified is that naming a font changes which font is embedded, which is the
     mechanism the fix relies on.
+
+    That verification is inherently machine-dependent, and the CI matrix proved it: the
+    GitHub Linux images ship DejaVu, the macOS and Windows ones do not, and there Graphviz
+    silently substitutes another face, so a PDF asserted to name `DejaVuSans` names
+    something else. Naming a font is all the library can do; honouring the name is the
+    system's business. The test therefore splits in two — that the DOT and the rendered
+    output carry the font the caller asked for is asserted everywhere, while the assertion
+    about which face is *embedded* is skipped where a probe render shows Graphviz cannot
+    resolve it.
 27. **Weight-aware minimization shares fewer states** than 1.0's minimize-then-count
     approach, so weighted automata are larger. `push()` recovers some of it:
     `{"ax": 0.3, "bx": 0.7}` minimizes to five states against three unweighted, and

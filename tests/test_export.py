@@ -47,6 +47,46 @@ WORD_LISTS = st.lists(st.text(alphabet="abc", max_size=4), max_size=8)
 needs_graphviz = pytest.mark.skipif(shutil.which("dot") is None, reason="Graphviz is not installed")
 
 
+def _embedded_name(font: str) -> bytes:
+    """Return the name a PDF would use for ``font``, which drops the spaces."""
+    return font.replace(" ", "").encode()
+
+
+def _graphviz_resolves(font: str) -> bool:
+    """Whether Graphviz can find ``font`` rather than substituting for it.
+
+    Naming a font is all the library can do; whether the request is honoured
+    depends on what is installed. Graphviz embeds the face it actually resolved,
+    so rendering a probe and looking for the requested name answers the question
+    directly, on any platform, without shelling out to a font tool that only
+    exists on some of them.
+    """
+    if shutil.which("dot") is None:
+        return False
+
+    probe = f'digraph {{ node [fontname="{font}"]; a [label="a"]; }}'
+    rendered = subprocess.run(
+        ["dot", "-Tpdf"],
+        input=probe.encode("utf-8"),
+        capture_output=True,
+        check=False,
+    )
+
+    return rendered.returncode == 0 and _embedded_name(font) in rendered.stdout
+
+
+# The GitHub Linux images ship DejaVu; the macOS and Windows ones do not, and
+# there Graphviz silently substitutes another face. That is a fact about the
+# runner, not about this library, so the assertion that depends on it is scoped
+# to machines where the font exists. What the library actually controls -- that
+# the DOT names the font it was asked for -- is asserted unconditionally by
+# `test_issue_15_accented_tokens_survive_to_svg` and by the `to_dot` tests.
+needs_default_font = pytest.mark.skipif(
+    not _graphviz_resolves(DEFAULT_FONT),
+    reason=f"Graphviz cannot resolve {DEFAULT_FONT} on this machine",
+)
+
+
 # -- dictionaries and JSON -------------------------------------------------
 
 
@@ -520,6 +560,7 @@ def test_issue_16_parallel_edges_keep_their_own_labels() -> None:
 
 
 @needs_graphviz
+@needs_default_font
 def test_issue_15_the_named_font_is_the_one_embedded(tmp_path: Path) -> None:
     """The reporter's input: French verb forms, rendered to PDF as boxes in 1.0.
 
@@ -533,7 +574,24 @@ def test_issue_15_the_named_font_is_the_one_embedded(tmp_path: Path) -> None:
     destination = tmp_path / "verbs.pdf"
     write_figure(automaton, destination)
 
-    assert b"DejaVuSans" in destination.read_bytes()
+    assert _embedded_name(DEFAULT_FONT) in destination.read_bytes()
+
+
+@needs_graphviz
+def test_issue_15_the_dot_names_the_font_it_was_asked_for(tmp_path: Path) -> None:
+    """The half of the fix that holds on every machine.
+
+    Whether Graphviz *has* the font is the machine's business. That the request
+    reaches the renderer at all is the library's, and it is what 1.0's template
+    could not express: it declared no ``fontname``, so there was nothing to
+    honour or substitute for.
+    """
+    automaton = Dafsa.from_sequences(["aimâmes", "aimèrent"])
+    destination = tmp_path / "verbs.svg"
+    write_figure(automaton, destination, fontname="Noto Sans")
+
+    assert 'fontname="Noto Sans"' in to_dot(automaton, fontname="Noto Sans")
+    assert "Noto Sans" in destination.read_text(encoding="utf-8")
 
 
 @needs_graphviz
