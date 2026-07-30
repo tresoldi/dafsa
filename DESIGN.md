@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted, not yet implemented
+Status: accepted; milestones 0–1 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -162,10 +162,15 @@ s_first       array[int32], length num_states + 1     # transitions of q are [s_
 t_symbol      array[int32], length num_transitions    # sorted by (source, symbol)
 t_target      array[int32], length num_transitions
 s_flags       array[uint8]                            # bit 0: final
-t_weight      list[W] | None                          # semiring elements, weighted case only
-s_final       list[W] | None                          # final weights, weighted case only
-s_count       array[int64]                            # accepted suffixes from q (§6.3)
+t_weight      list[W] | None                          # semiring elements, weighted case only   [M2]
+s_final       list[W] | None                          # final weights, weighted case only       [M2]
+s_count       array[int64]                            # accepted suffixes from q (§6.3)         [M4]
 ```
+
+The fields marked `[M2]` and `[M4]` are added by the milestone noted, not carried as `None`
+placeholders beforehand: a weight field means nothing until the semiring that interprets it
+exists, and a field whose only possible value is `None` is worse documentation than its
+absence. The first four fields plus `s_flags` are what milestone 1 built.
 
 Consequences, each of which answers something in §2:
 
@@ -185,6 +190,28 @@ growable parallel lists (`list[list[int]]` for symbols and targets per state) ra
 objects, and `freeze()` flattens them into the CSR arrays with canonical renumbering. This is
 the "array-based from the start" decision: at no point does a node become a first-class
 object that user code can hold a reference to.
+
+`freeze()` is where the frozen core's invariants are *established* rather than assumed, which
+is the point of having a build/freeze split at all. It performs four jobs:
+
+1. **Canonical renumbering.** Breadth-first from the root, following each state's transitions
+   in ascending symbol order. Numbering therefore depends only on the automaton's shape, so
+   two builders describing the same automaton freeze to byte-identical arrays. That is a
+   stronger property than "no gaps" and is what makes the arrays comparable and diffable.
+2. **Reachability pruning.** States allocated and then abandoned cost nothing in the result.
+3. **Determinism.** Enforced when a transition is added, so a duplicate symbol is reported at
+   the call site that caused it rather than discovered at freeze time.
+4. **Acyclicity.** Iterative three-colour depth-first search. The distinction that matters:
+   an edge into a *grey* state is a cycle, an edge into a *black* state is not. Converging
+   paths are exactly the state sharing that makes a DAFSA a DAFSA, so a check that rejected
+   them would reject every structure this library exists to build.
+
+Every pass is iterative. Nothing in the builder recurses on the structure being built, which
+is what makes §2.1's issue #10 unreachable rather than merely unlikely.
+
+Errors are raised as a small family in `dafsa.exceptions`, each deriving from `DafsaError`
+*and* from the built-in a caller would reasonably catch: `UnknownTokenError` (a `KeyError`),
+`DeterminismError` and `AcyclicityError` (both `ValueError`).
 
 ---
 
@@ -344,6 +371,30 @@ automaton.total_weight()                -> W
 `Match` carries the state path, the transition path, and the semiring weight — **the
 resolution of #8**, without needing networkx for the common case.
 
+### What exists after milestone 1
+
+The core is public and stable enough to build on; everything above that is not listed here is
+still to come. `Alphabet` and `Automaton` are importable from `dafsa` directly, `Builder` is
+`dafsa._builder.Builder` and stays private — callers reach it through the structures.
+
+```python
+Alphabet(tokens) / Alphabet.from_sequences(seqs)
+alphabet.tokens / .id(token) / .token(symbol)
+alphabet.encode(seq) / .try_encode(seq) -> tuple | None / .decode(symbols)
+len(alphabet) / token in alphabet / iter(alphabet) / == / hash()
+
+automaton.accepts(seq) -> bool          # seq in automaton
+automaton.step(state, symbol)           -> State | None
+automaton.walk(symbols, start=ROOT)     -> State | None
+automaton.transitions(state) / .all_transitions() -> Iterator[Transition]
+automaton.is_final(state) / .out_degree(state) / .states()
+automaton.num_states / .num_transitions / .alphabet
+```
+
+`try_encode` returning `None` rather than raising is the deliberate half of the token
+contract: a sequence containing a token the automaton has never seen is *not accepted*, which
+is an answer, not an error. Only `encode` raises, for callers who mean it.
+
 ### Transform and inspect
 
 ```python
@@ -420,6 +471,29 @@ undocumentedly, in `__main__.py`) explicit and optional.
 | README | Rewritten for the structure family; dead Travis badge removed; Zenodo DOI and citation kept; explicit 1.0 → 2.0 note |
 | `manuscript/`, `paper.json` | **Untouched.** They remain the record of the 1.0 JOSS paper. 2.0 is documented in the changelog and docs, and gets a new Zenodo version DOI on release |
 
+Decisions taken while implementing the above, recorded because they are worth reversing
+deliberately rather than by accident:
+
+- **`requirements.txt` deleted.** PEP 621 `dependencies` is now the single source, and a
+  duplicate list drifts. Note that closed issue #4 explicitly asked for that file; the request
+  it was serving — an explicit, discoverable dependency list — is met by `pyproject.toml` and
+  `pip install -e ".[dev]"`.
+- **`mkdocs` pinned to `<2`, `mkdocs-material` to `<10`.** MkDocs 2.0 removes the plugin
+  system outright, which breaks both `mkdocs-material` and `mkdocstrings` with no migration
+  path. Defensive, not permanent — revisit once that settles.
+- **Doctests run in CI.** `--doctest-modules` over `src/`, so the examples in the docstrings
+  are executed rather than merely plausible.
+- **Tests ship in the sdist** (`recursive-include tests *.py`), so downstream packagers can
+  run them at build time.
+
+**One operational constraint worth knowing.** The credentials available to automated sessions
+in this repository lack GitHub's `workflow` scope, so `.github/workflows/*` cannot be created,
+modified, or deleted by a pushed commit — the push is rejected outright, and the GitHub
+contents API returns 404 for the same reason. Workflow changes have to be made by a human, or
+by a token that carries the scope. A corollary that has already bitten once: a workflow file
+whose name is not exactly `*.yml` or `*.yaml` is silently ignored by Actions rather than
+reported as an error, so a typo in the filename disables the workflow with no signal.
+
 ---
 
 ## 11. Testing strategy
@@ -453,21 +527,34 @@ Tests that check the implementation against something *other than itself*:
 One release. Ordered so that each milestone is independently testable and nothing is built on
 an unverified layer.
 
-| # | Milestone | Contents |
-|---|---|---|
-| 0 | Infrastructure | `pyproject.toml` (3.10+, ruff, mypy, `py.typed`), CI refresh, MkDocs skeleton, remove `daciuk/` and the Sphinx/RTD files |
-| 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` |
-| 2 | Semiring layer | protocol, six built-ins, law tests |
-| 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier |
-| 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` |
-| 5 | Compaction | `CompactDafsa` — closes #18, #14 |
-| 6 | Substring index | `SuffixAutomaton`, `Cdawg` |
-| 7 | Transducers | `Fst`, `compose`, `project` |
-| 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 |
-| 9 | Weight pushing | `push()` for divisible semirings |
-| 10 | CLI | rewrite against the new API — closes the remainder of #17 |
-| 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI |
-| 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here |
+| # | Milestone | Contents | Status |
+|---|---|---|---|
+| 0 | Infrastructure | `pyproject.toml` (3.10+, ruff, mypy, `py.typed`), CI refresh, MkDocs skeleton, remove `daciuk/` and the Sphinx/RTD files | **done** |
+| 1 | Core | `Alphabet`, CSR `Automaton`, builder, `freeze()` with canonical renumbering, iterative traversal, `contains` | **done** |
+| 2 | Semiring layer | protocol, six built-ins, law tests | |
+| 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | |
+| 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best` | |
+| 5 | Compaction | `CompactDafsa` — closes #18, #14 | |
+| 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
+| 7 | Transducers | `Fst`, `compose`, `project` | |
+| 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | |
+| 9 | Weight pushing | `push()` for divisible semirings | |
+| 10 | CLI | rewrite against the new API — closes the remainder of #17 | |
+| 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | |
+| 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | |
+
+Milestone 1 delivered the core at 100% branch coverage, checked against independent references
+rather than against itself: a brute-force stack-based enumeration of the accepted language, and
+`hypothesis` properties asserting that the accepted language equals the inserted set and that
+membership agrees with a plain Python `set`. Issue #10's depth tests build a 50,000-state
+automaton and then freeze, traverse, `deepcopy`, and `pickle` it, with a guard test asserting
+the recursion limit has *not* been raised so the other four cannot pass vacuously.
+
+For scale, a 96,393-sequence corpus builds and freezes in ~4s at ~425,000 lookups/s. That
+figure is a **trie** built by a deliberately naive register-free helper, so it measures
+`freeze()` at scale and says nothing yet about minimization — the number that answers 1.0's
+eight-minute benchmark (§2.2) belongs to milestone 3, and should be recorded here when it
+lands.
 
 ---
 
