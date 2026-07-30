@@ -33,14 +33,46 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import networkx as nx
-
 from dafsa._types import ROOT
 from dafsa.exceptions import ExportError
 
 if TYPE_CHECKING:
+    import networkx as nx
+
     from dafsa._types import Token
     from dafsa.automaton import Automaton
+
+
+def _networkx() -> Any:
+    """Return the ``networkx`` module, or explain why it is missing.
+
+    Imported here rather than at the top of the module because it is an optional
+    dependency. Nothing in the library needs it — construction, minimization,
+    counting, ranking, composition and the DOT output are all plain Python — so
+    making it required would charge every user for three functions most of them
+    will not call.
+
+    Returns
+    -------
+    module
+        The ``networkx`` module.
+
+    Raises
+    ------
+    ExportError
+        If it is not installed.
+    """
+    try:
+        import networkx as nx  # noqa: PLC0415 - deliberately deferred
+    except ImportError as error:
+        message = (
+            "this export needs networkx, which is an optional dependency; "
+            "install it with `pip install dafsa[graph]`"
+        )
+        raise ExportError(message) from error
+
+    return nx
+
 
 #: Emitted into every DOT source so Graphviz reads the labels as UTF-8.
 DEFAULT_CHARSET = "UTF-8"
@@ -415,7 +447,7 @@ def to_networkx(automaton: Automaton) -> nx.MultiDiGraph:
     >>> graph.number_of_edges() == Dafsa.from_sequences(["ab", "ac"]).num_transitions
     True
     """
-    graph = nx.MultiDiGraph()
+    graph = _networkx().MultiDiGraph()
     weighted = automaton.is_weighted
 
     for state in automaton.states():
@@ -474,7 +506,7 @@ def write_gml(automaton: Automaton, path: str | Path) -> None:
         Destination. Names ending in ``.gz`` or ``.bz2`` are compressed by
         ``networkx``.
     """
-    nx.write_gml(_flattened(automaton), str(path))
+    _networkx().write_gml(_flattened(automaton), str(path))
 
 
 def write_graphml(automaton: Automaton, path: str | Path) -> None:
@@ -487,7 +519,7 @@ def write_graphml(automaton: Automaton, path: str | Path) -> None:
     path
         Destination.
     """
-    nx.write_graphml(_flattened(automaton), str(path))
+    _networkx().write_graphml(_flattened(automaton), str(path))
 
 
 __all__ = [

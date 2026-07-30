@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–11 implemented (see §12)
+Status: accepted; milestones 0–12 implemented, release pending (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -667,7 +667,7 @@ an unverified layer.
 | 9 | Weight pushing | `push()` for divisible semirings | **done** |
 | 10 | CLI | rewrite against the new API — closes the remainder of #17 | **done** |
 | 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | **done** |
-| 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | |
+| 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | **prepared** |
 
 Milestone 1 delivered the core at 100% branch coverage, checked against independent references
 rather than against itself: a brute-force stack-based enumeration of the accepted language, and
@@ -758,6 +758,20 @@ Two implementation decisions in milestone 3 worth recording:
   no canonical way to distribute a weight along a path — deciding that is exactly what weight
   pushing does (milestone 9) — so construction does not invent one. `weight(seq)` is then the
   product of a chain of `one`s and the final weight, which is the weight that was inserted.
+Milestone 12 is **prepared, not performed**. The version is `2.0.0`, the classifiers say
+production, `CHANGELOG.md` is written, and the distributions build and pass metadata checks. What
+remains is not code and is not mine to do: tagging the release, minting the Zenodo version DOI
+from it, and closing the eight issues. Root causes and fixes for every one of them are recorded
+in §2.1 and the milestone notes here, so each can be closed with a pointer rather than a
+restatement.
+
+**networkx moved to an optional `graph` extra**, which §8 concluded it had earned. Nothing in
+milestones 0–7, 9 or 10 needs it; `match()` closed #8 without it, even though that issue
+suggested reaching for it; it is used by `to_networkx`, `write_gml` and `write_graphml` alone.
+Those three raise `ExportError` naming `pip install dafsa[graph]` when it is absent, and a test
+asserts that importing `dafsa` does not import networkx at all. The library now has **no required
+dependencies**.
+
 **The benchmark guard is a ratio, not a stopwatch.** A wall-clock threshold on shared CI
 hardware either trips on a loaded runner or is set so loose it catches nothing. What is asserted
 instead is that quadrupling the input does not multiply the work by more than ten: linear growth

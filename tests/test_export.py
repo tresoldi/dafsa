@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 from typing import TYPE_CHECKING, Any
 
 import networkx as nx
@@ -438,6 +439,62 @@ def test_graphml_survives_weighted_automata(tmp_path: Path) -> None:
     write_graphml(automaton, destination)
 
     assert destination.stat().st_size > 0
+
+
+# -- networkx is optional --------------------------------------------------
+
+
+def test_importing_dafsa_does_not_import_networkx() -> None:
+    """Three exports need it; nothing else does, so nobody else should pay."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys, dafsa; print('networkx' in sys.modules)",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.strip() == "False"
+
+
+def _convert(automaton: Any, path: Path) -> None:  # noqa: ARG001 - uniform signature
+    to_networkx(automaton)
+
+
+def _to_gml(automaton: Any, path: Path) -> None:
+    write_gml(automaton, path)
+
+
+def _to_graphml(automaton: Any, path: Path) -> None:
+    write_graphml(automaton, path)
+
+
+@pytest.mark.parametrize(
+    "call",
+    [_convert, _to_gml, _to_graphml],
+    ids=["to_networkx", "write_gml", "write_graphml"],
+)
+def test_graph_exports_explain_a_missing_networkx(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, call: Any
+) -> None:
+    monkeypatch.setitem(sys.modules, "networkx", None)
+    automaton = Dafsa.from_sequences(["ab"])
+
+    with pytest.raises(ExportError, match=r"pip install dafsa\[graph\]"):
+        call(automaton, tmp_path / "out")
+
+
+def test_the_other_exports_do_not_need_networkx(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(sys.modules, "networkx", None)
+    automaton = Dafsa.from_sequences(["ab"])
+
+    assert "digraph" in to_dot(automaton)
+    assert json.loads(to_json(automaton))["format"] == "dafsa"
 
 
 # -- regressions -----------------------------------------------------------
