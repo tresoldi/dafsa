@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–6 and 8 implemented (see §12)
+Status: accepted; milestones 0–8 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -390,6 +390,35 @@ structure's benefit; revisit if the quadratic worst case ever bites.
 
 ### 6.6 `Fst`
 
+**The representation needed no new core, which is the finding of this milestone.** A transition
+carries an input and an output symbol, and a *pair of tokens is itself a token*: hashable, and
+so something an `Alphabet` can number. An `Fst` is therefore an ordinary `Automaton` over an
+alphabet of pairs, and inherits minimization, counting, compaction and export unchanged. It also
+means core determinism is one transition per *pair*, not per input — which is exactly the
+ambiguity a transducer is allowed to have, and why `apply()` returns a list.
+
+Three decisions worth recording, each a limit rather than a feature:
+
+- **The composition filter has two states, not three.** The textbook filter is usually given as
+  three, forbidding a right-alone move after a left-alone one *and* the reverse. Implemented
+  literally that loses the path entirely when one side deletes while the other inserts — a test
+  caught it on `("ab" -> "m") o ("m" -> "xy")`, which composed to nothing. Exactly one of the two
+  orders must be allowed, not neither: right-alone moves come before left-alone ones within a
+  run, and the two filter states are "may still move right alone" and "may not".
+- **`compose` refuses an ambiguous result** rather than determinizing it. If two composed paths
+  carry the same input and output out of one state, resolving them means weighted
+  determinization, which is a different algorithm and out of scope. The error names the pair.
+- **`project` is unweighted.** Projection collapses paths that shared a side, and reconciling
+  their weights is the same weighted determinization. Dropping the weights is honest; carrying
+  one arbitrary path's is not.
+
+Projection needed subset construction, and subset construction produces a DFA that is not
+minimal, so milestone 7 also added **Revuz minimization** (`_algorithms.minimize`) — settle
+states in reverse topological order, merge on signature. The dictionary structures do not need
+it, since they minimize as they insert, but it now provides a strong independent check on them:
+minimizing a `Trie` must produce exactly the `Dafsa` that the incremental construction builds,
+by an entirely different route, and a property test asserts it does.
+
 Acyclic weighted transducer. Transitions carry `(input_symbol, output_symbol, weight)` with
 `EPSILON = -1` permitted on either side. Built from aligned sequence pairs; minimized by the
 same register discipline over `(final, final_weight, sorted (in, out, target, weight))`.
@@ -620,7 +649,7 @@ an unverified layer.
 | 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best`, plus the §7 query methods `match`/`paths`/`longest_prefix_of`/`starts_with` — closes #8 | **done** |
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | **done** |
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | **done** |
-| 7 | Transducers | `Fst`, `compose`, `project` | |
+| 7 | Transducers | `Fst`, `compose`, `project` | **done** |
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
 | 9 | Weight pushing | `push()` for divisible semirings | |
 | 10 | CLI | rewrite against the new API — closes the remainder of #17 | |

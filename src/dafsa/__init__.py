@@ -9,7 +9,7 @@ Available now: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
 (:mod:`dafsa.semirings`), the dictionary structures :class:`Trie`, :class:`Dafsa` and
 :class:`CompactDafsa`, the substring indexes :class:`SuffixAutomaton` and
 :class:`Cdawg`, the counting layer that makes an automaton an index rather than
-only a set, and :mod:`dafsa.export`. The transducers land in a later milestone.
+only a set, the transducers :class:`Fst`, and :mod:`dafsa.export`.
 
 Examples
 --------
@@ -44,6 +44,7 @@ from dafsa.exceptions import (
     ExportError,
     UnknownTokenError,
 )
+from dafsa.fst import EPSILON, Fst, compose
 from dafsa.semirings import Semiring
 from dafsa.structures import CompactDafsa, Dafsa, Trie
 from dafsa.suffix import Cdawg, SuffixAutomaton
@@ -57,6 +58,7 @@ __author__ = "Tiago Tresoldi"
 __email__ = "tiago.tresoldi@lingfil.uu.se"
 
 __all__ = [
+    "EPSILON",
     "ROOT",
     "AcyclicityError",
     "Alphabet",
@@ -67,6 +69,7 @@ __all__ = [
     "DafsaError",
     "DeterminismError",
     "ExportError",
+    "Fst",
     "Match",
     "Semiring",
     "SuffixAutomaton",
@@ -74,6 +77,7 @@ __all__ = [
     "Trie",
     "UnknownTokenError",
     "__version__",
+    "compose",
     "export",
     "semirings",
     "tokenize",

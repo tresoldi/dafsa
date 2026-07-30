@@ -13,8 +13,8 @@ automata, and acyclic weighted transducers.
     [`Trie`](api.md#dafsa.structures.Trie), [`Dafsa`](api.md#dafsa.structures.Dafsa) and
     [`CompactDafsa`](api.md#dafsa.structures.CompactDafsa), the substring indexes
     [`SuffixAutomaton`](api.md#dafsa.suffix.SuffixAutomaton) and
-    [`Cdawg`](api.md#dafsa.suffix.Cdawg), and the [export layer](api.md#dafsa.export). The
-    transducers are still being built.
+    [`Cdawg`](api.md#dafsa.suffix.Cdawg), the transducers
+    [`Fst`](api.md#dafsa.fst.Fst), and the [export layer](api.md#dafsa.export).
 
     For the released library — the one described by the JOSS paper and the Zenodo DOI — use
     `pip install dafsa==1.0` and read

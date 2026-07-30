@@ -489,4 +489,8 @@ def _signature(builder: Builder, state: State) -> _Signature:
     )
 
 
-__all__ = ["CompactDafsa", "Dafsa", "Trie"]
+#: The construction loop, shared with the transducers, which are dictionaries
+#: of ``(input, output)`` pairs and need exactly the same machinery.
+build_from_weighted = _build
+
+__all__ = ["CompactDafsa", "Dafsa", "Trie", "build_from_weighted"]

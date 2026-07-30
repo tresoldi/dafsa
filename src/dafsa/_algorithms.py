@@ -488,6 +488,82 @@ def compact(automaton: Automaton, factory: type[A]) -> A:
     return builder.freeze(factory)
 
 
+def minimize(automaton: Automaton, factory: type[A]) -> A:
+    """Return the minimal automaton accepting the same weighted language.
+
+    Revuz's algorithm: because the automaton is acyclic, states can be settled in
+    reverse topological order, and by the time a state is reached every successor
+    already stands for its equivalence class. Two states then merge exactly when
+    their signatures agree.
+
+    The dictionary structures do not need this — their construction minimizes as
+    it goes. It exists for automata that arrive already built, which is what
+    subset construction produces when a transducer is projected onto one side.
+
+    Parameters
+    ----------
+    automaton
+        The automaton to minimize. Must be deterministic and acyclic.
+    factory
+        The class to freeze the result into.
+
+    Returns
+    -------
+    Automaton
+        The minimal equivalent automaton.
+    """
+    # Imported here rather than at module scope: the builder imports the
+    # automaton, which imports this module.
+    from dafsa._builder import Builder  # noqa: PLC0415
+
+    semiring = automaton.semiring
+    register: dict[tuple[Any, ...], State] = {}
+    canonical: dict[State, State] = {}
+
+    for state in reversed(topological_order(automaton)):
+        final = automaton.is_final(state)
+        signature = (
+            final,
+            semiring.key(automaton.final_weight(state)) if final else None,
+            tuple(
+                (
+                    automaton.transition_label(index),
+                    canonical[automaton.transition_target(index)],
+                    semiring.key(automaton.transition_weight(index)),
+                )
+                for index in automaton.transition_indices(state)
+            ),
+        )
+        canonical[state] = register.setdefault(signature, state)
+
+    survivors = sorted(set(canonical.values()))
+    renumbered = {old: new for new, old in enumerate(survivors)}
+
+    builder = Builder(automaton.alphabet, semiring)
+    for _ in range(len(survivors) - 1):
+        builder.new_state()
+
+    # The root must stay the root; freeze() prunes whatever the swap orphans.
+    swap = dict(renumbered)
+    root = canonical[ROOT]
+    swap[root], swap[survivors[0]] = renumbered[survivors[0]], renumbered[root]
+
+    for old in survivors:
+        for index in automaton.transition_indices(old):
+            label = automaton.transition_label(index)
+            builder.add_transition(
+                swap[old],
+                label[0],
+                swap[canonical[automaton.transition_target(index)]],
+                automaton.transition_weight(index),
+                label,
+            )
+        if automaton.is_final(old):
+            builder.set_final(swap[old], weight=automaton.final_weight(old))
+
+    return builder.freeze(factory)
+
+
 class _Worst:
     """Orders weighted sequences worst-first, for eviction from a bounded heap.
 
@@ -532,6 +608,7 @@ __all__ = [
     "compact",
     "iterate",
     "k_best",
+    "minimize",
     "rank",
     "suffix_counts",
     "topological_order",
