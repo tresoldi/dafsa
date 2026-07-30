@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–8 implemented (see §12)
+Status: accepted; milestones 0–9 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -651,7 +651,7 @@ an unverified layer.
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | **done** |
 | 7 | Transducers | `Fst`, `compose`, `project` | **done** |
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
-| 9 | Weight pushing | `push()` for divisible semirings | |
+| 9 | Weight pushing | `push()` for divisible semirings | **done** |
 | 10 | CLI | rewrite against the new API — closes the remainder of #17 | |
 | 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | |
 | 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | |
@@ -745,6 +745,24 @@ Two implementation decisions in milestone 3 worth recording:
   no canonical way to distribute a weight along a path — deciding that is exactly what weight
   pushing does (milestone 9) — so construction does not invent one. `weight(seq)` is then the
   product of a chain of `one`s and the final weight, which is the weight that was inserted.
+Milestone 9 needed one addition to the core: **an initial weight**. Pushing moves weight
+towards the front of a path, and the front of the *first* transition has nowhere further to go,
+so without somewhere to put it the total weight of the language would change and `weight(seq)`
+would stop meaning what it says. A single scalar on the automaton solves it, and the property
+test is exact: every accepted sequence keeps the weight it had, to within the rounding division
+introduces.
+
+The claim §5 makes about pushing recovering state sharing is now checked rather than asserted.
+`{"ax": 0.3, "bx": 0.7}` minimizes to five states weighted against three unweighted, because two
+accepting states with different weights cannot merge however identical everything downstream is.
+Pushing moves the difference onto the transitions leading in, and `minimize(push(a))` returns to
+three with every weight intact.
+
+Pushing also establishes what milestone 4 said `k_best` was missing: after it, the weights
+leaving any state combine with its final weight to `one`, so a prefix's weight is informative
+about its extensions. `k_best` still enumerates — making it prune is a separate change, and it is
+not pretended otherwise.
+
 - **`Automaton` is not generic over the weight type.** Weights are typed `Any`. Making the
   class `Automaton[W]` would thread a type parameter through every structure, the builder, and
   `freeze()`'s overloads for a gain confined to callers who mix semirings in one program. It is

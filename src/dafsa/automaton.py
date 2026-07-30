@@ -140,6 +140,10 @@ class Automaton:
         One compound label per transition, or ``None`` when every transition
         consumes exactly one token. A label is a tuple of symbols whose first
         element equals the transition's entry in ``symbol``.
+    initial_weight
+        A weight applied to every accepted sequence. ``None`` means the
+        semiring's ``one``. Weight pushing is what makes it non-trivial: moving
+        weight towards the front has to leave it somewhere.
 
     Notes
     -----
@@ -167,6 +171,7 @@ class Automaton:
         "_final_weights",
         "_first",
         "_flags",
+        "_initial_weight",
         "_labels",
         "_semiring",
         "_symbol",
@@ -185,6 +190,7 @@ class Automaton:
         transition_weights: list[Any] | None = None,
         final_weights: list[Any] | None = None,
         labels: list[tuple[Symbol, ...]] | None = None,
+        initial_weight: Any = None,
     ) -> None:
         self._alphabet = alphabet
         self._first = first
@@ -195,6 +201,9 @@ class Automaton:
         self._transition_weights = transition_weights
         self._final_weights = final_weights
         self._labels = labels
+        self._initial_weight = (
+            semiring.one if initial_weight is None else initial_weight
+        )
 
         # Suffix counts are derived from the transitions, so they cannot be passed
         # in and be wrong. They are computed on first use rather than at
@@ -222,6 +231,11 @@ class Automaton:
         return self._semiring
 
     @property
+    def initial_weight(self) -> Any:
+        """The weight every accepted sequence carries before its path."""
+        return self._initial_weight
+
+    @property
     def is_weighted(self) -> bool:
         """Whether any weight differs from the semiring's ``one``.
 
@@ -229,7 +243,12 @@ class Automaton:
         arrays; :meth:`weight` still answers, with ``one`` for accepted
         sequences.
         """
-        return self._transition_weights is not None or self._final_weights is not None
+        return (
+            self._transition_weights is not None
+            or self._final_weights is not None
+            or self._semiring.key(self._initial_weight)
+            != self._semiring.key(self._semiring.one)
+        )
 
     @property
     def is_compact(self) -> bool:
@@ -569,7 +588,7 @@ class Automaton:
             return self._semiring.zero
 
         semiring = self._semiring
-        total = semiring.one
+        total = self._initial_weight
         state = ROOT
         position = 0
         while position < len(symbols):
@@ -625,7 +644,7 @@ class Automaton:
         state = ROOT
         states = [state]
         transitions: list[Transition] = []
-        weight = semiring.one
+        weight = self._initial_weight
         position = 0
 
         while position < len(symbols):
@@ -933,6 +952,30 @@ class Automaton:
         (2, 3)
         """
         return _algorithms.total_weight(self)
+
+    def push(self) -> Any:
+        """Return an equivalent automaton with its weight moved towards the front.
+
+        Every accepted sequence keeps exactly the weight it had. What changes is
+        where along its path that weight sits: afterwards, the weights leaving any
+        state combine with its final weight to the semiring's ``one``, so a
+        prefix's weight already tells you as much as it can about what follows.
+
+        Returns
+        -------
+        Automaton
+            A new automaton of the same class.
+
+        Raises
+        ------
+        NotImplementedError
+            If the semiring is not divisible, or if its multiplication does not
+            commute.
+        ZeroDivisionError
+            If some state cannot reach an accepting state, since its potential is
+            then the semiring's ``zero``.
+        """
+        return _algorithms.push(self, type(self))
 
     def k_best(self, k: int) -> list[tuple[tuple[Token, ...], Any]]:
         """Return the ``k`` best accepted sequences with their weights.

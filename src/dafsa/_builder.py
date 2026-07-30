@@ -80,6 +80,7 @@ class Builder:
         "_alphabet",
         "_final",
         "_final_weights",
+        "_initial_weight",
         "_labels",
         "_semiring",
         "_symbols",
@@ -96,6 +97,7 @@ class Builder:
         self._labels: list[list[tuple[Symbol, ...]]] = [[]]
         self._final: list[bool] = [False]
         self._final_weights: list[Any] = [semiring.zero]
+        self._initial_weight: Any = semiring.one
 
     @property
     def alphabet(self) -> Alphabet:
@@ -229,6 +231,16 @@ class Builder:
         else:
             self._final_weights[state] = self._semiring.zero
 
+    def set_initial_weight(self, weight: Any) -> None:
+        """Set the weight every accepted sequence carries before its path.
+
+        Parameters
+        ----------
+        weight
+            The initial weight.
+        """
+        self._initial_weight = weight
+
     def final_weight(self, state: State) -> Any:
         """Return ``state``'s final weight.
 
@@ -347,6 +359,7 @@ class Builder:
             self._trivial_or(transition_weights),
             self._trivial_or(final_weights, skip=self._semiring.zero),
             labels if any(len(entry) > 1 for entry in labels) else None,
+            self._initial_weight,
         )
 
     def _trivial_or(self, weights: list[Any], skip: Any = None) -> list[Any] | None:

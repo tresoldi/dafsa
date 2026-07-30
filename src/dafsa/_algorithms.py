@@ -150,7 +150,7 @@ def total_weight(automaton: Automaton) -> Any:
             )
         totals[state] = total
 
-    return totals[ROOT]
+    return semiring.times(automaton.initial_weight, totals[ROOT])
 
 
 def iterate(
@@ -460,6 +460,7 @@ def compact(automaton: Automaton, factory: type[A]) -> A:
     renumbered = {old: new for new, old in enumerate(survivors)}
 
     builder = Builder(automaton.alphabet, semiring)
+    builder.set_initial_weight(automaton.initial_weight)
     for _ in range(len(survivors) - 1):
         builder.new_state()
 
@@ -484,6 +485,136 @@ def compact(automaton: Automaton, factory: type[A]) -> A:
             )
         if automaton.is_final(state):
             builder.set_final(renumbered[state], weight=automaton.final_weight(state))
+
+    return builder.freeze(factory)
+
+
+def potentials(automaton: Automaton) -> list[Any]:
+    """Return, for each state, the combined weight of everything it can still do.
+
+    ``V[q]`` is the semiring sum, over every path from ``q`` to an accepting
+    state, of that path's weight times the final weight it ends on. It is what
+    weight pushing divides by, and what makes the pushed automaton locally
+    normalised.
+
+    Parameters
+    ----------
+    automaton
+        The automaton to measure.
+
+    Returns
+    -------
+    list
+        One potential per state.
+    """
+    semiring = automaton.semiring
+    values: list[Any] = [semiring.zero] * automaton.num_states
+
+    for state in reversed(topological_order(automaton)):
+        total = automaton.final_weight(state)
+        for index in automaton.transition_indices(state):
+            total = semiring.plus(
+                total,
+                semiring.times(
+                    automaton.transition_weight(index),
+                    values[automaton.transition_target(index)],
+                ),
+            )
+        values[state] = total
+
+    return values
+
+
+def push(automaton: Automaton, factory: type[A]) -> A:
+    """Return an equivalent automaton with its weight moved towards the front.
+
+    Mohri's weight pushing. Each state gets a potential — the combined weight of
+    every way of finishing from it — and every transition's weight is divided by
+    its source's potential and multiplied by its target's. Along any path the
+    potentials telescope, so each accepted sequence keeps exactly the weight it
+    had; what changes is where that weight sits.
+
+    The point is what the result satisfies afterwards: from any state, the
+    weights of the outgoing transitions combined with the final weight come to
+    ``one``. The automaton is locally normalised, which is what makes a prefix
+    informative about its extensions — and therefore what a pruning best-first
+    search would need, since with weight concentrated at the accepting states a
+    prefix says nothing at all.
+
+    Parameters
+    ----------
+    automaton
+        The automaton to push.
+    factory
+        The class to freeze the result into.
+
+    Returns
+    -------
+    Automaton
+        The pushed automaton.
+
+    Raises
+    ------
+    NotImplementedError
+        If the semiring is not divisible, or its multiplication does not commute.
+        Both are needed: dividing is the operation, and the telescoping assumes
+        the order of multiplication does not matter.
+    ZeroDivisionError
+        If a state cannot reach an accepting state. Its potential is then ``zero``
+        and there is nothing to divide by. Construction never produces such a
+        state; a hand-built automaton can.
+    """
+    from dafsa._builder import Builder  # noqa: PLC0415 - avoids an import cycle
+
+    semiring = automaton.semiring
+    if not semiring.divisible:
+        message = (
+            f"{type(semiring).__name__} is not divisible, so weight cannot be "
+            f"moved from one transition to another"
+        )
+        raise NotImplementedError(message)
+    if not semiring.commutative:
+        message = (
+            f"{type(semiring).__name__} does not commute, so the potentials "
+            f"would not cancel along a path"
+        )
+        raise NotImplementedError(message)
+
+    values = potentials(automaton)
+    zero = semiring.key(semiring.zero)
+    for state, value in enumerate(values):
+        if semiring.key(value) == zero:
+            message = (
+                f"state {state} cannot reach an accepting state, so it has no "
+                f"potential to push weight through"
+            )
+            raise ZeroDivisionError(message)
+
+    builder = Builder(automaton.alphabet, semiring)
+    for _ in range(automaton.num_states - 1):
+        builder.new_state()
+
+    builder.set_initial_weight(semiring.times(automaton.initial_weight, values[ROOT]))
+
+    for state in automaton.states():
+        for index in automaton.transition_indices(state):
+            target = automaton.transition_target(index)
+            label = automaton.transition_label(index)
+            builder.add_transition(
+                state,
+                label[0],
+                target,
+                semiring.divide(
+                    semiring.times(automaton.transition_weight(index), values[target]),
+                    values[state],
+                ),
+                label,
+            )
+        if automaton.is_final(state):
+            builder.set_final(
+                state,
+                weight=semiring.divide(automaton.final_weight(state), values[state]),
+            )
 
     return builder.freeze(factory)
 
@@ -540,6 +671,7 @@ def minimize(automaton: Automaton, factory: type[A]) -> A:
     renumbered = {old: new for new, old in enumerate(survivors)}
 
     builder = Builder(automaton.alphabet, semiring)
+    builder.set_initial_weight(automaton.initial_weight)
     for _ in range(len(survivors) - 1):
         builder.new_state()
 
@@ -609,6 +741,8 @@ __all__ = [
     "iterate",
     "k_best",
     "minimize",
+    "potentials",
+    "push",
     "rank",
     "suffix_counts",
     "topological_order",

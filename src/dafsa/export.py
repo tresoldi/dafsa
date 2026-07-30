@@ -110,6 +110,7 @@ def to_dict(automaton: Automaton) -> dict[str, Any]:
         "semiring": type(automaton.semiring).__name__,
         "weighted": weighted,
         "compact": automaton.is_compact,
+        **({"initial_weight": automaton.initial_weight} if weighted else {}),
         "alphabet": list(automaton.alphabet.tokens),
         "states": states,
         "transitions": transitions,
