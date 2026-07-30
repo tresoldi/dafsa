@@ -53,7 +53,7 @@ docs = [
     # and mkdocstrings with no migration path. Pinned until that shakes out.
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.5,<10",
-    "mkdocstrings[python]>=0.26",
+    "mkdocstrings[python]>=1.0.6",
 ]
 test = [
     "dafsa[graph]",
