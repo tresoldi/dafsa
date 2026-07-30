@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–9 implemented (see §12)
+Status: accepted; milestones 0–10 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -567,6 +567,19 @@ dafsa [-f trie|dafsa|compact|suffix|cdawg] [-s boolean|counting|tropical|log|pro
 `--condense` becomes `--compact`; `--sep` makes the tokenization that 1.0 did implicitly (and
 undocumentedly, in `__main__.py`) explicit and optional.
 
+**Tokenization needed two flags, not one.** `--sep` was specified with an optional value so that
+bare `--sep` could mean whitespace. In `argparse` that is a trap: `dafsa --sep words.txt` assigns
+the *filename* to `--sep` and then reports the positional as missing, because nothing
+distinguishes an omitted optional value from the argument that follows it. So `--sep SEP` takes a
+required value and `--words` splits on whitespace, the two being mutually exclusive, and omitting
+both leaves every character a token. `--sep ""` is rejected with a message pointing at `--words`,
+since `str.split("")` raises.
+
+This is the half of **#17** the API could not fix. 1.0's `__main__.py` called `line.split()`
+whenever it saw a space, so the command line appeared to handle word tokens while the API did
+not — and neither side made the difference visible. The split is now one flag that does nothing
+unless asked, calling the same `tokenize` the API exposes.
+
 ---
 
 ## 10. Repository and infrastructure changes
@@ -652,7 +665,7 @@ an unverified layer.
 | 7 | Transducers | `Fst`, `compose`, `project` | **done** |
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
 | 9 | Weight pushing | `push()` for divisible semirings | **done** |
-| 10 | CLI | rewrite against the new API — closes the remainder of #17 | |
+| 10 | CLI | rewrite against the new API — closes the remainder of #17 | **done** |
 | 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | |
 | 12 | Release | `2.0.0`, Zenodo version DOI, close #7, #8, #10, #14, #15, #16, #17, #18 with pointers to the relevant sections here | |
 

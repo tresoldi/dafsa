@@ -49,9 +49,15 @@ def test_module_runs_as_a_script(flag: str) -> None:
     assert result.stdout.strip()
 
 
-def test_main_with_no_arguments_prints_help(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main([]) == 0
-    assert "usage: dafsa" in capsys.readouterr().out
+def test_main_with_no_arguments_asks_for_a_source(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The interface reads sequences from somewhere, so a source is required."""
+    with pytest.raises(SystemExit) as excinfo:
+        main([])
+
+    assert excinfo.value.code != 0
+    assert "source" in capsys.readouterr().err
 
 
 def test_main_reports_the_package_version(
