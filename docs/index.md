@@ -11,8 +11,9 @@ automata, and acyclic weighted transducers.
     [`Automaton`](api.md#dafsa.automaton.Automaton)), the
     [semiring layer](api.md#dafsa.semirings), and the structures
     [`Trie`](api.md#dafsa.structures.Trie), [`Dafsa`](api.md#dafsa.structures.Dafsa) and
-    [`CompactDafsa`](api.md#dafsa.structures.CompactDafsa). The substring and transducer
-    structures are still being built.
+    [`CompactDafsa`](api.md#dafsa.structures.CompactDafsa), and the
+    [export layer](api.md#dafsa.export). The substring and transducer structures are still
+    being built.
 
     For the released library — the one described by the JOSS paper and the Zenodo DOI — use
     `pip install dafsa==1.0` and read
@@ -48,7 +49,9 @@ cd dafsa
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.10 or later.
+Requires Python 3.10 or later. Writing image files additionally needs
+[Graphviz](https://graphviz.org/) installed and its `dot` executable on the path; every other
+export, including the DOT source itself, is pure Python.
 
 ## Citation
 

@@ -34,13 +34,14 @@ from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
 
-from dafsa import semirings
+from dafsa import export, semirings
 from dafsa.alphabet import Alphabet, tokenize
 from dafsa.automaton import ROOT, Automaton, Match, Transition
 from dafsa.exceptions import (
     AcyclicityError,
     DafsaError,
     DeterminismError,
+    ExportError,
     UnknownTokenError,
 )
 from dafsa.semirings import Semiring
@@ -63,12 +64,14 @@ __all__ = [
     "Dafsa",
     "DafsaError",
     "DeterminismError",
+    "ExportError",
     "Match",
     "Semiring",
     "Transition",
     "Trie",
     "UnknownTokenError",
     "__version__",
+    "export",
     "semirings",
     "tokenize",
 ]

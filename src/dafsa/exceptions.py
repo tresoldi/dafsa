@@ -38,9 +38,19 @@ class AcyclicityError(DafsaError, ValueError):
     """
 
 
+class ExportError(DafsaError, RuntimeError):
+    """An export could not be produced.
+
+    Raised when an external tool an export depends on is missing or fails —
+    Graphviz, in practice. The automaton itself is fine; only the rendering of it
+    could not be made.
+    """
+
+
 __all__ = [
     "AcyclicityError",
     "DafsaError",
     "DeterminismError",
+    "ExportError",
     "UnknownTokenError",
 ]

@@ -163,6 +163,12 @@ select = [
 ignore = [
     "D203",    # incompatible with D211
     "D213",    # incompatible with D212
+    # RUF001-003 flag characters that "look like" ASCII. This library is for
+    # linguists: IPA, combining diacritics and non-Latin scripts are the subject
+    # matter, not typos, and they appear in docs, tests and corpora throughout.
+    "RUF001",  # ambiguous character in a string
+    "RUF002",  # ambiguous character in a docstring
+    "RUF003",  # ambiguous character in a comment
 ]
 
 [tool.ruff.lint.pydocstyle]

@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–5 implemented (see §12)
+Status: accepted; milestones 0–5 and 8 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -475,6 +475,13 @@ dafsa.export.write_gml(a, path) / write_graphml(a, path)
 - The DOT emitter declares `charset="UTF-8"` and a configurable `fontname` defaulting to a
   wide-coverage font, and escapes labels properly — **the fix for #15**, together with a
   documented note that Graphviz must be able to find a font covering the tokens in use.
+  Escaping is not cosmetic: a token containing a quote or a backslash would otherwise end the
+  DOT attribute early and produce a file Graphviz rejects. The tests render every generated
+  source through `dot` rather than pattern-matching the text, because source Graphviz will not
+  parse is not an export.
+- `resources/template.dot` is deleted. Emitting the source directly is what makes it possible
+  to set graph-level attributes at all — the template had placeholders for nodes and edges and
+  no way to express `charset` or `fontname`, which is the immediate cause of #15.
 - Node sizing guards against `max_weight == 0` and against an empty automaton, fixing the
   `ZeroDivisionError` and `ValueError` of §2.2.
 - `to_networkx` returns a **`MultiDiGraph`**, built in a single pass over the CSR arrays, one
@@ -486,9 +493,18 @@ dafsa.export.write_gml(a, path) / write_graphml(a, path)
 and networkx-backed extras such as full path enumeration. Construction, minimization, lookup,
 counting, and k-best are implemented directly on the CSR arrays: they are the algorithms this
 library exists to show, and delegating them would defeat the point as well as being slower.
-This split is worth revisiting once §5 is implemented — networkx's data model does not carry
-semiring weights naturally, and if the export surface turns out to be all it earns, it belongs
-in an optional extra.
+
+That revisit is now due, and the answer is clear: **networkx earns only the export surface.**
+Nothing in milestones 0–5 needed it, `match()` closed #8 without it — the 1.0 issue explicitly
+suggested reaching for networkx to return paths — and here it is used for `to_networkx`,
+`write_gml` and `write_graphml`, all of which are optional to any actual use of the library. It
+should move to an optional `graph` extra before release, with the three functions raising a
+clear error when it is absent. That is a packaging change, not a design change, and it belongs
+with milestone 12.
+
+**Graphviz** is not a Python dependency at all — `write_figure` shells out to `dot`, and its
+absence raises `ExportError` with a message saying so. `to_dot` returns source regardless, so a
+caller without Graphviz can still render elsewhere.
 
 ---
 
@@ -586,7 +602,7 @@ an unverified layer.
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | **done** |
 | 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
 | 7 | Transducers | `Fst`, `compose`, `project` | |
-| 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | |
+| 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
 | 9 | Weight pushing | `push()` for divisible semirings | |
 | 10 | CLI | rewrite against the new API — closes the remainder of #17 | |
 | 11 | Docs and benchmarks | MkDocs site, migration guide, quickstart, benchmark suite in CI | |
@@ -641,6 +657,26 @@ over all 96,393 sequences in 3.9s; a prefix query returning 4 results in 0.11ms.
 position-independent as intended — 26.0ms per thousand calls at position ~48,000 against
 29.3ms at ~96,000, where enumeration would have made the latter tens of thousands of times
 slower.
+
+Milestone 8 was taken out of order, ahead of 6 and 7, because it depends on nothing they
+produce and closes two more reported issues — the tracker goes from eight open to four with the
+work already done.
+
+It closed **#16** twice over. The reported half is that `to_graph()` returned an `nx.Graph`
+while documenting a directed one. The unreported half is worse: 1.0 wrote every edge's label
+into `graph[l][r]["label"]`, a single slot per *pair of states*, so two transitions joining the
+same pair silently lost one. Measured on `DAFSA(["am", "an"])`, 1.0 produces an undirected graph
+with **two** edges labelled `a` and `n` for an automaton with **three** transitions — the `m` is
+simply gone. A `MultiDiGraph` built in one pass gives three edges labelled `a`, `m`, `n`.
+
+**#15** — accented characters rendering as boxes — is a font-resolution failure, and the fix is
+to stop leaving the choice to Graphviz: the emitter declares `charset="UTF-8"` and a
+`fontname` defaulting to a face with coverage well past Latin-1. Verified by rendering the
+reporter's own input to PDF and confirming the named font is the one embedded. One honest
+limit: the original tofu could not be reproduced on the development machine, because fontconfig
+there substitutes a covering font (DejaVu Serif) for Graphviz's unresolvable default, so the
+symptom never appears. What is verified is that naming a font changes which font is embedded,
+which is the mechanism the fix relies on.
 
 Milestone 5 closed **#18** and **#14**, both of which were the same one-character defect:
 1.0 tested `in_degree > 1` when selecting compaction candidates and so failed to exclude states
