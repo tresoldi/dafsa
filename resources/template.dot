@@ -1,5 +1,0 @@
-digraph G {
-  graph [layout="dot",rankdir="LR"];
-  $dot_nodes$
-  $dot_edges$
-}

@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "DAFSA: Finite-state structures for sequence data"
+abstract: >-
+  dafsa is a Python library for storing and querying sets of sequences as
+  deterministic acyclic finite-state automata. It provides tries, minimal DAFSAs
+  and their path-compacted form, suffix automata and CDAWGs for substring
+  indexing, and acyclic weighted transducers, with weights defined over an
+  explicit semiring.
+type: software
+authors:
+  - family-names: Tresoldi
+    given-names: Tiago
+    email: dafsa@tresoldi.org
+    orcid: "https://orcid.org/0000-0002-2863-1467"
+version: 2.0.0
+license: MIT
+doi: 10.5281/zenodo.3668870
+repository-code: "https://github.com/tresoldi/dafsa"
+url: "https://dafsa.tresoldi.org"
+keywords:
+  - dafsa
+  - dawg
+  - finite-state-automata
+  - suffix-automaton
+  - transducer
+  - trie
+  - semiring
+  - computational-linguistics
+references:
+  - type: software
+    title: "DAFSA, a library for computing Deterministic Acyclic Finite State Automata"
+    authors:
+      - family-names: Tresoldi
+        given-names: Tiago
+        orcid: "https://orcid.org/0000-0002-2863-1467"
+    version: "1.0"
+    year: 2020
+    doi: 10.5281/zenodo.3668870
+    notes: >-
+      The 1.0 release, described by the JOSS submission whose manuscript source
+      is kept under manuscript/. 2.0 is a rewrite and a deliberate API break.

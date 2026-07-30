@@ -1,42 +1,88 @@
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dafsa"
-version = "2.0"
-authors = [{name = "Tiago Tresoldi", email = "tiago.tresoldi@lingfil.uu.se"}]
+dynamic = ["version"]
+authors = [{name = "Tiago Tresoldi", email = "dafsa@tresoldi.org"}]
+maintainers = [{name = "Tiago Tresoldi", email = "dafsa@tresoldi.org"}]
 license = {text = "MIT"}
-description = "Library for computing Deterministic Acyclic Finite State Automata (DAFSA)"
+description = "Finite-state structures for sequence data: tries, DAFSAs, suffix automata, and transducers"
 readme = "README.md"
+requires-python = ">=3.10"
 keywords = [
     "dafsa",
     "dawg",
     "finite state automata",
     "deterministic acyclic finite state automaton",
     "directed acyclic word graph",
+    "suffix automaton",
+    "cdawg",
+    "transducer",
+    "trie",
+    "semiring",
 ]
 classifiers = [
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Topic :: Software Development :: Libraries",
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
     "Topic :: Text Processing :: Indexing",
     "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
 ]
-requires-python = ">=3.6"
-dependencies = ["networkx"]
+# Deliberately none. Every structure, algorithm and the DOT output are plain
+# Python; networkx is needed only by three graph exports and lives in the
+# `graph` extra.
+dependencies = []
 
 [project.optional-dependencies]
-dev = ["black", "flake8", "twine", "wheel"]
-test = ["pytest"]
+graph = ["networkx>=3.0"]
+docs = [
+    # MkDocs 2.0 removes the plugin system outright, which breaks mkdocs-material
+    # and mkdocstrings with no migration path. Pinned until that shakes out.
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5,<10",
+    "mkdocstrings[python]>=0.26",
+]
+test = [
+    "dafsa[graph]",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-xdist>=3.6",
+    "hypothesis>=6.100",
+]
+dev = [
+    "dafsa[docs,graph,test]",
+    # ruff and mypy are pinned exactly so that a developer, the pre-commit hook
+    # and CI all run the same versions. An unpinned range does not merely drift:
+    # ruff 0.15 and 0.16 disagree about whether PLR0917 exists, so the `noqa`
+    # that one of them requires the other reports as unused, and no single
+    # source file satisfies both.
+    "ruff==0.16.0",
+    "mypy==2.3.0",
+    "bandit[toml]>=1.7.0",
+    "pre-commit>=3.8",
+    "build>=1.2",
+    "twine>=5.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/tresoldi/dafsa"
-Documentation = "https://dafsa.readthedocs.io"
+Documentation = "https://dafsa.tresoldi.org"
+Repository = "https://github.com/tresoldi/dafsa"
+Issues = "https://github.com/tresoldi/dafsa/issues"
+Changelog = "https://github.com/tresoldi/dafsa/blob/master/CHANGELOG.md"
 
 [project.scripts]
 dafsa = "dafsa.__main__:main"
@@ -44,9 +90,167 @@ dafsa = "dafsa.__main__:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 zip-safe = false
-include-package-data = true
-test-suite = "tests"
+
+[tool.setuptools.dynamic]
+version = {attr = "dafsa.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+
+[tool.setuptools.package-data]
+dafsa = ["py.typed"]
+
+# ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests", "src"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--doctest-modules",
+    "--cov=dafsa",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=88",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["dafsa"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# ---------------------------------------------------------------------------
+# Typing
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+# 3.10 is the floor the package supports and what ruff targets; there are no
+# stub-bearing third-party dependencies that would need a later parse target.
+python_version = "3.10"
+files = ["src", "tests", "benchmarks", "figures"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false  # Some third-party decorators are untyped
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["networkx.*", "pytest.*", "hypothesis.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Linting
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "ARG",   # flake8-unused-arguments
+    "SIM",   # flake8-simplify
+    "ICN",   # flake8-import-conventions
+    "PIE",   # flake8-pie
+    "T20",   # flake8-print
+    "PYI",   # flake8-pyi
+    "PT",    # flake8-pytest-style
+    "Q",     # flake8-quotes
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+    "TID",   # flake8-tidy-imports
+    "TC",    # flake8-type-checking
+    "RUF",   # Ruff-specific rules
+    "D",     # pydocstyle
+]
+
+ignore = [
+    "E501",   # Line too long (ruff format handles this)
+    "B008",   # Do not perform function calls in argument defaults
+    "RET504", # Unnecessary variable assignment before return
+    "ARG002", # Unused method argument (common in abstract methods)
+    "D202",   # No blank lines allowed after function docstring
+    "D200",   # One-line docstring should fit on one line
+    "D107",   # Missing docstring in __init__
+    "D203",   # incompatible with D211
+    "D213",   # incompatible with D212
+    # RUF001-003 flag characters that "look like" ASCII. This library is for
+    # linguists: IPA, combining diacritics and non-Latin scripts are the subject
+    # matter, not typos, and they appear in docs, tests and corpora throughout.
+    "RUF001", # ambiguous character in a string
+    "RUF002", # ambiguous character in a docstring
+    "RUF003", # ambiguous character in a comment
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dafsa"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG001",  # Unused function arguments in tests
+    "ARG002",  # Unused method arguments in tests
+    "D",       # Docstrings are not required in tests
+]
+"benchmarks/run.py" = [
+    "T201",    # Allow print statements in the benchmark script
+]
+"figures/trie-vs-dafsa.py" = [
+    "T201",    # Allow print statements in the figure script
+]
+"src/dafsa/__main__.py" = [
+    "T201",    # The command-line interface prints; that is what it is for
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs", "site"]
+# B404/B603/B607: `write_figure` and the figure script run Graphviz's `dot`,
+# resolved on PATH because an absolute path would break every installation that
+# puts it elsewhere, with an argument list built in this package and shell=False.
+skips = ["B404", "B603", "B607"]

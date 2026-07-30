@@ -1,0 +1,43 @@
+# Pre-commit hooks mirroring the CI "quality" job.
+# Install once with:  pre-commit install
+# Run on all files:   pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      # Linter (matches `ruff check .`)
+      - id: ruff
+        args: [--fix]
+      # Formatter (matches `ruff format --check .`)
+      - id: ruff-format
+
+  # mypy runs from the development environment rather than from an isolated one
+  # built by pre-commit. It has to: the checked files import `dafsa`, and an
+  # isolated env would not have it installed, so every import would be
+  # unresolved. `pass_filenames: false` lets the `files` list in pyproject.toml
+  # decide what is checked, exactly as `make quality` and CI do.
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: bandit
+        name: bandit
+        entry: bandit -c pyproject.toml -r src/dafsa/
+        language: system
+        types: [python]
+        pass_filenames: false

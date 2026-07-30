@@ -1,0 +1,102 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, format & type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install package with dev tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Check formatting with ruff
+        run: ruff format --check .
+      - name: Lint with ruff
+        run: ruff check .
+      - name: Type check with mypy
+        run: mypy
+      - name: Security scan with bandit
+        run: bandit -c pyproject.toml -r src/dafsa/
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Graphviz is not a Python dependency: `write_figure` shells out to `dot`.
+      # The tests that render an image skip themselves when it is absent, so this
+      # step is what keeps them from silently never running.
+      - name: Install Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+      - name: Install package with test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      # Coverage flags, including the --cov-fail-under gate, live in
+      # pyproject.toml's addopts, so they are not repeated here.
+      - name: Run tests
+        run: pytest
+
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Check distribution metadata
+        run: twine check dist/*
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+
+  docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install package with docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+      - name: Build the documentation site
+        run: mkdocs build --strict

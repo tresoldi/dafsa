@@ -1,6 +1,15 @@
 include README.md
+include CHANGELOG.md
 include AUTHORS.md
 include CONTRIBUTING.md
+include ARCHITECTURE.md
+include MIGRATION.md
+include SECURITY.md
+include CITATION.cff
 include LICENSE
-include requirements.txt
-include resources/*
+recursive-include resources *
+recursive-include tests *.py
+prune docs
+prune figures
+prune manuscript
+prune overrides
