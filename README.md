@@ -1,7 +1,7 @@
 # DAFSA
 
 [![PyPI](https://img.shields.io/pypi/v/dafsa.svg)](https://pypi.org/project/dafsa)
-[![CI](https://github.com/tresoldi/dafsa/actions/workflows/ci.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/ci.yml)
+[![CI](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/CI.yml)
 [![Docs](https://github.com/tresoldi/dafsa/actions/workflows/docs.yml/badge.svg)](https://tresoldi.github.io/dafsa)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)](https://doi.org/10.5281/zenodo.3668870)
 [![Joss](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725/status.svg)](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725)
