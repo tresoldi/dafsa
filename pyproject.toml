@@ -1,42 +1,73 @@
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dafsa"
-version = "2.0"
+version = "2.0.0.dev0"
 authors = [{name = "Tiago Tresoldi", email = "tiago.tresoldi@lingfil.uu.se"}]
 license = {text = "MIT"}
-description = "Library for computing Deterministic Acyclic Finite State Automata (DAFSA)"
+description = "Finite-state structures for sequence data: tries, DAFSAs, suffix automata, and transducers"
 readme = "README.md"
+requires-python = ">=3.10"
 keywords = [
     "dafsa",
     "dawg",
     "finite state automata",
     "deterministic acyclic finite state automaton",
     "directed acyclic word graph",
+    "suffix automaton",
+    "cdawg",
+    "transducer",
+    "trie",
+    "semiring",
 ]
 classifiers = [
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Topic :: Software Development :: Libraries",
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
     "Topic :: Text Processing :: Indexing",
     "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
 ]
-requires-python = ">=3.6"
-dependencies = ["networkx"]
+dependencies = ["networkx>=3.0"]
 
 [project.optional-dependencies]
-dev = ["black", "flake8", "twine", "wheel"]
-test = ["pytest"]
+docs = [
+    # MkDocs 2.0 removes the plugin system outright, which breaks mkdocs-material
+    # and mkdocstrings with no migration path. Pinned until that shakes out.
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5,<10",
+    "mkdocstrings[python]>=0.26",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+]
+dev = [
+    "dafsa[docs,test]",
+    "mypy>=1.11",
+    "ruff>=0.6",
+    "build>=1.2",
+    "twine>=5.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/tresoldi/dafsa"
-Documentation = "https://dafsa.readthedocs.io"
+Documentation = "https://tresoldi.github.io/dafsa"
+Repository = "https://github.com/tresoldi/dafsa"
+Issues = "https://github.com/tresoldi/dafsa/issues"
 
 [project.scripts]
 dafsa = "dafsa.__main__:main"
@@ -44,9 +75,105 @@ dafsa = "dafsa.__main__:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 zip-safe = false
-include-package-data = true
-test-suite = "tests"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+
+[tool.setuptools.package-data]
+dafsa = ["py.typed"]
+
+# ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["dafsa"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+
+# ---------------------------------------------------------------------------
+# Typing
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src", "tests"]
+strict = true
+warn_unreachable = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+
+[[tool.mypy.overrides]]
+module = "networkx.*"
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Linting
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "A",       # flake8-builtins
+    "ARG",     # flake8-unused-arguments
+    "B",       # flake8-bugbear
+    "C4",      # flake8-comprehensions
+    "D",       # pydocstyle
+    "E",       # pycodestyle errors
+    "EM",      # flake8-errmsg
+    "F",       # pyflakes
+    "FBT",     # flake8-boolean-trap
+    "I",       # isort
+    "ICN",     # flake8-import-conventions
+    "N",       # pep8-naming
+    "PERF",    # perflint
+    "PIE",     # flake8-pie
+    "PL",      # pylint
+    "PT",      # flake8-pytest-style
+    "PTH",     # flake8-use-pathlib
+    "RET",     # flake8-return
+    "RUF",     # ruff-specific
+    "SIM",     # flake8-simplify
+    "SLF",     # flake8-self
+    "TC",      # flake8-type-checking
+    "TID",     # flake8-tidy-imports
+    "UP",      # pyupgrade
+    "W",       # pycodestyle warnings
+]
+ignore = [
+    "D203",    # incompatible with D211
+    "D213",    # incompatible with D212
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D",       # docstrings are not required in tests
+    "PLR2004", # magic values are the point of a test
+    "SLF001",  # tests may reach into internals
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"

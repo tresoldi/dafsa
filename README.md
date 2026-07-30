@@ -1,14 +1,17 @@
 # DAFSA
 
 [![PyPI](https://img.shields.io/pypi/v/dafsa.svg)](https://pypi.org/project/dafsa)
-[![Build Status](https://travis-ci.org/tresoldi/dafsa.svg?branch=master)](https://travis-ci.org/tresoldi/dafsa)
-[![codecov](https://codecov.io/gh/tresoldi/dafsa/branch/master/graph/badge.svg)](https://codecov.io/gh/tresoldi/dafsa)
-[![Codacy
-Badge](https://api.codacy.com/project/badge/Grade/a2b47483ff684590b1208dbb4bbfc3ee)](https://www.codacy.com/manual/tresoldi/dafsa?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=tresoldi/dafsa&amp;utm_campaign=Badge_Grade)
-[![Documentation
-Status](https://readthedocs.org/projects/dafsa/badge/?version=latest)](https://dafsa.readthedocs.io/en/latest/?badge=latest)
-[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)
+[![CI](https://github.com/tresoldi/dafsa/actions/workflows/ci.yml/badge.svg)](https://github.com/tresoldi/dafsa/actions/workflows/ci.yml)
+[![Docs](https://github.com/tresoldi/dafsa/actions/workflows/docs.yml/badge.svg)](https://tresoldi.github.io/dafsa)
+[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.3668870.svg)](https://doi.org/10.5281/zenodo.3668870)
 [![Joss](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725/status.svg)](https://joss.theoj.org/papers/10d826c5b26e5222beb1b3780d606725)
+
+> **`master` is the 2.0 development line.** 2.0 is a clean break: the single `DAFSA` class
+> described below is being replaced by a family of structures over a new core, and the API in
+> this README is the **released 1.0** API, available from PyPI as `dafsa==1.0`. See
+> [`DESIGN.md`](DESIGN.md) for the rationale, the audit of 1.0 that motivated the rewrite, the
+> new API, the milestone plan, and the 1.0 → 2.0 migration table. This README is rewritten
+> when the structures land.
 
 DAFSA is a library for computing [Deterministic Acyclic Finite State Automata](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton) (also known as "directed acyclic word graphs", or DAWG). DAFSA are data structures derived from [tries](https://en.wikipedia.org/wiki/Trie) that allow to represent a set of sequences (typically character strings or *n*-grams) in the form of a directed acyclic graph with a single source vertex (the `start` symbol of all sequences) and at least one sink edge (`final` symbols, each pointed to by one or more sequences). In the current implementation, a trait of each node expresses whether it can be used a sink.
 

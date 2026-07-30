@@ -1,6 +1,10 @@
 include README.md
 include AUTHORS.md
 include CONTRIBUTING.md
+include DESIGN.md
 include LICENSE
-include requirements.txt
-include resources/*
+recursive-include resources *
+recursive-include tests *.py
+prune docs
+prune figures
+prune manuscript

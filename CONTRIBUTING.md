@@ -6,24 +6,51 @@ make via a GitHub issue or, if necessary, email to the author.
 Please note that we have a code of conduct. Be sure to follow it in all your
 interactions with the project.
 
+## Development setup
+
+The library targets Python 3.10 and later.
+
+```bash
+git clone https://github.com/tresoldi/dafsa.git
+cd dafsa
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Before opening a pull request, run what CI runs:
+
+```bash
+ruff check .              # lint
+ruff format .             # format
+mypy                      # type-check, strict
+pytest                    # tests
+mkdocs build --strict     # documentation
+```
+
+All five must pass. `mypy` runs in strict mode over `src/` and `tests/`, so new code needs
+type annotations.
+
+`master` is the 2.0 development line, and 2.0 is a deliberate break from the released 1.0.
+Before proposing a change, please read [`DESIGN.md`](DESIGN.md): it records the target API, the
+audit of 1.0 that motivated the rewrite, and the milestone the work is organised around. A
+change that cuts against a decision recorded there is worth discussing in an issue first — the
+decision may well be wrong, but it should be revised deliberately rather than by accident.
+
 ## Pull Request Process
 
 1. Try to follow best practices for good commit messages; when in doubt,
    err in favour of verbosity. Remember that a commit message should
    explain *what* and *why*, not *how*. Our informal reference
    to best practices
-   [is the one by Chris beams](https://chris.beams.io/posts/git-commit/).
-1. Ensure any install or build dependencies are removed before the end of the
-   layer when doing a build.
-2. Update the README.md with details of changes to the interface, this
-   includes new environment variables, exposed ports, useful file locations
-   and container parameters.
-3. Increase the version numbers in any examples files and the README.md to
-   the new version that this Pull Request would represent. The versioning
-   scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of another
-   developer, or if you do not have permission to do that, you may request
-   him/her to merge it for you.
+   [is the one by Chris Beams](https://chris.beams.io/posts/git-commit/).
+2. Add tests for the behaviour you are changing. For anything touching the automata
+   themselves, prefer a test that checks the result against an independent reference (a plain
+   Python `set`, a brute-force computation) over one that asserts the current output.
+3. Update the documentation under `docs/` when you change the interface, and note user-visible
+   changes for the changelog.
+4. The versioning scheme is [SemVer](https://semver.org/).
+5. Pull requests are merged once another contributor has signed off; if you lack permission to
+   merge, ask a maintainer to do it for you.
 
 ## Code of Conduct
 
