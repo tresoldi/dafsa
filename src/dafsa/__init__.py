@@ -7,9 +7,9 @@ of the repository.
 Available now: the frozen core (:class:`~dafsa.alphabet.Alphabet`,
 :class:`~dafsa.automaton.Automaton`), the semiring layer
 (:mod:`dafsa.semirings`), the dictionary structures :class:`Trie`, :class:`Dafsa` and
-:class:`CompactDafsa`, and the counting layer that makes an automaton an index
-rather than only a set. The substring and transducer structures land in later
-milestones.
+:class:`CompactDafsa`, the substring indexes :class:`SuffixAutomaton` and
+:class:`Cdawg`, the counting layer that makes an automaton an index rather than
+only a set, and :mod:`dafsa.export`. The transducers land in a later milestone.
 
 Examples
 --------
@@ -46,6 +46,7 @@ from dafsa.exceptions import (
 )
 from dafsa.semirings import Semiring
 from dafsa.structures import CompactDafsa, Dafsa, Trie
+from dafsa.suffix import Cdawg, SuffixAutomaton
 
 try:
     __version__ = version("dafsa")
@@ -60,6 +61,7 @@ __all__ = [
     "AcyclicityError",
     "Alphabet",
     "Automaton",
+    "Cdawg",
     "CompactDafsa",
     "Dafsa",
     "DafsaError",
@@ -67,6 +69,7 @@ __all__ = [
     "ExportError",
     "Match",
     "Semiring",
+    "SuffixAutomaton",
     "Transition",
     "Trie",
     "UnknownTokenError",

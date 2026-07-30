@@ -1,6 +1,6 @@
 # `dafsa` 2.0 — Design Document and Migration Plan
 
-Status: accepted; milestones 0–5 and 8 implemented (see §12)
+Status: accepted; milestones 0–6 and 8 implemented (see §12)
 Target: a single `2.0.0` release (clean break from `1.0`)
 Scope of this document: what 2.0 is, why the 1.0 internals are being replaced rather than
 patched, the concrete API, and the ordered plan to get there.
@@ -366,8 +366,27 @@ both, because the substring index is what makes longest-common-substring, substr
 and repeat detection possible — capabilities the dictionary structures cannot offer.
 
 - `SuffixAutomaton.from_sequence(seq)` — online construction (Blumer et al.), linear time.
-- `Cdawg` — path-compressed suffix automaton, edges labelled by `(start, length)` spans into
-  the source sequence.
+- `Cdawg` — path-compressed suffix automaton.
+
+**A correction to the sentence above.** This section originally said the suffix automaton is
+"the minimal DFA accepting every **substring**". That is a real structure, but it is the wrong
+one to compact: if every state accepts, no state is ever absorbable and `compact()` does
+nothing, so the CDAWG could not exist. The automaton built is therefore the classical one,
+accepting the **suffixes**, with acceptance marking the states on the suffix-link chain. Every
+*substring* is still indexed — it is exactly what can be walked from the root — so
+`contains_substring()` deliberately ignores acceptance, while `in` does not. Compaction then has
+non-accepting interior states to absorb and the CDAWG is a real structure.
+
+Labels are the compound token tuples milestone 5 introduced, not `(start, length)` spans into
+the source. Spans would be more compact for a single long text, but they would make the
+structure a second representation with its own traversal, and they cannot express a label whose
+tokens are not contiguous in any one source — which is what a compacted *dictionary* has.
+Sharing one representation is worth more than the bytes.
+
+Suffix links are scaffolding for construction and are not kept after freezing, which costs
+`longest_common_subsequence_with` its linear-time algorithm: it restarts at each position, so it
+is O(len(other) × longest match). Storing the links would be an array in the core for one
+structure's benefit; revisit if the quadratic worst case ever bites.
 
 ### 6.6 `Fst`
 
@@ -600,7 +619,7 @@ an unverified layer.
 | 3 | Dictionary structures | `Trie`, `Dafsa` (register-based, weight-aware), minimality verifier | **done** |
 | 4 | Counting layer | `s_count`, `len`, `rank`/`unrank`, lexicographic iteration, `total_weight`, `k_best`, plus the §7 query methods `match`/`paths`/`longest_prefix_of`/`starts_with` — closes #8 | **done** |
 | 5 | Compaction | `CompactDafsa` — closes #18, #14 | **done** |
-| 6 | Substring index | `SuffixAutomaton`, `Cdawg` | |
+| 6 | Substring index | `SuffixAutomaton`, `Cdawg` | **done** |
 | 7 | Transducers | `Fst`, `compose`, `project` | |
 | 8 | Export | DOT with UTF-8 and fonts, `MultiDiGraph`, JSON, GML/GraphML — closes #15, #16 | **done** |
 | 9 | Weight pushing | `push()` for divisible semirings | |
