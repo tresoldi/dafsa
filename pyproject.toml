@@ -53,7 +53,11 @@ docs = [
     # and mkdocstrings with no migration path. Pinned until that shakes out.
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.5,<10",
-    "mkdocstrings[python]>=0.26",
+    # Bounded for the same reason as its neighbours, which it was missing: the
+    # docs site is built with `--strict`, so a major release that renames an
+    # option turns a dependency update into a red build. 1.0 is current and
+    # works; the cap is against 2.0, unseen.
+    "mkdocstrings[python]>=0.26,<2",
 ]
 test = [
     "dafsa[graph]",
