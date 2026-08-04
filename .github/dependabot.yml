@@ -5,6 +5,15 @@ updates:
   # graph, docs, test and dev extras.
   - package-ecosystem: "pip"
     directory: "/"
+    # This is a library, not an application, and its constraints are open
+    # ranges. Under the default strategy Dependabot raises the *floor* of every
+    # `>=` whenever a release appears -- proposing `pytest>=9.1.1` in place of
+    # `pytest>=8.0` even though 9.1.1 already satisfies the old range and is
+    # what CI installs. Those bumps test nothing new; they only drop support for
+    # older versions. `increase-if-necessary` keeps the range alone until a
+    # release genuinely falls outside it, which is when a bump carries
+    # information.
+    versioning-strategy: increase-if-necessary
     schedule:
       interval: "weekly"
       day: "monday"

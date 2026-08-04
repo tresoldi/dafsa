@@ -348,6 +348,15 @@ hooks use the same ones. This is not fussiness: ruff 0.15 and 0.16 disagree abou
 and no source file can satisfy both. A range would make `make quality` pass or fail
 depending on what a contributor happened to have installed.
 
+**Everything else is an open `>=` range, and stays that way.** A floor states the oldest
+version believed to work, not the newest available — CI already installs the newest, so
+raising a floor tests nothing and only drops support. Dependabot is therefore configured
+with `versioning-strategy: increase-if-necessary` for pip, so it proposes a bump only when
+a release actually falls outside the declared range. The exceptions are **upper** bounds on
+the three documentation packages, which exist because the site is built with `--strict`: a
+major release that renames an option would otherwise turn a dependency update into a red
+build.
+
 ---
 
 ## 7. Versioning and compatibility
