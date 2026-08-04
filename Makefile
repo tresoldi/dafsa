@@ -1,7 +1,7 @@
 # dafsa Makefile
 # POSIX-compatible development commands
 
-.PHONY: help quality security format test test-cov test-fast bump-version build build-release clean install install-dev bench site site-serve
+.PHONY: help quality security format test test-cov test-fast version bump-version build build-release clean install install-dev bench site site-serve
 
 # Default target: show help
 .DEFAULT_GOAL := help
@@ -61,8 +61,17 @@ test-fast: ## Run tests in parallel, skipping the slow performance guards
 	pytest -n auto -m "not slow" --no-cov
 	@echo "OK: tests passed."
 
-bump-version: ## Bump version (TYPE=patch|minor|major) in pyproject.toml, commit, and tag
-	@CURRENT=$$(grep -m1 -o '^version = "[^"]*"' pyproject.toml | cut -d'"' -f2); \
+# The version lives in src/dafsa/__init__.py, which pyproject.toml reads through
+# `dynamic`. CITATION.cff carries a copy, and its date-released is stamped here
+# so the citation metadata cannot claim a date the release did not have.
+VERSION_FILE := src/dafsa/__init__.py
+
+version: ## Print the current version
+	@grep -m1 -o '^__version__ = "[^"]*"' $(VERSION_FILE) | cut -d'"' -f2
+
+bump-version: ## Bump version (TYPE=patch|minor|major), stamp CITATION.cff, commit, and tag
+	@CURRENT=$$(grep -m1 -o '^__version__ = "[^"]*"' $(VERSION_FILE) | cut -d'"' -f2); \
+	if [ -z "$$CURRENT" ]; then echo "Error: no __version__ found in $(VERSION_FILE)"; exit 1; fi; \
 	echo "==> Current version: $$CURRENT"; \
 	major=$$(echo $$CURRENT | cut -d. -f1); \
 	minor=$$(echo $$CURRENT | cut -d. -f2); \
@@ -71,22 +80,23 @@ bump-version: ## Bump version (TYPE=patch|minor|major) in pyproject.toml, commit
 	elif [ "$(TYPE)" = "minor" ]; then NEW="$$major.$$((minor + 1)).0"; \
 	elif [ "$(TYPE)" = "patch" ]; then NEW="$$major.$$minor.$$((patch + 1))"; \
 	else echo "Error: TYPE must be patch, minor, or major"; exit 1; fi; \
-	echo "==> Bumping $(TYPE) version to $$NEW..."; \
-	sed -i "s/^version = \"$$CURRENT\"/version = \"$$NEW\"/" pyproject.toml; \
-	sed -i "s/^version: $$CURRENT/version: $$NEW/" CITATION.cff; \
+	TODAY=$$(date +%Y-%m-%d); \
+	echo "==> Bumping $(TYPE) version to $$NEW, released $$TODAY..."; \
+	sed -i.bak "s/^__version__ = \"$$CURRENT\"/__version__ = \"$$NEW\"/" $(VERSION_FILE); \
+	sed -i.bak -e "s/^version: .*/version: $$NEW/" \
+	           -e "s/^date-released: .*/date-released: $$TODAY/" CITATION.cff; \
+	rm -f $(VERSION_FILE).bak CITATION.cff.bak; \
 	echo ""; \
-	echo "Update CHANGELOG.md before committing."; \
+	echo "Now update CHANGELOG.md, then press Enter to commit and tag."; \
 	echo ""; \
-	read -p "Press Enter to commit and tag, or Ctrl+C to cancel..."; \
-	git add pyproject.toml CITATION.cff; \
-	git commit -m "Bump version to $$NEW"; \
+	read -p "Press Enter to continue, or Ctrl+C to cancel..."; \
+	git add $(VERSION_FILE) CITATION.cff CHANGELOG.md; \
+	git commit -m "Release $$NEW"; \
 	git tag -a "v$$NEW" -m "Release v$$NEW"; \
 	echo "OK: version bumped to $$NEW and tagged."; \
 	echo ""; \
-	echo "Next steps:"; \
-	echo "  1. Update CHANGELOG.md"; \
-	echo "  2. git add CHANGELOG.md && git commit --amend --no-edit"; \
-	echo "  3. git push && git push --tags"
+	echo "Next step:  git push && git push --tags"; \
+	echo "The release workflow publishes to PyPI on the tag."
 
 build: ## Build the package (creates dist/)
 	@echo "==> Building package..."
