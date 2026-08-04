@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0
+## 2.0.0 — 2026-08-04
 
 A rewrite. 2.0 shares no implementation with 1.0 and its API is a deliberate break; `dafsa==1.0`
 stays on PyPI, and the

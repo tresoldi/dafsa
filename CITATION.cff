@@ -14,6 +14,8 @@ authors:
     email: dafsa@tresoldi.org
     orcid: "https://orcid.org/0000-0002-2863-1467"
 version: 2.0.0
+# Stamped by `make bump-version`; set by hand for the 2.0.0 release itself.
+date-released: 2026-08-04
 license: MIT
 doi: 10.5281/zenodo.3668870
 repository-code: "https://github.com/tresoldi/dafsa"
