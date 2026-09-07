@@ -73,7 +73,7 @@ dev = [
     # ruff 0.15 and 0.16 disagree about whether PLR0917 exists, so the `noqa`
     # that one of them requires the other reports as unused, and no single
     # source file satisfies both.
-    "ruff==0.16.1",
+    "ruff==0.16.6",
     "mypy==2.3.0",
     "bandit[toml]>=1.7.0",
     "pre-commit>=3.8",
